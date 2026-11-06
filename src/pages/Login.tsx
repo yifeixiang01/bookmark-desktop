@@ -9,6 +9,20 @@ import { useAuth } from "@/hooks/useAuth";
 const inputCls =
   "h-11 w-full rounded-xl border border-white/20 bg-white/10 px-3.5 text-sm text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:bg-white/15";
 
+const authErrorMessages = new Set([
+  "邮箱或密码不正确",
+  "该邮箱已注册，请直接登录",
+  "邮箱格式不正确",
+  "密码至少 8 位",
+  "密码最长 72 位",
+]);
+
+function getAuthErrorMessage(message?: string) {
+  return message && authErrorMessages.has(message)
+    ? message
+    : "登录失败，请稍后重试";
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const utils = trpc.useUtils();
@@ -34,7 +48,10 @@ export default function Login() {
   const registerMut = trpc.emailAuth.register.useMutation({ onSuccess });
 
   const pending = loginMut.isPending || registerMut.isPending;
-  const serverError = loginMut.error?.message ?? registerMut.error?.message ?? "";
+  const mutationError = loginMut.error ?? registerMut.error;
+  const serverError = mutationError
+    ? getAuthErrorMessage(mutationError.message)
+    : "";
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
