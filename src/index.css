@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.625rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+/* 编辑模式：图标抖动（手机桌面长按效果） */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-0.7deg); }
+  50% { transform: rotate(0.7deg); }
+}
+.jiggle {
+  animation: wiggle 0.52s ease-in-out infinite;
+  transform-origin: center 80%;
+}
+.jiggle:nth-child(2n) { animation-delay: 0.13s; }
+.jiggle:nth-child(3n) { animation-delay: 0.26s; animation-duration: 0.58s; }
+
+/* ===== 交互动效 ===== */
+/* 图标入场（交错延迟由 inline animation-delay 控制） */
+@keyframes tile-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.85); }
+  to { opacity: 1; transform: none; }
+}
+.tile-enter { animation: tile-enter 0.35s cubic-bezier(0.22, 1.2, 0.36, 1) both; }
+
+/* 文件夹从图标位置原位弹开（transform-origin 由 JS 按锚点计算） */
+@keyframes folder-pop {
+  from { opacity: 0; transform: scale(0.55); }
+  to { opacity: 1; transform: scale(1); }
+}
+.folder-pop { animation: folder-pop 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.25) both; }
+
+/* 分区切换 */
+@keyframes partition-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.partition-enter { animation: partition-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* 遮罩/菜单淡入 */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fade-in 0.15s ease-out both; }
+
+/* 右键菜单弹出 */
+@keyframes menu-pop {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+.menu-pop { animation: menu-pop 0.14s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; transform-origin: top left; }
+
+/* 轻提示上浮 */
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.toast-in { animation: toast-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* 悬停提示气泡：轻微上浮淡入 */
+@keyframes tip-pop {
+  from { opacity: 0; transform: translate(-50%, 5px) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+.tip-pop { animation: tip-pop 0.18s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* 拖拽幻影激活：弹起放大 + 微倾，像被"拿起" */
+@keyframes ghost-pop {
+  from { opacity: 0.4; transform: scale(0.72); }
+  to { opacity: 1; transform: scale(1.06) rotate(-2deg); }
+}
+.ghost-pop { animation: ghost-pop 0.16s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* 删除确认弹窗：背板淡入 + 卡片弹起 */
+@keyframes confirm-pop {
+  from { opacity: 0; transform: scale(0.88) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.confirm-pop { animation: confirm-pop 0.24s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.confirm-fade { animation: fade-in 0.18s ease both; }
+
+/* 弹簧式 hover（图标/文件夹统一手感） */
+.spring-hover { transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.18s ease; }
+
+/* 隐藏滚动条（保留滚动能力）：桌面横向滚动 / 文件夹面板共用 */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
