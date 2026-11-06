@@ -157,7 +157,7 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md bg-white/95 backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle>{editing ? '编辑书签' : '添加书签'}</DialogTitle>
+          <DialogTitle>{editing ? '修改书签' : '添加书签'}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4 py-1">
           <div className="flex items-start gap-4">

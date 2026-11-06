@@ -4,6 +4,7 @@ import { allBookmarks, findBookmark, loadState, saveState, uid } from '@/lib/sto
 import { findFreeRect, layoutItems, rectsOverlap, spanOf } from '@/lib/gridLayout'
 import { hostHue } from '@/lib/favicon'
 import { folderNameFor } from '@/lib/categorize'
+import { copyBookmark, removeBookmarkCopies, syncBookmark } from '@/lib/bookmarkActions'
 
 function activeOf(d: AppState): Partition | undefined {
   return d.partitions.find((x) => x.id === d.activePartitionId)
@@ -114,6 +115,11 @@ export function useBookmarkStore() {
     (groupId: string | null, bookmark: Bookmark) => update((d) => {
       const p = activeOf(d)
       if (!p) return
+      const existing = findBookmark(p, bookmark.id)
+      if (existing) {
+        syncBookmark(d, { ...existing.bookmark }, bookmark)
+        if ((existing.group?.id ?? null) === groupId) return
+      }
       removeBookmarkEverywhere(p, bookmark.id)
       if (groupId === null) {
         p.items.push({ id: uid(), kind: 'bookmark', bookmark })
@@ -131,6 +137,8 @@ export function useBookmarkStore() {
     (groupName: string, bookmark: Bookmark) => update((d) => {
       const p = activeOf(d)
       if (!p) return
+      const existing = findBookmark(p, bookmark.id)
+      if (existing) syncBookmark(d, { ...existing.bookmark }, bookmark)
       removeBookmarkEverywhere(p, bookmark.id)
       p.items.push({
         id: uid(),
@@ -174,6 +182,22 @@ export function useBookmarkStore() {
       if (!p) return
       removeBookmarkEverywhere(p, bookmarkId)
       p.dock = p.dock.filter((id) => id !== bookmarkId)
+    }),
+    [update]
+  )
+
+  const deleteBookmarkScoped = useCallback(
+    (bookmark: Bookmark, sourceId: string, allSpaces: boolean) => update((d) => {
+      for (const p of d.partitions) {
+        if (allSpaces || p.id === sourceId) removeBookmarkCopies(p, bookmark)
+      }
+    }),
+    [update]
+  )
+
+  const copyBookmarkToPartitions = useCallback(
+    (bookmark: Bookmark, sourceId: string, targetIds: string[]) => update((d) => {
+      copyBookmark(d, bookmark, sourceId, targetIds)
     }),
     [update]
   )
@@ -440,6 +464,7 @@ export function useBookmarkStore() {
     addGroup, renameGroup, deleteGroup,
     saveBookmark, saveBookmarkToNewGroup, moveBookmarkToDesktop, moveBookmarkToFolder, deleteBookmark,
     toggleDock, importGroups,
+    deleteBookmarkScoped, copyBookmarkToPartitions,
     placeItemAt, mergeBookmarks, mergeFromFolder, addBookmarkToFolder,
     toggleLocked, setIconSize, sortByColor, setBookmarkIcon,
     batchDelete, batchMoveToFolder, batchMoveToNewFolder, batchMoveToPartition,

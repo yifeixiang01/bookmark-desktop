@@ -20,6 +20,7 @@ interface Props {
   gridRef: React.RefObject<GridFrame | null>
   onPress: (e: React.PointerEvent, source: DragSource) => void
   onToggleSelect: (bookmarkId: string) => void
+  onCopyBookmark: (bookmarkId: string) => void
   onEditBookmark: (bookmarkId: string) => void
   onDeleteBookmark: (item: Extract<DesktopItem, { kind: 'bookmark' }>) => void
   onToggleDock: (bookmarkId: string) => void
@@ -190,6 +191,7 @@ export function DesktopGrid(props: Props) {
                   iconPx={iconPx}
                   enterDelay={Math.min(index * 28, 380)}
                   onToggleSelect={() => props.onToggleSelect(item.bookmark.id)}
+                  onCopy={() => props.onCopyBookmark(item.bookmark.id)}
                   onEdit={() => props.onEditBookmark(item.bookmark.id)}
                   onDelete={() => props.onDeleteBookmark(item)}
                   onToggleDock={() => props.onToggleDock(item.bookmark.id)}

@@ -1,3 +1,5 @@
+import { BookmarkSpaceDialog } from '@/components/BookmarkSpaceDialog'
+import { containingPartitions } from '@/lib/bookmarkActions'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, Layers } from 'lucide-react'
 import { useBookmarkStore } from '@/hooks/useBookmarkStore'
@@ -38,6 +40,7 @@ export default function Home() {
   const { state, activePartition } = store
   const cloud = useCloudSync(state, store.replaceState, !!user)
 
+  const [spaceAction, setSpaceAction] = useState<{ mode: 'copy' | 'delete'; bookmark: Bookmark; sourceId: string } | null>(null)
   const [editMode, setEditMode] = useState(false)
   const [openGroup, setOpenGroup] = useState<{ id: string; rect: DOMRect } | null>(null)
   const [prompt, setPrompt] = useState<NamePrompt>(null)
@@ -59,18 +62,19 @@ export default function Home() {
     toastTimer.current = setTimeout(() => setToast(''), 2600)
   }
 
-  const hostOf = (url: string) => {
-    try {
-      return new URL(url).hostname.replace(/^www\./, '')
-    } catch {
-      return ''
-    }
+  const editBookmark = (id: string) => {
+    const found = store.findBookmark(id)
+    if (found) setBookmarkForm({ open: true, editing: { groupId: found.group?.id ?? null, bookmark: found.bookmark } })
   }
 
-  /** 书签图标（删除确认弹窗用） */
-  const bookmarkIcon = (b: Bookmark, size = 56) => (
-    <FaviconImg url={b.url} name={b.name} customIcon={b.icon} size={size} />
-  )
+  const openSpaceAction = (id: string, mode: 'copy' | 'delete') => {
+    if (mode === 'copy' && state.partitions.length < 2) {
+      showToast('没有其他空间，请先创建')
+      return
+    }
+    const found = store.findBookmark(id)
+    if (found) setSpaceAction({ mode, bookmark: found.bookmark, sourceId: activePartition.id })
+  }
 
   /** 文件夹迷你预览（删除确认弹窗用） */
   const folderIcon = (g: { bookmarks: Bookmark[] }) => (
@@ -193,7 +197,7 @@ export default function Home() {
     },
   })
 
-  const groups = activePartition.items.flatMap((it) => (it.kind === 'group' ? [it.group] : []))
+  const groups = useMemo(() => activePartition.items.flatMap((it) => (it.kind === 'group' ? [it.group] : [])), [activePartition.items])
   const totalBookmarks = useMemo(() => allBookmarks(activePartition).length, [activePartition])
 
   const dockItems = useMemo(
@@ -380,7 +384,7 @@ export default function Home() {
           // 文件夹面板打开时，点桌面空白处关闭（点图标/按钮/输入框不打扰；拖拽落点不触发）
           if (!openGroup || dragState.suppressClick) return
           const t = e.target as HTMLElement
-          if (t.closest('.folder-pop') || t.closest('a,button,input')) return
+          if (t.closest('.folder-pop') || t.closest('a,button,input,[role=menu]')) return
           setOpenGroup(null)
         }}
         onContextMenu={(e) => {
@@ -426,14 +430,8 @@ export default function Home() {
                   })
                 }
               }}
-              onDeleteBookmark={(item) => {
-                setConfirm({
-                  title: `删除「${item.bookmark.name}」？`,
-                  description: hostOf(item.bookmark.url) || undefined,
-                  icon: bookmarkIcon(item.bookmark),
-                  action: () => store.deleteBookmark(item.bookmark.id),
-                })
-              }}
+              onCopyBookmark={(id) => openSpaceAction(id, 'copy')}
+              onDeleteBookmark={(item) => openSpaceAction(item.bookmark.id, 'delete')}
               onToggleDock={store.toggleDock}
               onOpenGroup={(id, rect) => setOpenGroup({ id, rect })}
               onRenameGroup={(id) => setPrompt({ kind: 'rename-group', id })}
@@ -464,7 +462,7 @@ export default function Home() {
         </div>
       </main>
 
-      <Dock items={dockItems} editMode={editMode} iconPx={iconPx} onRemove={(id) => store.toggleDock(id)} />
+      <Dock onEdit={editBookmark} onDelete={(id) => openSpaceAction(id, 'delete')} onCopy={(id) => openSpaceAction(id, 'copy')} items={dockItems} editMode={editMode} iconPx={iconPx} onRemove={(id) => store.toggleDock(id)} />
 
       {/* 批量整理操作条 */}
       {editMode && selected.size > 0 && (
@@ -558,15 +556,8 @@ export default function Home() {
           const found = store.findBookmark(bid)
           if (found) setBookmarkForm({ open: true, editing: { groupId: gid, bookmark: found.bookmark } })
         }}
-        onDeleteBookmark={(bid) => {
-          const found = store.findBookmark(bid)
-          setConfirm({
-            title: `删除「${found?.bookmark.name ?? '这个书签'}」？`,
-            description: found ? hostOf(found.bookmark.url) || undefined : undefined,
-            icon: found ? bookmarkIcon(found.bookmark) : undefined,
-            action: () => store.deleteBookmark(bid),
-          })
-        }}
+        onCopyBookmark={(id) => openSpaceAction(id, 'copy')}
+        onDeleteBookmark={(id) => openSpaceAction(id, 'delete')}
         onToggleDock={store.toggleDock}
         onMoveToDesktop={(bid) => {
           store.moveBookmarkToDesktop(bid)
@@ -581,14 +572,35 @@ export default function Home() {
         defaultGroupId={bookmarkForm.defaultGroupId}
         onClose={() => setBookmarkForm({ open: false })}
         onSave={(gid, bookmark, newGroupName) => {
+          const synced = !!bookmarkForm.editing && containingPartitions(state, bookmarkForm.editing.bookmark).some((p) => p.id !== activePartition.id)
           if (newGroupName) {
             store.saveBookmarkToNewGroup(newGroupName, bookmark)
           } else {
             store.saveBookmark(gid, bookmark)
           }
-          showToast(`已保存「${bookmark.name}」`)
+          showToast(synced ? '已同步其他空间' : `已保存「${bookmark.name}」`)
         }}
       />
+
+      {spaceAction && (
+        <BookmarkSpaceDialog
+          bookmark={spaceAction.bookmark}
+          partitions={state.partitions}
+          sourceId={spaceAction.sourceId}
+          mode={spaceAction.mode}
+          onClose={() => setSpaceAction(null)}
+          onConfirm={(ids, allSpaces) => {
+            if (spaceAction.mode === 'copy') {
+              store.copyBookmarkToPartitions(spaceAction.bookmark, spaceAction.sourceId, ids)
+              showToast('已复制到所选空间')
+            } else {
+              store.deleteBookmarkScoped(spaceAction.bookmark, spaceAction.sourceId, allSpaces)
+              showToast(allSpaces ? '已从所有空间删除' : '已从当前空间删除')
+            }
+            setSpaceAction(null)
+          }}
+        />
+      )}
 
       {/* 批量移动：目标选择 */}
       <OptionPickerDialog
