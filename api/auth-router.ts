@@ -1,10 +1,12 @@
 import * as cookie from "cookie";
 import { Session } from "@contracts/constants";
 import { getSessionCookieOptions } from "./lib/cookies";
-import { createRouter, authedQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery } from "./middleware";
 
 export const authRouter = createRouter({
-  me: authedQuery.query((opts) => {
+  me: publicQuery.query((opts) => {
+    if (!opts.ctx.user) return null;
+
     // 不把密码哈希下发到浏览器
     const { passwordHash: _redacted, ...safeUser } = opts.ctx.user;
     return safeUser;
