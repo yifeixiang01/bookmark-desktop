@@ -443,11 +443,7 @@ export default function Home() {
                   action: () => store.deleteGroup(g.id),
                 })
               }}
-              onAddClick={() =>
-                editMode
-                  ? setPrompt({ kind: 'add-group' })
-                  : setBookmarkForm({ open: true, defaultGroupId: null })
-              }
+              onAddClick={() => setPrompt({ kind: 'add-group' })}
             />
           </div>
 
@@ -455,7 +451,7 @@ export default function Home() {
             <div className="absolute left-1/2 top-1/3 -translate-x-1/2 rounded-2xl border border-white/15 bg-black/25 px-8 py-6 text-center backdrop-blur-md">
               <p className="text-white/90">「{activePartition.name}」还是空的</p>
               <p className="mt-1 text-sm text-white/60">
-                点上方 + 添加书签，或在右上角「设置」里导入浏览器书签文件
+                右键桌面添加书签，或在右上角「设置」里导入浏览器书签文件
               </p>
             </div>
           )}

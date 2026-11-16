@@ -211,25 +211,25 @@ export function DesktopGrid(props: Props) {
           )
         })}
 
-        {/* 添加入口：固定跟在最后一个空位 */}
-        <div
+        {/* 编辑模式下保留新建文件夹入口 */}
+        {editMode && <div
           className="absolute flex items-start justify-center transition-[left,top] duration-200 ease-out"
           style={cellStyle(addCell, { w: 1, h: 1 })}
         >
           <div className="flex w-20 flex-col items-center gap-1.5 pt-0.5">
             <button
               onClick={props.onAddClick}
-              title={editMode ? '新建文件夹' : '添加书签'}
+              title="新建文件夹"
               className="grid place-items-center rounded-2xl border-2 border-dashed border-white/40 text-white/70 backdrop-blur-sm transition-colors hover:border-white/70 hover:text-white"
               style={{ width: iconPx, height: iconPx }}
             >
               <Plus size={Math.round(iconPx * 0.4)} />
             </button>
             <span className="text-xs text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-              {editMode ? '新建文件夹' : '添加书签'}
+              新建文件夹
             </span>
           </div>
-        </div>
+        </div>}
         </div>
       </div>
     </div>
