@@ -25,6 +25,8 @@ function getAuthErrorMessage(message?: string) {
 
 export default function Login() {
   const navigate = useNavigate();
+  const requestedReturn = new URLSearchParams(window.location.search).get('returnTo');
+  const returnTo = requestedReturn?.startsWith('/extension/authorize?') ? requestedReturn : '/';
   const utils = trpc.useUtils();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
@@ -37,12 +39,12 @@ export default function Login() {
   const [localError, setLocalError] = useState("");
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) navigate("/", { replace: true });
-  }, [authLoading, isAuthenticated, navigate]);
+    if (!authLoading && isAuthenticated) navigate(returnTo, { replace: true });
+  }, [authLoading, isAuthenticated, navigate, returnTo]);
 
   const onSuccess = async () => {
     await utils.auth.me.invalidate();
-    navigate("/", { replace: true });
+    navigate(returnTo, { replace: true });
   };
   const loginMut = trpc.emailAuth.login.useMutation({ onSuccess });
   const registerMut = trpc.emailAuth.register.useMutation({ onSuccess });

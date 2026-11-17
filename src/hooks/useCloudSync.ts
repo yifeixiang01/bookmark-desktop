@@ -3,83 +3,78 @@ import { trpc } from '@/providers/trpc'
 import type { AppState } from '@/types/bookmark'
 import { parseStateJSON } from '@/lib/store'
 
-/**
- * 云端同步：
- * - 登录后先拉取云端状态；有则覆盖本地，没有则把当前本地上传（完成老用户迁移）
- * - 之后每次本地变更防抖 800ms 整包上传
- * - hydrated 为 false 期间页面应显示加载态，避免本地种子数据误覆盖云端
- */
-export function useCloudSync(
-  state: AppState,
-  replaceState: (s: AppState) => void,
-  enabled: boolean
-) {
-  const [hydrated, setHydrated] = useState(false)
-  const [syncing, setSyncing] = useState(false)
-  const skipNextPush = useRef(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const saveMut = trpc.state.save.useMutation()
-  const saveRef = useRef(saveMut.mutate)
-  saveRef.current = saveMut.mutate
-  const replaceRef = useRef(replaceState)
-  replaceRef.current = replaceState
+/** Serialize writes; revision checks prevent a stale desktop overwriting extension saves. */
+export function useCloudSync(state: AppState, replaceState: (s: AppState) => void, userId: number | undefined) {
+  const utils = trpc.useUtils()
+  const save = trpc.state.save.useMutation()
+  const latest = useRef({ state, replaceState, utils, mutate: save.mutateAsync })
+  latest.current = { state, replaceState, utils, mutate: save.mutateAsync }
+  const [status, setStatus] = useState({ hydrated: false, syncing: false, loadError: false, error: '' })
+  const controller = useRef<{ retry: () => void }>({ retry: () => {} })
 
-  const getQuery = trpc.state.get.useQuery(undefined, {
-    enabled,
-    retry: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  })
-
-  // 初始水合：拉云端 → 覆盖本地；云端为空 → 上传本地
   useEffect(() => {
-    if (!enabled || hydrated || !getQuery.isSuccess) return
-    const remote = getQuery.data
-    const parsed = remote ? parseStateJSON(JSON.stringify(remote)) : null
-    skipNextPush.current = true // 水合引发的状态变化不再回传
-    if (parsed) {
-      replaceRef.current(parsed)
-      setHydrated(true)
-    } else {
-      // 新账号（或云端数据损坏）：把当前本地数据上传作为初始版本
-      setSyncing(true)
-      saveRef.current(
-        { state: JSON.parse(JSON.stringify(state)) as never },
-        { onSettled: () => { setSyncing(false); setHydrated(true) } }
-      )
+    if (!userId) return
+    let disposed = false, busy = false, stopped = false, revision = 0
+    let baseline = ''
+    setStatus({ hydrated: false, syncing: false, loadError: false, error: '' })
+    const update = (patch: Partial<typeof status>) => { if (!disposed) setStatus(s => ({ ...s, ...patch })) }
+    async function load(initial = false) {
+      if (busy || stopped || disposed) return
+      if (!initial && JSON.stringify(latest.current.state) !== baseline) return
+      busy = true
+      try {
+        const snapshot = await latest.current.utils.state.snapshot.fetch()
+        if (disposed) return
+        // A user may edit while the read is in flight. Keep their edits for CAS save.
+        if (!initial && JSON.stringify(latest.current.state) !== baseline) return
+        revision = snapshot.revision
+        const parsed = snapshot.state ? parseStateJSON(JSON.stringify(snapshot.state)) : null
+        if (snapshot.state && !parsed) throw new Error('云端数据无法读取')
+        const next = parsed ?? latest.current.state
+        baseline = JSON.stringify(next)
+        if (parsed) latest.current.replaceState(parsed)
+        else {
+          const result = await latest.current.mutate({ state: next, expectedRevision: revision })
+          revision = result.revision
+        }
+        update({ hydrated: true, loadError: false, error: '' })
+      } catch {
+        update({ loadError: initial, error: initial ? '' : '云端读取失败，将在下次切回时重试' })
+      } finally { busy = false }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, hydrated, getQuery.isSuccess, getQuery.data])
-
-  // 本地变更 → 防抖上传
-  useEffect(() => {
-    if (!hydrated) return
-    if (skipNextPush.current) {
-      skipNextPush.current = false
-      return
+    async function flush() {
+      if (busy || stopped || disposed || !baseline) return
+      const local = latest.current.state
+      const json = JSON.stringify(local)
+      if (json === baseline) return
+      busy = true
+      update({ syncing: true })
+      try {
+        const result = await latest.current.mutate({ state: local, expectedRevision: revision })
+        if (disposed) return
+        revision = result.revision
+        baseline = json
+        update({ error: '' })
+      } catch (error) {
+        const code = (error as { data?: { code?: string } }).data?.code
+        if (code === 'CONFLICT' || code === 'UNAUTHORIZED') stopped = true
+        update({ error: code === 'CONFLICT' ? '云端已有新修改，本地修改尚未上传。请先导出本地备份，再刷新页面获取云端数据。' : code === 'UNAUTHORIZED' ? '登录已失效，请重新登录；本地修改尚未上传。' : '同步失败，本地修改已保留，正在等待重试。' })
+      } finally {
+        busy = false
+        update({ syncing: false })
+      }
     }
-    clearTimeout(timer.current)
-    timer.current = setTimeout(() => {
-      setSyncing(true)
-      saveRef.current(
-        { state: JSON.parse(JSON.stringify(state)) as never },
-        { onSettled: () => setSyncing(false) }
-      )
-    }, 800)
-    return () => clearTimeout(timer.current)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, hydrated])
-
-  // 401 说明会话刚失效（如退出登录瞬间的 refetch），由路由守卫接管跳转，不当作加载失败
-  const unauthorized =
-    getQuery.error && (getQuery.error as { data?: { code?: string } }).data?.code === 'UNAUTHORIZED'
-
-  return {
-    hydrated,
-    syncing,
-    loadError: enabled && getQuery.isError && !unauthorized,
-    retryLoad: getQuery.refetch,
-  }
+    controller.current.retry = () => { void load(true) }
+    void load(true)
+    const tick = () => { void flush() }
+    const timer = setInterval(tick, 1000)
+    const focus = () => { if (JSON.stringify(latest.current.state) === baseline) void load(); else void flush() }
+    window.addEventListener('focus', focus)
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (baseline && JSON.stringify(latest.current.state) !== baseline) { event.preventDefault(); event.returnValue = '' }
+    }
+    window.addEventListener('beforeunload', beforeUnload)
+    return () => { disposed = true; clearInterval(timer); window.removeEventListener('focus', focus); window.removeEventListener('beforeunload', beforeUnload) }
+  }, [userId])
+  return { ...status, retryLoad: () => controller.current.retry() }
 }

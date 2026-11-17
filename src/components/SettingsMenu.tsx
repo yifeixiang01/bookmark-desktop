@@ -24,13 +24,14 @@ interface Props {
   onImportJSON: (file: File) => void
   accountLabel: string
   syncing: boolean
+  syncError?: string
   onLogout: () => void
 }
 
 export function SettingsMenu({
   currentPartitionName, appCount, onAddApp,
   wallpaper, onWallpaper, onImportHTML, onExportJSON, onImportJSON,
-  accountLabel, syncing, onLogout, partitions, onAddPartition, onRenamePartition, onDeletePartition, onReorderPartitions,
+  accountLabel, syncing, syncError, onLogout, partitions, onAddPartition, onRenamePartition, onDeletePartition, onReorderPartitions,
 }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -82,7 +83,7 @@ export function SettingsMenu({
             <p className="truncate text-sm font-medium text-slate-700">{accountLabel}</p>
             <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
               {syncing ? <CloudUpload size={12} /> : <Cloud size={12} />}
-              {syncing ? '同步中…' : '已同步到云端'}
+              {syncError ? '尚未同步，请查看页面提示' : syncing ? '同步中…' : '已同步到云端'}
             </p>
           </div>
             <button className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50" onClick={() => { setOpen(false); onLogout() }}><LogOut size={14} />退出登录</button>
