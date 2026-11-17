@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import type { AppState, Bookmark, GridPos, Group, IconSize, Partition } from '@/types/bookmark'
 import { allBookmarks, findBookmark, loadState, saveState, uid } from '@/lib/store'
-import { findFreeRect, layoutItems, rectsOverlap, spanOf } from '@/lib/gridLayout'
+import { previewInsert, layoutItems, spanOf } from '@/lib/gridLayout'
 import { hostHue } from '@/lib/favicon'
 import { folderNameFor } from '@/lib/categorize'
 import { copyBookmark, moveGroup, removeBookmarkCopies, syncBookmark } from '@/lib/bookmarkActions'
@@ -285,20 +285,12 @@ export function useBookmarkStore() {
         if (cp) it.pos = { ...cp }
       }
 
-      const others = p.items.filter((i) => i.id !== itemId)
-      const { placements } = layoutItems(others, rows)
-      const overlapped = others.filter((o) => {
-        const op = placements.get(o.id)
-        return op && rectsOverlap(nx, ny, span, op.x, op.y, spanOf(o))
-      })
-
-      item.pos = { x: nx, y: ny }
-      placements.set(itemId, item.pos)
-      // 插入式落位（与拖拽悬停"排开"预览一致）：被压到的项目顺推到下一个空位
-      for (const o of overlapped) {
-        const oSpan = spanOf(o)
-        o.pos = findFreeRect(others, placements, rows, oSpan, o.id)
-        placements.set(o.id, o.pos)
+      const cell = { x: nx, y: ny }
+      const moved = previewInsert(p.items, current, itemId, span, cell, rows)
+      item.pos = cell
+      for (const it of p.items) {
+        const target = moved.get(it.id)
+        if (target) it.pos = { ...target }
       }
     }),
     [update]

@@ -111,9 +111,58 @@ export function previewInsert(
   map.set(sourceId, { ...cell })
   const moved = new Map<string, GridPos>()
   for (const o of displaced) {
-    const np = findFreeRect(others, map, rows, spanOf(o), o.id)
-    map.set(o.id, np)
-    moved.set(o.id, np)
+    const origin = map.get(o.id)!
+    const size = spanOf(o)
+    if (!rectsOverlap(origin.x, origin.y, size, cell.x, cell.y, span)) continue
+    // Search outward from the collision, propagating a nearby vacancy through
+    // adjacent icons. The dragged footprint is reserved even for panel sources.
+    const blocked = (p: GridPos) => rectsOverlap(p.x, p.y, { w: 1, h: 1 }, cell.x, cell.y, span)
+    const occupant = (p: GridPos) => others.find((it) => {
+      const at = map.get(it.id)
+      return at && rectsOverlap(p.x, p.y, { w: 1, h: 1 }, at.x, at.y, spanOf(it))
+    })
+    if (size.w === 1 && size.h === 1) {
+      const queue: GridPos[][] = [[origin]]
+      const seen = new Set([`${origin.x},${origin.y}`])
+      let path: GridPos[] | undefined
+      for (let i = 0; i < queue.length && !path; i++) {
+        const route = queue[i]
+        const at = route[route.length - 1]
+        for (const next of [{ x: at.x + 1, y: at.y }, { x: at.x, y: at.y + 1 }, { x: at.x - 1, y: at.y }, { x: at.x, y: at.y - 1 }]) {
+          const key = `${next.x},${next.y}`
+          if (next.x < 0 || next.y < 0 || next.y >= rows || seen.has(key) || blocked(next)) continue
+          seen.add(key)
+          const hit = occupant(next)
+          if (!hit) { path = [...route, next]; break }
+          if (hit.kind === 'bookmark') queue.push([...route, next])
+        }
+      }
+      if (path) {
+        for (let i = path.length - 2; i >= 0; i--) {
+          const it = occupant(path[i])
+          if (!it) continue
+          map.set(it.id, { ...path[i + 1] })
+          moved.set(it.id, { ...path[i + 1] })
+        }
+        continue
+      }
+    }
+    // Larger cards cannot travel through one-cell gaps. Choose the closest
+    // fitting rectangle, never the global first empty cell.
+    for (let distance = 1; ; distance++) {
+      let target: GridPos | undefined
+      for (let dx = distance; dx >= -distance && !target; dx--) {
+        const dy = distance - Math.abs(dx)
+        for (const y of dy ? [origin.y + dy, origin.y - dy] : [origin.y]) {
+          const x = origin.x + dx
+          if (x < 0 || y < 0 || y + size.h > rows) continue
+          if (rectsOverlap(x, y, size, cell.x, cell.y, span)) continue
+          if (!rectTaken(others, map, o.id, x, y, size)) target = { x, y }
+          if (target) break
+        }
+      }
+      if (target) { map.set(o.id, target); moved.set(o.id, target); break }
+    }
   }
   return moved
 }
