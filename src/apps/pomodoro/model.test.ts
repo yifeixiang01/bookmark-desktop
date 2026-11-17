@@ -1,9 +1,8 @@
-import { describe, expect, it } from 'vitest'
-import { actOnPomodoro, createPomodoro, finishPomodoro, remainingSeconds } from './desktopApps'
-import { allBookmarks, parseStateJSON } from './store'
+import { expect, it } from 'vitest'
+import { actOnPomodoro, createPomodoro, finishPomodoro, remainingSeconds } from '@/apps/pomodoro/model'
+import { allBookmarks, parseStateJSON } from '@/lib/store'
 import type { AppState } from '@/types/bookmark'
 
-describe('番茄钟', () => {
   it('pauses and resumes using the precise remaining time', () => {
     const started = actOnPomodoro(createPomodoro(), 'toggle', 10_000)
     expect(started.endsAt).toBe(1_510_000)
@@ -36,7 +35,6 @@ describe('番茄钟', () => {
     const app = actOnPomodoro(createPomodoro(), 'toggle', 100_000)
     expect(remainingSeconds(app, 0)).toBe(1500)
   })
-})
 
 it('preserves app cards in backups and excludes them from bookmark queries', () => {
   const state: AppState = { version: 1, activePartitionId: 'p', wallpaper: 'dusk-ridge', searchEngine: 'baidu', locked: false, iconSize: 'm', partitions: [{ id: 'p', name: '主页', dock: [], items: [

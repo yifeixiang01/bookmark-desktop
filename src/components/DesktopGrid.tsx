@@ -6,8 +6,8 @@ import { dragState } from '@/lib/dragState'
 import type { DragInfo, DragSource, GridFrame } from '@/hooks/useDesktopDrag'
 import { BookmarkTile } from './BookmarkTile'
 import { FolderTile } from './FolderTile'
-import { AppTile } from './AppTile'
-import type { PomodoroAction } from '@/lib/desktopApps'
+import { AppTile } from '@/apps/AppTile'
+import type { AppAction } from '@/apps'
 
 interface Props {
   items: DesktopItem[]
@@ -32,7 +32,7 @@ interface Props {
   onRenameGroup: (groupId: string) => void
   onDeleteGroup: (group: Extract<DesktopItem, { kind: 'group' }>['group']) => void
   onDeleteApp?: (id: string) => void
-  onAppAction?: (id: string, action: PomodoroAction) => void
+  onAppAction?: (id: string, action: AppAction) => void
   onMoveGroup?: (groupId: string) => void
   onDissolveGroup?: (groupId: string) => void
   onAddClick: () => void
@@ -187,10 +187,10 @@ export function DesktopGrid(props: Props) {
               onPointerDown={locked || item.kind === 'app' ? undefined : (e) => props.onPress(e, { kind: 'desktop-item', itemId: item.id })}
               className={`absolute flex items-start justify-center ${
                 noSlide ? '' : 'transition-[left,top] duration-200 ease-out'
-              } ${locked ? '' : 'cursor-grab'} ${editMode ? 'jiggle' : ''} ${isSource ? 'opacity-25' : ''} ${
+              } ${locked || item.kind === 'app' ? '' : 'cursor-grab'} ${editMode ? 'jiggle' : ''} ${isSource ? 'opacity-25' : ''} ${
                 isMergeTarget ? 'z-10 scale-110 drop-shadow-[0_0_14px_rgba(255,255,255,0.55)]' : ''
               }`}
-              style={{ ...cellStyle(cell, span), touchAction: locked ? undefined : 'none' }}
+              style={{ ...cellStyle(cell, span), touchAction: locked || item.kind === 'app' ? undefined : 'none' }}
             >
               {item.kind === 'bookmark' ? (
                 <BookmarkTile

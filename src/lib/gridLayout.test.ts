@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import type { DesktopItem } from '@/types/bookmark'
 import { layoutItems, previewInsert, rectsOverlap, spanOf } from './gridLayout'
-import { createPomodoro } from './desktopApps'
+import { createPomodoro } from '@/apps/pomodoro/model'
 
 it('reflows offscreen saved positions into available visible cells without changing saved data', () => {
   const items = [icon('a'), icon('b')]

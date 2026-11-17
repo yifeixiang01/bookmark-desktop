@@ -1,11 +1,4 @@
-import type { PomodoroApp } from '@/types/bookmark'
-
-export const APP_CATALOG = [
-  { type: 'pomodoro', name: '番茄钟', description: '25 分钟专注，5 分钟休息，找到自己的节奏。', emoji: '🍅', available: true },
-  { type: 'water', name: '喝水提醒', description: '定时补充水分，照顾忙碌中的自己。', emoji: '💧', available: false },
-  { type: 'woodfish', name: '敲木鱼', description: '敲一下木鱼，给心情留一点平静。', emoji: '🪵', available: false },
-  { type: 'pet', name: '桌宠', description: '让可爱的小伙伴陪你度过每一天。', emoji: '🐱', available: false },
-] as const
+import type { PomodoroApp } from './types'
 
 export type PomodoroAction = 'toggle' | 'reset' | 'focus' | 'break'
 export const durationOf = (mode: PomodoroApp['mode']) => mode === 'focus' ? 25 * 60 : 5 * 60

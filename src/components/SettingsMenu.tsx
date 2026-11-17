@@ -1,17 +1,18 @@
 import { DndContext, PointerSensor, KeyboardSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { SortablePartitionRow } from './SortablePartitionRow'
-import type { Partition } from '@/types/bookmark'
+import type { AppType, Partition } from '@/types/bookmark'
 import { useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Settings, Plus, Trash2, Upload, Download, FileUp, Pencil, Check, LogOut, Cloud, CloudUpload } from 'lucide-react'
 import { WALLPAPERS } from './Wallpaper'
-import { APP_CATALOG } from '@/lib/desktopApps'
+import { APP_CATALOG } from '@/apps'
+import { AppPreview } from '@/apps/AppPreview'
 
 interface Props {
   currentPartitionName: string
-  appCount: number
-  onAddApp: () => void
+  appCounts: Partial<Record<AppType, number>>
+  onAddApp: (type: AppType) => void
   partitions: Partition[]
   onAddPartition: (name: string) => void
   onRenamePartition: (id: string, name: string) => void
@@ -29,7 +30,7 @@ interface Props {
 }
 
 export function SettingsMenu({
-  currentPartitionName, appCount, onAddApp,
+  currentPartitionName, appCounts, onAddApp,
   wallpaper, onWallpaper, onImportHTML, onExportJSON, onImportJSON,
   accountLabel, syncing, syncError, onLogout, partitions, onAddPartition, onRenamePartition, onDeletePartition, onReorderPartitions,
 }: Props) {
@@ -38,6 +39,7 @@ export function SettingsMenu({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
   const [section, setSection] = useState('partitions')
+  const [previewType, setPreviewType] = useState<AppType | null>(null)
   const [open, setOpen] = useState(false)
   const [newPartition, setNewPartition] = useState('')
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
@@ -73,7 +75,10 @@ export function SettingsMenu({
                 <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-2xl" aria-hidden="true">{app.emoji}</span>
                 <h4 className="text-sm font-semibold text-slate-800">{app.name}</h4>
                 <p className="mb-4 mt-1 flex-1 text-xs leading-5 text-slate-500">{app.description}</p>
-                {app.available ? <><button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-slate-800 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700" onClick={onAddApp}><Plus size={14} />添加到当前桌面</button><p role="status" className="mt-2 text-center text-[11px] text-slate-400">{appCount ? `当前桌面已添加 ${appCount} 张` : '可添加多个，独立计时'}</p></> : <button type="button" disabled className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-400">即将上线</button>}
+                {app.available ? <>
+                  <div className="flex flex-wrap gap-2"><button type="button" aria-label={`预览${app.name}`} className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50" onClick={() => setPreviewType(app.type)}>预览</button><button type="button" aria-label={`添加${app.name}到当前桌面`} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-slate-800 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700" onClick={() => onAddApp(app.type)}><Plus size={14} />添加到桌面</button></div>
+                  <p role="status" className="mt-2 text-center text-[11px] text-slate-400">{appCounts[app.type] ? `当前桌面已添加 ${appCounts[app.type]} 张` : '可添加多个，独立保存'}</p>
+                </> : <button type="button" disabled className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-400">即将上线</button>}
               </article>)}
             </div>
           </section>
@@ -188,6 +193,7 @@ export function SettingsMenu({
         </DialogContent>
       </Dialog>
 
+      {previewType && <AppPreview key={previewType} type={previewType} onClose={() => setPreviewType(null)} onAdd={() => { onAddApp(previewType); setPreviewType(null) }} />}
       <input
         ref={htmlInput}
         type="file"

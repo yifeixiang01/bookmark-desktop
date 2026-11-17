@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react'
-import type { AppState, Bookmark, GridPos, Group, IconSize, Partition } from '@/types/bookmark'
+import type { AppState, Bookmark, GridPos, Group, IconSize, Partition, AppType } from '@/types/bookmark'
 import { allBookmarks, findBookmark, loadState, saveState, uid } from '@/lib/store'
 import { previewInsert, layoutItems, spanOf } from '@/lib/gridLayout'
 import { hostHue } from '@/lib/favicon'
 import { folderNameFor } from '@/lib/categorize'
 import { copyBookmark, moveGroup, removeBookmarkCopies, syncBookmark } from '@/lib/bookmarkActions'
-import { actOnPomodoro, createPomodoro, finishPomodoro, type PomodoroAction } from '@/lib/desktopApps'
+import { actOnApp, createApp, settleApp, type AppAction } from '@/apps'
 
 function activeOf(d: AppState): Partition | undefined {
   return d.partitions.find((x) => x.id === d.activePartitionId)
@@ -39,8 +39,8 @@ export function useBookmarkStore() {
   const activePartition =
     state.partitions.find((p) => p.id === state.activePartitionId) ?? state.partitions[0]
 
-  const addApp = useCallback(() => update((d) => {
-    activeOf(d)?.items.push({ id: uid(), kind: 'app', app: createPomodoro() })
+  const addApp = useCallback((type: AppType = 'pomodoro') => update((d) => {
+    activeOf(d)?.items.push({ id: uid(), kind: 'app', app: createApp(type) })
   }), [update])
 
   const removeApp = useCallback((id: string) => update((d) => {
@@ -48,19 +48,19 @@ export function useBookmarkStore() {
     if (p) p.items = p.items.filter((it) => !(it.kind === 'app' && it.id === id))
   }), [update])
 
-  const appAction = useCallback((id: string, action: PomodoroAction) => update((d) => {
+  const appAction = useCallback((id: string, action: AppAction) => update((d) => {
     const item = activeOf(d)?.items.find((it) => it.id === id)
-    if (item?.kind === 'app') item.app = actOnPomodoro(item.app, action, Date.now())
+    if (item?.kind === 'app') item.app = actOnApp(item.app, action, Date.now())
   }), [update])
 
   const finishApps = useCallback(() => {
     setState((prev) => {
       const now = Date.now()
-      const expired = prev.partitions.some((p) => p.items.some((it) => it.kind === 'app' && it.app.endsAt !== null && it.app.endsAt <= now))
+      const expired = prev.partitions.some((p) => p.items.some((it) => it.kind === 'app' && settleApp(it.app, now) !== it.app))
       if (!expired) return prev
       const draft: AppState = JSON.parse(JSON.stringify(prev))
       for (const p of draft.partitions) for (const it of p.items) {
-        if (it.kind === 'app') it.app = finishPomodoro(it.app, now)
+        if (it.kind === 'app') it.app = settleApp(it.app, now)
       }
       saveState(draft)
       return draft

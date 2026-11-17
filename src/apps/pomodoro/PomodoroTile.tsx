@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { GripHorizontal, Pause, Play, RotateCcw, Timer, X } from 'lucide-react'
-import type { PomodoroApp } from '@/types/bookmark'
-import { durationOf, remainingSeconds, type PomodoroAction } from '@/lib/desktopApps'
+import type { PomodoroApp } from './types'
+import { durationOf, remainingSeconds, type PomodoroAction } from './model'
 import { dragState } from '@/lib/dragState'
 
 interface Props {
@@ -16,7 +16,7 @@ interface Props {
   onRemove?: () => void
 }
 
-export function AppTile({ app, width, height, editMode, locked, preview, onPress, onAction, onRemove }: Props) {
+export function PomodoroTile({ app, width, height, editMode, locked, preview, onPress, onAction, onRemove }: Props) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     if (preview || app.endsAt === null) return

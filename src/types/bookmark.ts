@@ -1,3 +1,11 @@
+import type { DesktopApp } from '@/apps/types'
+export type { DesktopApp, AppType } from '@/apps/types'
+export type { NoteApp, NoteArchive } from '@/apps/note/types'
+export type { TodoApp } from '@/apps/todo/types'
+export type { WaterApp } from '@/apps/water/types'
+export type { WoodfishApp } from '@/apps/woodfish/types'
+export type { PomodoroApp } from '@/apps/pomodoro/types'
+
 // 数据模型 —— 华为手机桌面式：空间 > 桌面项目（独立书签 | 文件夹）
 export interface Bookmark {
   /** ISO timestamp when collected; absent on older bookmarks. */
@@ -33,17 +41,7 @@ interface DesktopItemBase {
 export type DesktopItem =
   | (DesktopItemBase & { kind: 'bookmark'; bookmark: Bookmark })
   | (DesktopItemBase & { kind: 'group'; group: Group })
-  | (DesktopItemBase & { kind: 'app'; app: PomodoroApp })
-
-export interface PomodoroApp {
-  type: 'pomodoro'
-  mode: 'focus' | 'break'
-  remaining: number
-  /** 运行时保存绝对截止时间，刷新或切换桌面后仍能准确恢复。 */
-  endsAt: number | null
-  completed: number
-  finished: boolean
-}
+  | (DesktopItemBase & { kind: 'app'; app: DesktopApp })
 
 export interface Partition {
   id: string

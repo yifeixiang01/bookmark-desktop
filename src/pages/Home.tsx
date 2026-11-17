@@ -1,5 +1,7 @@
 import { FolderTile } from '@/components/FolderTile'
-import { AppTile } from '@/components/AppTile'
+import { AppTile } from '@/apps/AppTile'
+import { appName } from '@/apps'
+import type { AppType } from '@/types/bookmark'
 import { dragVisualOf } from '@/lib/gridLayout'
 import { BookmarkSpaceDialog } from '@/components/BookmarkSpaceDialog'
 import { containingPartitions } from '@/lib/bookmarkActions'
@@ -77,16 +79,25 @@ export default function Home() {
   }, [])
 
   const runningAppIds = useRef(new Set<string>())
+  const dueWaterIds = useRef(new Set<string>())
   useEffect(() => {
     const running = new Set<string>()
     let finished = false
+    let waterDue = false
+    const due = new Set<string>()
     for (const p of state.partitions) for (const it of p.items) {
       if (it.kind !== 'app') continue
+      if (it.app.type === 'water' && it.app.due) {
+        due.add(it.id)
+        if (!dueWaterIds.current.has(it.id)) waterDue = true
+      }
+      if (it.app.type !== 'pomodoro') continue
       if (it.app.endsAt !== null) running.add(it.id)
       else if (it.app.finished && runningAppIds.current.has(it.id)) finished = true
     }
     runningAppIds.current = running
-    if (finished) showToast('番茄钟本轮已结束，记得休息和调整节奏')
+    dueWaterIds.current = due
+    if (finished || waterDue) showToast([finished ? '番茄钟本轮已结束，记得休息' : '', waterDue ? '该喝水啦，给自己补充水分' : ''].filter(Boolean).join(' · '))
   }, [state.partitions, showToast])
 
   const editBookmark = (id: string) => {
@@ -138,6 +149,7 @@ export default function Home() {
     const el = desktopScrollRef.current
     if (!el) return
     const onWheel = (e: WheelEvent) => {
+      if (e.target instanceof HTMLElement && e.target.closest('textarea,select,[data-app-scroll]')) return
       if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return
       if (el.scrollWidth <= el.clientWidth) return
       e.preventDefault()
@@ -372,8 +384,8 @@ export default function Home() {
       {!editMode && (
       <SettingsMenu
         currentPartitionName={activePartition.name}
-        appCount={activePartition.items.filter((it) => it.kind === 'app').length}
-        onAddApp={() => { store.addApp(); showToast(`已添加番茄钟到「${activePartition.name}」`) }}
+        appCounts={activePartition.items.reduce<Partial<Record<AppType, number>>>((counts, it) => { if (it.kind === 'app') counts[it.app.type] = (counts[it.app.type] ?? 0) + 1; return counts }, {})}
+        onAddApp={(type) => { store.addApp(type); showToast(`已添加${appName(type)}到「${activePartition.name}」`) }}
         partitions={state.partitions}
         onAddPartition={store.addPartition}
         onRenamePartition={store.renamePartition}
@@ -460,7 +472,10 @@ export default function Home() {
           <div key={activePartition.id} className="partition-enter h-full min-w-full">
             <DesktopGrid
               onAppAction={store.appAction}
-              onDeleteApp={(id) => setConfirm({ title: '移除番茄钟？', description: '这张卡片的计时和专注记录会一起移除。其他卡片不受影响。', action: () => store.removeApp(id) })}
+              onDeleteApp={(id) => {
+                const item = activePartition.items.find((it) => it.id === id)
+                if (item?.kind === 'app') setConfirm({ title: `移除${appName(item.app.type)}？`, description: item.app.type === 'note' ? `当前便签内容和 ${item.app.history?.length ?? 0} 条归档历史会一起删除，无法恢复。其他卡片不受影响。` : '这张卡片的内容和记录会一起移除。其他卡片不受影响。', action: () => store.removeApp(id) })
+              }}
               items={activePartition.items}
               editMode={editMode}
               locked={state.locked}
