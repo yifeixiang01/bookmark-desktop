@@ -7,6 +7,7 @@ import { folderNameFor } from '@/lib/categorize'
 import { copyBookmark, moveGroup, removeBookmarkCopies, syncBookmark } from '@/lib/bookmarkActions'
 import { applyNoteAction, migrateNoteHistory } from '@/apps/note/state'
 import { actOnApp, createApp, settleApp, type AppAction } from '@/apps'
+import { moveMobileItem } from '@/lib/mobileLayout'
 
 function activeOf(d: AppState): Partition | undefined {
   return d.partitions.find((x) => x.id === d.activePartitionId)
@@ -518,6 +519,14 @@ export function useBookmarkStore() {
     [update]
   )
 
+  const reorderMobileItem = useCallback(
+    (itemId: string, delta: -1 | 1) => update((d) => {
+      const partition = activeOf(d)
+      if (partition) moveMobileItem(partition, itemId, delta)
+    }),
+    [update]
+  )
+
   const replaceState = useCallback((next: AppState) => {
     saveState(next)
     setState(next)
@@ -536,7 +545,7 @@ export function useBookmarkStore() {
     placeItemAt, mergeBookmarks, mergeFromFolder, addBookmarkToFolder,
     toggleLocked, setIconSize, sortByColor, setBookmarkIcon,
     batchDelete, batchMoveToFolder, batchMoveToNewFolder, batchMoveToPartition,
-    setWallpaper, setSearchEngine, replaceState,
+    setWallpaper, setSearchEngine, reorderMobileItem, replaceState,
   }
 }
 

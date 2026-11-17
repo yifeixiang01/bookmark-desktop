@@ -47,6 +47,8 @@ export interface Partition {
   id: string
   name: string
   items: DesktopItem[]
+  /** 移动端顶层项目顺序；与 PC 端自由网格坐标互不影响。 */
+  mobileOrder?: string[]
   /** Dock 栏固定的书签 id 列表 */
   dock: string[]
   /** 该空间共享的便签归档；删除便签卡片不会删除这里的历史。 */
