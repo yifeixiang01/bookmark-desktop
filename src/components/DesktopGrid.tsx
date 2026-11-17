@@ -20,6 +20,7 @@ interface Props {
   gridRef: React.RefObject<GridFrame | null>
   onPress: (e: React.PointerEvent, source: DragSource) => void
   onToggleSelect: (bookmarkId: string) => void
+  onToggleSelectGroup?: (groupId: string) => void
   onCopyBookmark: (bookmarkId: string) => void
   onEditBookmark: (bookmarkId: string) => void
   onDeleteBookmark: (item: Extract<DesktopItem, { kind: 'bookmark' }>) => void
@@ -27,6 +28,8 @@ interface Props {
   onOpenGroup: (groupId: string, anchor: DOMRect) => void
   onRenameGroup: (groupId: string) => void
   onDeleteGroup: (group: Extract<DesktopItem, { kind: 'group' }>['group']) => void
+  onMoveGroup?: (groupId: string) => void
+  onDissolveGroup?: (groupId: string) => void
   onAddClick: () => void
 }
 
@@ -205,6 +208,10 @@ export function DesktopGrid(props: Props) {
                   onOpen={(rect) => props.onOpenGroup(item.group.id, rect)}
                   onRename={() => props.onRenameGroup(item.group.id)}
                   onDelete={() => props.onDeleteGroup(item.group)}
+                  onMove={() => props.onMoveGroup?.(item.group.id)}
+                  onDissolve={() => props.onDissolveGroup?.(item.group.id)}
+                  selected={selected.has(item.group.id)}
+                  onToggleSelect={() => props.onToggleSelectGroup?.(item.group.id)}
                 />
               )}
             </div>

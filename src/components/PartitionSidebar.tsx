@@ -16,7 +16,7 @@ export function PartitionSidebar({
         <div key={p.id} className="relative group">
           <button
             onClick={() => onSelect(p.id)}
-            className={`w-11 sm:w-14 rounded-xl px-1 py-2 sm:py-2.5 text-[11px] sm:text-[13px] leading-tight transition-colors ${
+            className={`w-11 max-w-[5em] truncate whitespace-nowrap sm:w-14 rounded-xl px-1 py-2 sm:py-2.5 text-[11px] sm:text-[13px] leading-tight transition-colors ${
               p.id === activeId
                 ? 'bg-white/90 text-slate-800 font-medium shadow'
                 : 'text-white/85 hover:bg-white/15'

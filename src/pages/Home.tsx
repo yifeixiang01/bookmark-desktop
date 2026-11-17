@@ -432,6 +432,7 @@ export default function Home() {
               gridRef={gridRef}
               onPress={press}
               onToggleSelect={toggleSelect}
+              onToggleSelectGroup={toggleSelect}
               onEditBookmark={(bid) => {
                 const found = store.findBookmark(bid)
                 if (found) {
@@ -446,6 +447,11 @@ export default function Home() {
               onToggleDock={toggleDockBookmark}
               onOpenGroup={(id, rect) => setOpenGroup({ id, rect })}
               onRenameGroup={(id) => setPrompt({ kind: 'rename-group', id })}
+              onMoveGroup={() => setPicker({ kind: 'partition' })}
+              onDissolveGroup={(id) => {
+                const group = activePartition.items.find((it) => it.kind === 'group' && it.group.id === id)
+                if (group?.kind === 'group') setConfirm({ title: `解除卡片「${group.group.name}」？`, description: '卡片会被删除，其中的书签会释放到当前桌面。', action: () => store.dissolveGroup(id) })
+              }}
               onDeleteGroup={(g) => {
                 setConfirm({
                   title: `删除文件夹「${g.name}」？`,

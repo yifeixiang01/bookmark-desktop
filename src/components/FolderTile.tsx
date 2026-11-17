@@ -4,6 +4,7 @@ import { dragState } from '@/lib/dragState'
 import { folderCellIconPx, folderTilePx } from '@/lib/gridLayout'
 import { FaviconImg } from './FaviconImg'
 import { TipBubble, useHoverTip } from './HoverTip'
+import { FolderContextMenu } from './FolderContextMenu'
 
 interface Props {
   group: Group
@@ -15,13 +16,17 @@ interface Props {
   onOpen: (anchor: DOMRect) => void
   onRename: () => void
   onDelete: () => void
+  onMove?: () => void
+  onDissolve?: () => void
+  selected?: boolean
+  onToggleSelect?: () => void
 }
 
 /**
  * 文件夹图标（华为桌面式，图标可直接点击）：
  * 占 2x2 格（宽度=两个图标位），3x3 宫格；超过 8 个时第 9 格为堆叠预览，不足保留透明空位。
  */
-export function FolderTile({ group, editMode, iconPx, enterDelay, preview = false, onOpen, onRename, onDelete }: Props) {
+export function FolderTile({ group, editMode, iconPx, enterDelay, preview = false, onOpen, onRename, onDelete, onMove, onDissolve, selected, onToggleSelect }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const tip = useHoverTip()
 
@@ -93,12 +98,13 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, preview = fals
   )
 
   return (
-    <div
+    <FolderContextMenu onDelete={onDelete} onMove={() => onMove?.()} onEdit={onRename} onDissolve={() => onDissolve?.()}><div
       ref={rootRef}
       className={`${preview ? '' : 'tile-enter'} relative flex flex-col items-center gap-1.5`}
       style={{ width: tileSize, animationDelay: `${enterDelay}ms` }}
       onClickCapture={suppressClick}
       {...tip.bind}
+      onClick={(e) => { if (editMode && onToggleSelect && !(e.target as HTMLElement).closest('button')) onToggleSelect(); else if (!editMode) openWithAnchor() }}
     >
       {!editMode && tip.show && (
         <TipBubble
@@ -108,7 +114,7 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, preview = fals
           rect={tip.rect}
         />
       )}
-      {tile}
+      <div className={selected ? 'rounded-[28px] ring-2 ring-sky-400 ring-offset-2 ring-offset-transparent' : ''}>{tile}</div>
       <span
         className="max-w-full cursor-pointer truncate text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]"
         title={group.name}
@@ -135,6 +141,6 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, preview = fals
           </button>
         </>
       )}
-    </div>
+    </div></FolderContextMenu>
   )
 }

@@ -117,6 +117,27 @@ export function useBookmarkStore() {
     [update]
   )
 
+  const moveGroupToPartition = useCallback((groupId: string, partitionId: string) => update((d) => {
+    const from = activeOf(d)
+    const to = d.partitions.find((p) => p.id === partitionId)
+    if (!from || !to || from.id === to.id) return
+    const index = from.items.findIndex((it) => it.kind === 'group' && it.group.id === groupId)
+    if (index < 0) return
+    const [item] = from.items.splice(index, 1)
+    if (item.kind === 'group') to.items.push(item)
+  }), [update])
+
+  const dissolveGroup = useCallback((groupId: string) => update((d) => {
+    const p = activeOf(d)
+    if (!p) return
+    const index = p.items.findIndex((it) => it.kind === 'group' && it.group.id === groupId)
+    const item = index >= 0 ? p.items[index] : null
+    if (!item || item.kind !== 'group') return
+    p.items.splice(index, 1)
+    p.dock = p.dock.filter((id) => !item.group.bookmarks.some((b) => b.id === id))
+    for (const bookmark of item.group.bookmarks) p.items.push({ id: uid(), kind: 'bookmark', bookmark })
+  }), [update])
+
   // ---------- 书签 ----------
   /**
    * 保存书签：groupId 为 null 表示作为独立图标放桌面；
@@ -472,7 +493,7 @@ export function useBookmarkStore() {
     activePartition,
     findBookmark: (bid: string) => findBookmark(activePartition, bid),
     addPartition, renamePartition, deletePartition, setActivePartition, reorderPartitions,
-    addGroup, renameGroup, deleteGroup,
+    addGroup, renameGroup, deleteGroup, moveGroupToPartition, dissolveGroup,
     saveBookmark, saveBookmarkToNewGroup, moveBookmarkToDesktop, moveBookmarkToFolder, deleteBookmark,
     toggleDock, importGroups,
     deleteBookmarkScoped, copyBookmarkToPartitions,
