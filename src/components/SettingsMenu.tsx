@@ -1,8 +1,8 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Image, Settings, Upload, Download, FileUp, Pencil, Check, LogOut, Cloud, CloudUpload } from 'lucide-react'
 import { WALLPAPERS } from './Wallpaper'
 
@@ -23,20 +23,17 @@ export function SettingsMenu({
   editMode, onToggleEdit, wallpaper, onWallpaper, onImportHTML, onExportJSON, onImportJSON,
   accountLabel, syncing, onLogout,
 }: Props) {
+  const [wallpaperOpen, setWallpaperOpen] = useState(false)
   const htmlInput = useRef<HTMLInputElement>(null)
   const jsonInput = useRef<HTMLInputElement>(null)
 
   return (
     <div className="fixed right-4 top-4 z-20 flex items-center gap-2">
-      {/* 换背景 */}
-      <Popover>
-        <PopoverTrigger asChild>
-          <button className="flex items-center gap-1.5 rounded-full bg-black/25 px-3.5 py-2 text-[13px] text-white/90 backdrop-blur-md border border-white/15 hover:bg-black/35 transition-colors">
-            <Image size={14} />
-            换背景
-          </button>
-        </PopoverTrigger>
-        <PopoverContent align="end" className="w-72 bg-white/95 backdrop-blur-xl">
+      <Dialog open={wallpaperOpen} onOpenChange={setWallpaperOpen}>
+        <DialogContent className="max-w-sm bg-white/95 backdrop-blur-xl">
+          <DialogHeader>
+            <DialogTitle>换背景</DialogTitle>
+          </DialogHeader>
           <p className="pb-2 text-xs font-medium text-slate-500">内置壁纸</p>
           <div className="grid grid-cols-3 gap-2">
             {WALLPAPERS.map((w) => (
@@ -80,8 +77,8 @@ export function SettingsMenu({
               应用
             </button>
           </form>
-        </PopoverContent>
-      </Popover>
+        </DialogContent>
+      </Dialog>
 
       {/* 设置 */}
       <DropdownMenu>
@@ -100,6 +97,10 @@ export function SettingsMenu({
             </p>
           </div>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => setWallpaperOpen(true)}>
+            <Image className="mr-2" size={14} />
+            换背景
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={onToggleEdit}>
             {editMode ? <Check className="mr-2" size={14} /> : <Pencil className="mr-2" size={14} />}
             {editMode ? '完成编辑' : '编辑模式'}
