@@ -1,5 +1,33 @@
 {
-  "extends": "../tsconfig.app.json",
-  "compilerOptions": { "types": ["chrome", "vite/client", "node"], "tsBuildInfoFile": "../node_modules/.tmp/extension.tsbuildinfo" },
-  "include": ["src", "vite.config.ts"]
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "types": [
+      "chrome",
+      "vite/client",
+      "node"
+    ],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": [
+    "src",
+    "vite.config.ts"
+  ]
 }
