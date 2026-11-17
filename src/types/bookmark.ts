@@ -1,5 +1,7 @@
 // 数据模型 —— 华为手机桌面式：空间 > 桌面项目（独立书签 | 文件夹）
 export interface Bookmark {
+  /** ISO timestamp when collected; absent on older bookmarks. */
+  createdAt?: string
   id: string
   name: string
   url: string

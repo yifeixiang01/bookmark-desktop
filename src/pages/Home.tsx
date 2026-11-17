@@ -40,7 +40,7 @@ export default function Home() {
   const { user, isLoading: authLoading, logout } = useAuth({ redirectOnUnauthenticated: true })
   const store = useBookmarkStore()
   const { state, activePartition } = store
-  const cloud = useCloudSync(state, store.replaceState, !!user)
+  const cloud = useCloudSync(state, store.replaceState, user?.id)
 
   const [movingGroup, setMovingGroup] = useState<string | null>(null)
   const [movingBookmark, setMovingBookmark] = useState<string | null>(null)
@@ -332,6 +332,9 @@ export default function Home() {
   return (
     <div className="h-screen select-none overflow-hidden font-sans">
       <Wallpaper id={state.wallpaper} />
+      {cloud.error && <div role="alert" className="fixed bottom-4 left-1/2 z-50 w-[min(90vw,650px)] -translate-x-1/2 rounded-xl bg-amber-100 p-4 text-sm text-amber-950 shadow-xl">
+        <p>{cloud.error}</p><button className="mt-2 underline" onClick={() => exportJSON(state)}>导出本地备份</button>
+      </div>}
 
       {/* 编辑模式下隐藏设置入口，换成显眼的「完成」按钮 */}
       {editMode && (
@@ -368,6 +371,7 @@ export default function Home() {
         onWallpaper={store.setWallpaper}
         accountLabel={user.email ?? user.name ?? '已登录'}
         syncing={cloud.syncing}
+        syncError={cloud.error}
         onLogout={logout}
         onExportJSON={() => exportJSON(state)}
         onImportHTML={async (file) => {

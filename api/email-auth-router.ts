@@ -9,6 +9,7 @@ import { createRouter, publicQuery } from "./middleware";
 import { signSessionToken } from "./kimi/session";
 import { findUserByUnionId, upsertUser } from "./queries/users";
 import type { TrpcContext } from "./context";
+import { ensureState } from './queries/user-states';
 
 /** 邮箱账号的 unionId 命名空间，与 Kimi OAuth 用户隔离 */
 const unionIdFor = (email: string) => `email:${email}`;
@@ -76,6 +77,8 @@ export const emailAuthRouter = createRouter({
         passwordHash: hashPassword(input.password),
         lastSignInAt: new Date(),
       });
+      const created = await findUserByUnionId(unionId);
+      if (created) await ensureState(created.id);
       await issueSession(ctx, unionId);
       return { ok: true };
     }),

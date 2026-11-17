@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "extension:check": "tsc -p extension/tsconfig.json",
+    "extension:build": "node scripts/extension-icons.mjs && vite build --config extension/vite.config.ts",
+    "extension:package": "npm run extension:build && powershell -NoProfile -File scripts/package-extension.ps1",
     "dev": "vite",
     "dev:local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev-local.ps1",
     "db:local:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/local-db.ps1 start",
@@ -91,6 +94,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@hono/vite-dev-server": "^0.19.0",
+    "@types/chrome": "^0.3.7",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",

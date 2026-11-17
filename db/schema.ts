@@ -33,6 +33,7 @@ export const userStates = pgTable("user_states", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull().unique(),
   state: jsonb("state").notNull(),
+  revision: integer("revision").default(0).notNull(),
   updatedAt: timestamp("updatedAt", { withTimezone: true })
     .defaultNow()
     .notNull()
@@ -40,3 +41,18 @@ export const userStates = pgTable("user_states", {
 });
 
 export type UserState = typeof userStates.$inferSelect;
+
+/** Only hashes of extension credentials are persisted. */
+export const extensionCodes = pgTable("extension_codes", {
+  codeHash: varchar("codeHash", { length: 64 }).primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  challenge: varchar("challenge", { length: 43 }).notNull(),
+  redirectUri: text("redirectUri").notNull(),
+  expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
+});
+
+export const extensionSessions = pgTable("extension_sessions", {
+  tokenHash: varchar("tokenHash", { length: 64 }).primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
+});
