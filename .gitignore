@@ -30,6 +30,7 @@ dist-ssr
 *.db
 *.sqlite
 *.sqlite3
+.local-data/
 db/migrations/*.sql
 # TypeScript cache
 *.tsbuildinfo
