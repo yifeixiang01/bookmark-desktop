@@ -3,21 +3,23 @@ import type { DesktopItem } from '@/types/bookmark'
 import { layoutItems, previewInsert, rectsOverlap, spanOf } from './gridLayout'
 import { createPomodoro } from '@/apps/pomodoro/model'
 
-it('reflows offscreen saved positions into available visible cells without changing saved data', () => {
+it('preserves saved positions beyond the viewport instead of moving them to the first empty cell', () => {
   const items = [icon('a'), icon('b')]
   items[0].pos = { x: 8, y: 0 }
   items[1].pos = { x: 0, y: 0 }
-  const { placements } = layoutItems(items, 6, 4)
-  expect(placements.get('a')).toEqual({ x: 0, y: 1 })
+  const { placements, cols } = layoutItems(items, 6)
+  expect(placements.get('a')).toEqual({ x: 8, y: 0 })
+  expect(cols).toBe(9)
   expect(placements.get('b')).toEqual({ x: 0, y: 0 })
   expect(items[0].pos).toEqual({ x: 8, y: 0 })
 })
 
-it('keeps cards within the visible width and allows overflow when the screen is full', () => {
+it('preserves a card straddling the right edge and grows the scrollable grid', () => {
   const items = Array.from({ length: 6 }, (_, i) => icon(String(i)))
-  expect(layoutItems(items, 2, 2).cols).toBe(3)
+  expect(layoutItems(items, 2).cols).toBe(3)
   const card: DesktopItem = { id: 'card', kind: 'group', pos: { x: 3, y: 0 }, group: { id: 'g', name: 'g', bookmarks: [] } }
-  expect(layoutItems([card], 6, 4).placements.get('card')).toEqual({ x: 0, y: 0 })
+  expect(layoutItems([card], 6).placements.get('card')).toEqual({ x: 3, y: 0 })
+  expect(layoutItems([card], 6).cols).toBe(5)
 })
 
 const icon = (id: string): DesktopItem => ({ id, kind: 'bookmark', bookmark: { id, name: id, url: 'https://example.com' } })
@@ -25,12 +27,32 @@ const icon = (id: string): DesktopItem => ({ id, kind: 'bookmark', bookmark: { i
 it('reserves nine slots for an app and places bookmarks outside its footprint', () => {
   const app: DesktopItem = { id: 'app', kind: 'app', app: createPomodoro(), pos: { x: 0, y: 0 } }
   const items = [app, ...Array.from({ length: 18 }, (_, i) => icon(String(i)))]
-  const { placements } = layoutItems(items, 6, 5)
+  const { placements } = layoutItems(items, 6)
   expect(spanOf(app)).toEqual({ w: 3, h: 3 })
   for (const it of items.slice(1)) {
     const p = placements.get(it.id)!
     expect(rectsOverlap(0, 0, spanOf(app), p.x, p.y, spanOf(it))).toBe(false)
   }
+})
+
+it('keeps a 3x3 app at the far right after persisting and reloading its placement', () => {
+  const app: DesktopItem = { id: 'app', kind: 'app', app: createPomodoro(), pos: { x: 12, y: 3 } }
+  const items = [icon('a'), app]
+  const restored: DesktopItem[] = JSON.parse(JSON.stringify(items))
+  const { placements, cols } = layoutItems(restored, 6)
+  expect(placements.get('app')).toEqual({ x: 12, y: 3 })
+  expect(cols).toBe(15)
+})
+
+it('still relocates invalid vertical positions and overlapping items', () => {
+  const items = [icon('a'), icon('b'), icon('c')]
+  items[0].pos = { x: 8, y: 0 }
+  items[1].pos = { x: 8, y: 0 }
+  items[2].pos = { x: 8, y: 6 }
+  const { placements } = layoutItems(items, 6)
+  expect(placements.get('a')).toEqual({ x: 8, y: 0 })
+  expect(placements.get('b')).toEqual({ x: 0, y: 0 })
+  expect(placements.get('c')).toEqual({ x: 0, y: 1 })
 })
 
 it('moves a large app aside when a bookmark is dropped on it without creating overlaps', () => {

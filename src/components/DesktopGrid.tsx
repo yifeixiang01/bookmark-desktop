@@ -77,7 +77,7 @@ export function DesktopGrid(props: Props) {
   const rows = Math.max(6, Math.floor(fitRows / 2) * 2)
   const scale = Math.min(1, availH / (rows * rowH))
   const visibleCols = Math.max(2, Math.floor(availW / (colW * scale)))
-  const { placements, cols: usedCols } = layoutItems(items, rows, visibleCols)
+  const { placements, cols: usedCols } = layoutItems(items, rows)
   // 至少铺满一屏；尾部始终多留一列空位，便于拖放与新增
   const minCols = visibleCols
   const cols = Math.max(usedCols + 1, minCols)
@@ -90,7 +90,6 @@ export function DesktopGrid(props: Props) {
         offsetX: 0,
         cols,
         rows,
-        visibleCols,
         colW,
         rowH,
         iconPx,

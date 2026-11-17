@@ -176,8 +176,7 @@ export function previewInsert(
  */
 export function layoutItems(
   items: DesktopItem[],
-  rows: number,
-  visibleCols = Infinity
+  rows: number
 ): { placements: Map<string, GridPos>; cols: number } {
   const placements = new Map<string, GridPos>()
   const pending: DesktopItem[] = []
@@ -185,7 +184,9 @@ export function layoutItems(
   for (const it of items) {
     const span = spanOf(it)
     const p = it.pos
-    if (p && p.x >= 0 && p.x + span.w <= visibleCols && p.y >= 0 && p.y + span.h <= rows && !rectTaken(items, placements, it.id, p.x, p.y, span)) {
+    // Columns grow horizontally. A saved position beyond the viewport is still
+    // valid and must remain reachable by scrolling, including right-edge drops.
+    if (p && p.x >= 0 && p.y >= 0 && p.y + span.h <= rows && !rectTaken(items, placements, it.id, p.x, p.y, span)) {
       placements.set(it.id, { x: p.x, y: p.y })
     } else {
       pending.push(it)

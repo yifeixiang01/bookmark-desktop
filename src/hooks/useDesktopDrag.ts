@@ -13,7 +13,6 @@ export interface GridFrame {
   el: HTMLElement
   offsetX: number
   cols: number
-  visibleCols: number
   /** 固定行数（由可视高度决定），命中与落位都钳制在 0..rows-span.h */
   rows: number
   colW: number
