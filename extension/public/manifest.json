@@ -7,6 +7,7 @@
   "host_permissions": ["https://bookmark.yifeixiang.com.cn/*"],
   "action": { "default_title": "Dandan · 保存书签", "default_popup": "index.html" },
   "background": { "service_worker": "background.js", "type": "module" },
+  "content_scripts": [{ "matches": ["http://*/*", "https://*/*"], "js": ["pointer.js"], "all_frames": true }],
   "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
   "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'none'" }
 }

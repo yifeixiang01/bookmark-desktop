@@ -11,7 +11,21 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (!isWebUrl(url)) return
   const page: Page = { url, title: info.linkUrl ? url : tab?.title || url, icon: !info.linkUrl && isWebUrl(tab?.favIconUrl) ? tab.favIconUrl : undefined }
   const id = crypto.randomUUID()
-  void chrome.storage.session.set({ [`page:${id}`]: page }).then(() => chrome.windows.create({ url: chrome.runtime.getURL(`index.html?capture=${id}`), type: 'popup', width: 440, height: 650 })).catch(console.error)
+  void (async () => {
+    const key = `pointer:${tab?.id}:${info.frameId ?? 0}`
+    const stored = await chrome.storage.session.get(key)
+    const pointer = stored[key] as { x: number; y: number; left: number; top: number; width: number; height: number; time: number } | undefined
+    const width = 360, height = 490
+    const position = pointer && Date.now() - pointer.time < 120_000 ? {
+      left: Math.round(Math.max(pointer.left, Math.min(pointer.x, pointer.left + pointer.width - width))),
+      top: Math.round(Math.max(pointer.top, Math.min(pointer.y, pointer.top + pointer.height - height))),
+    } : tab?.windowId !== undefined ? await chrome.windows.get(tab.windowId).then(window => ({
+      left: (window.left ?? 0) + Math.max(0, Math.round(((window.width ?? width) - width) / 2)),
+      top: (window.top ?? 0) + Math.max(0, Math.round(((window.height ?? height) - height) / 2)),
+    })) : {}
+    await chrome.storage.session.set({ [`page:${id}`]: page })
+    await chrome.windows.create({ url: chrome.runtime.getURL(`index.html?capture=${id}`), type: 'popup', width, height, ...position })
+  })().catch(console.error)
 })
 
 const base64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
@@ -36,6 +50,13 @@ async function login() {
 }
 let loggingIn = false
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
+  if (sender.id === chrome.runtime.id && sender.tab?.id !== undefined && message?.type === 'context-position') {
+    const values = ['x', 'y', 'left', 'top', 'width', 'height', 'time'] as const
+    if (values.every(key => typeof message[key] === 'number' && Number.isFinite(message[key])) && message.width > 0 && message.height > 0) {
+      void chrome.storage.session.set({ [`pointer:${sender.tab.id}:${sender.frameId ?? 0}`]: Object.fromEntries(values.map(key => [key, message[key]])) })
+    }
+    return
+  }
   if (sender.id !== chrome.runtime.id || message?.type !== 'login') return
   if (loggingIn) { reply({ error: '授权正在进行，请完成登录窗口中的操作' }); return }
   loggingIn = true

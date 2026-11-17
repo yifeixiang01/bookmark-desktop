@@ -108,18 +108,17 @@ export default function App() {
   }
   const supported = isWebUrl(page.url)
   return <main>
-    <header><div className="brand-icon">D</div><div><h1>Dandan</h1><p>把值得留下的，放进你的空间</p></div></header>
+    <header><h1>保存书签</h1><a href={SITE} target="_blank" rel="noreferrer" title="打开书签桌面">Dandan ↗</a></header>
     <div className="account"><span>{account ? account.email || account.name : '登录后同步到你的账号'}</span>{account && <button className="text-button" disabled={busy} onClick={logout}>退出</button>}</div>
-    {loading ? <div className="empty" aria-live="polite">正在加载空间…</div> : needsLogin ? <section className="login"><h2>你的收藏，随处可见</h2><p>在网站使用邮箱登录，并确认授权 Dandan，即可开始收藏。</p><button className="primary" disabled={busy} onClick={login}>{busy ? '请在打开的网站完成授权…' : '登录并授权'}</button><a href={`${SITE}/login`} target="_blank" rel="noreferrer">没有账号？前往官网注册 ↗</a></section> : account ? <>
-    <section className="preview"><div className="page-icon">{isWebUrl(page.icon) ? <img src={page.icon} alt="" referrerPolicy="no-referrer" onError={e => { e.currentTarget.style.display = 'none' }} /> : '↗'}</div><div><strong>保存当前网页</strong><p title={page.url}>{page.url || '无法读取网址'}</p></div></section>
+    {loading ? <div className="empty" aria-live="polite">正在加载空间…</div> : needsLogin ? <section className="login"><p>在网站使用邮箱登录，并确认授权 Dandan，即可开始收藏。</p><button className="primary" disabled={busy} onClick={login}>{busy ? '请在打开的网站完成授权…' : '登录并授权'}</button><a href={`${SITE}/login`} target="_blank" rel="noreferrer">没有账号？前往官网注册 ↗</a></section> : account ? <>
+    <section className="preview"><div className="page-icon">{isWebUrl(page.icon) ? <img src={page.icon} alt="" referrerPolicy="no-referrer" onError={e => { e.currentTarget.style.display = 'none' }} /> : '↗'}</div><div><p title={page.url}>{page.url || '无法读取网址'}</p></div></section>
     {!supported && <p className="warning">此页面暂不支持收藏，请在 HTTP / HTTPS 网页使用 Dandan。</p>}
     <label className="field">书签名称<input maxLength={300} value={page.title} disabled={busy} onChange={e => { setPage({ ...page, title: e.target.value }); setSuccess('') }} placeholder="给书签取个名字" /></label>
-    <label className="field">简介 <span>可选</span><textarea maxLength={2000} value={description} disabled={busy} onChange={e => setDescription(e.target.value)} placeholder="记录一点想法…" rows={2} /></label>
+    <details className="description"><summary>添加简介</summary><label className="field"><span className="sr-only">简介</span><textarea maxLength={2000} value={description} disabled={busy} onChange={e => setDescription(e.target.value)} placeholder="记录一点想法…" rows={2} /></label></details>
     <div className="space-heading"><h2>保存到空间 <small>可多选</small></h2><button className="text-button" disabled={busy} onClick={() => refresh(page, true)}>刷新</button></div>
     <div className="spaces">{spaces.map(space => <label className={`space ${selected.includes(space.id) ? 'chosen' : ''}`} key={space.id}><input type="checkbox" checked={selected.includes(space.id)} disabled={busy} onChange={e => { setSelected(e.target.checked ? [...selected, space.id] : selected.filter(id => id !== space.id)); setSuccess('') }} /><span>{space.name}</span>{space.saved && <small>已收藏</small>}</label>)}{!spaces.length && <p>暂无空间，请前往网页端创建后刷新。</p>}</div>
     <button className="primary" disabled={busy || !supported || !selected.length || !page.title.trim()} onClick={save}>{busy ? '正在处理…' : `保存书签${selected.length ? ` · ${selected.length} 个空间` : ''}`}</button>
     </> : <button className="primary" onClick={() => refresh(page)}>重新连接</button>}
     {error && <p className="error" role="alert">{error}</p>}{success && <p className="success" role="status">✓ {success}</p>}
-    <footer><a href={SITE} target="_blank" rel="noreferrer">打开书签桌面 ↗</a><span>为每次灵感留个位置</span></footer>
   </main>
 }
