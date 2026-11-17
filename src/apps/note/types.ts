@@ -14,4 +14,6 @@ export interface NoteApp {
   history?: NoteArchive[]
 }
 
-export type NoteAction = { type: 'note-text'; text: string } | { type: 'note-color'; color: NoteArchive['color'] } | { type: 'note-archive'; id: string } | { type: 'note-restore'; id: string; draftId: string }
+export type NoteAction = NoteHistoryDeleteAction | { type: 'note-text'; text: string } | { type: 'note-color'; color: NoteArchive['color'] } | { type: 'note-archive'; id: string } | { type: 'note-restore'; id: string; draftId: string }
+
+export type NoteHistoryDeleteAction = { type: 'note-history-delete'; id: string }

@@ -49,6 +49,8 @@ export interface Partition {
   items: DesktopItem[]
   /** Dock 栏固定的书签 id 列表 */
   dock: string[]
+  /** 该空间共享的便签归档；删除便签卡片不会删除这里的历史。 */
+  noteHistory?: import('@/apps/note/types').NoteArchive[]
 }
 
 export type IconSize = 's' | 'm' | 'l'

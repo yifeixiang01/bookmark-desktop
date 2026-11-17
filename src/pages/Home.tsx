@@ -473,9 +473,10 @@ export default function Home() {
           <div key={activePartition.id} className="partition-enter h-full min-w-full">
             <DesktopGrid
               onAppAction={store.appAction}
+              noteHistory={activePartition.noteHistory}
               onDeleteApp={(id) => {
                 const item = activePartition.items.find((it) => it.id === id)
-                if (item?.kind === 'app') setConfirm({ title: `移除${appName(item.app.type)}？`, description: item.app.type === 'note' ? `当前便签内容和 ${item.app.history?.length ?? 0} 条归档历史会一起删除，无法恢复。其他卡片不受影响。` : '这张卡片的内容和记录会一起移除。其他卡片不受影响。', action: () => store.removeApp(id) })
+                if (item?.kind === 'app') setConfirm({ title: `移除${appName(item.app.type)}？`, description: item.app.type === 'note' ? '仅移除这张卡片及未归档的内容。当前空间的便签历史会保留，重新添加便签后仍可查看。' : '这张卡片的内容和记录会一起移除。其他卡片不受影响。', action: () => store.removeApp(id) })
               }}
               items={activePartition.items}
               editMode={editMode}

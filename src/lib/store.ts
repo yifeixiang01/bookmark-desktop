@@ -1,4 +1,5 @@
 import type { AppState, Bookmark, DesktopItem, Group, Partition } from '@/types/bookmark'
+import { migrateNoteHistory } from '@/apps/note/state'
 
 /**
  * 数据层：localStorage 作为本地缓存（秒开 + 离线可用），
@@ -77,6 +78,7 @@ function migrate(parsed: AppState): AppState {
       // 旧数据可能带 size 字段（已废弃的小/大文件夹开关），迁移时剔除
       if (it.kind === 'group') delete (it.group as unknown as Record<string, unknown>).size
     }
+    migrateNoteHistory(p)
   }
   parsed.locked ??= false
   parsed.iconSize ??= 'm'

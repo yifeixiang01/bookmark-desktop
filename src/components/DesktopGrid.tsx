@@ -33,6 +33,7 @@ interface Props {
   onDeleteGroup: (group: Extract<DesktopItem, { kind: 'group' }>['group']) => void
   onDeleteApp?: (id: string) => void
   onAppAction?: (id: string, action: AppAction) => void
+  noteHistory?: import('@/types/bookmark').NoteArchive[]
   onMoveGroup?: (groupId: string) => void
   onDissolveGroup?: (groupId: string) => void
   onAddClick: () => void
@@ -220,7 +221,7 @@ export function DesktopGrid(props: Props) {
                   selected={selected.has(item.group.id)}
                   onToggleSelect={() => props.onToggleSelectGroup?.(item.group.id)}
                 />
-              ) : <AppTile app={item.app} width={dragVisualOf(item, iconPx).w} height={dragVisualOf(item, iconPx).h} editMode={editMode} locked={locked} onPress={(e) => props.onPress(e, { kind: 'desktop-item', itemId: item.id })} onAction={(action) => props.onAppAction?.(item.id, action)} onRemove={() => props.onDeleteApp?.(item.id)} />}
+              ) : <AppTile app={item.app} noteHistory={props.noteHistory} width={dragVisualOf(item, iconPx).w} height={dragVisualOf(item, iconPx).h} editMode={editMode} locked={locked} onPress={(e) => props.onPress(e, { kind: 'desktop-item', itemId: item.id })} onAction={(action) => props.onAppAction?.(item.id, action)} onRemove={() => props.onDeleteApp?.(item.id)} />}
             </div>
           )
         })}

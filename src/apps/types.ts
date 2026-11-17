@@ -4,6 +4,7 @@ import type { WaterApp, WaterAction } from './water/types'
 import type { WoodfishApp, WoodfishAction } from './woodfish/types'
 import type { PomodoroApp } from './pomodoro/types'
 import type { PomodoroAction } from './pomodoro/types'
+import type { NoteArchive } from './note/types'
 import type { PointerEvent } from 'react'
 export type DesktopApp = NoteApp | TodoApp | WaterApp | WoodfishApp | PomodoroApp
 export type AppType = DesktopApp['type']
@@ -20,4 +21,5 @@ export interface AppCardProps {
  onPress?: (e: PointerEvent) => void
  onAction?: (action: AppAction) => void
  onRemove?: () => void
+  noteHistory?: NoteArchive[]
 }

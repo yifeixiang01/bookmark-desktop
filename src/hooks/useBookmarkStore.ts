@@ -5,6 +5,7 @@ import { previewInsert, layoutItems, spanOf } from '@/lib/gridLayout'
 import { hostHue } from '@/lib/favicon'
 import { folderNameFor } from '@/lib/categorize'
 import { copyBookmark, moveGroup, removeBookmarkCopies, syncBookmark } from '@/lib/bookmarkActions'
+import { applyNoteAction, migrateNoteHistory } from '@/apps/note/state'
 import { actOnApp, createApp, settleApp, type AppAction } from '@/apps'
 
 function activeOf(d: AppState): Partition | undefined {
@@ -40,17 +41,25 @@ export function useBookmarkStore() {
     state.partitions.find((p) => p.id === state.activePartitionId) ?? state.partitions[0]
 
   const addApp = useCallback((type: AppType = 'pomodoro') => update((d) => {
-    activeOf(d)?.items.push({ id: uid(), kind: 'app', app: createApp(type) })
+    const p = activeOf(d)
+    if (!p) return
+    const app = createApp(type)
+    p.items.push({ id: uid(), kind: 'app', app })
   }), [update])
 
   const removeApp = useCallback((id: string) => update((d) => {
     const p = activeOf(d)
+    if (p) migrateNoteHistory(p)
     if (p) p.items = p.items.filter((it) => !(it.kind === 'app' && it.id === id))
   }), [update])
 
   const appAction = useCallback((id: string, action: AppAction) => update((d) => {
     const item = activeOf(d)?.items.find((it) => it.id === id)
-    if (item?.kind === 'app') item.app = actOnApp(item.app, action, Date.now())
+    if (item?.kind === 'app') {
+      const p = activeOf(d)!
+      if (item.app.type === 'note' && typeof action !== 'string' && action.type.startsWith('note-')) applyNoteAction(p, id, action as import('@/apps/note/types').NoteAction, Date.now())
+      else item.app = actOnApp(item.app, action, Date.now())
+    }
   }), [update])
 
   const finishApps = useCallback(() => {
