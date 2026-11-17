@@ -1,14 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { Check, Lock, LockOpen, Pencil, Plus, Sparkles } from 'lucide-react'
 import type { IconSize } from '@/types/bookmark'
-import { WALLPAPERS } from './Wallpaper'
 
 interface Props {
   pos: { x: number; y: number } | null
   editMode: boolean
   locked: boolean
   iconSize: IconSize
-  wallpaper: string
   onClose: () => void
   onAddBookmark: () => void
   onAddGroup: () => void
@@ -16,8 +14,6 @@ interface Props {
   onToggleLocked: () => void
   onIconSize: (s: IconSize) => void
   onSortByColor: () => void
-  onWallpaper: (id: string) => void
-  onCustomWallpaper: () => void
 }
 
 const SIZES: Array<{ key: IconSize; label: string }> = [
@@ -42,7 +38,7 @@ export function DesktopContextMenu(props: Props) {
   if (!pos) return null
 
   const W = 224
-  const H = 400
+  const H = 280
   const left = Math.max(8, Math.min(pos.x, window.innerWidth - W - 8))
   const top = Math.max(8, Math.min(pos.y, window.innerHeight - H - 8))
 
@@ -97,30 +93,7 @@ export function DesktopContextMenu(props: Props) {
         <button className={item} onClick={act(props.onSortByColor)}>
           <Sparkles size={14} className="text-slate-400" /> 按颜色整理图标
         </button>
-        {sep}
-        <p className="px-3 pb-1 pt-1.5 text-[11px] text-slate-400">换背景</p>
-        <div className="flex gap-1.5 px-3 pb-1.5">
-          {WALLPAPERS.map((w) => (
-            <button
-              key={w.id}
-              title={w.name}
-              onClick={() => props.onWallpaper(w.id)}
-              className={`h-9 flex-1 overflow-hidden rounded-md border-2 transition-colors ${
-                props.wallpaper === w.id ? 'border-slate-700' : 'border-transparent hover:border-slate-300'
-              }`}
-              style={{ background: w.sky }}
-            >
-              {w.mountains && (
-                <svg className="mt-auto w-full" style={{ height: '45%' }} viewBox="0 0 100 30" preserveAspectRatio="none">
-                  <path fill={w.mountains[1]} d="M0,20 L20,8 L40,18 L60,6 L80,16 L100,10 L100,30 L0,30 Z" />
-                </svg>
-              )}
-            </button>
-          ))}
-        </div>
-        <button className={item} onClick={act(props.onCustomWallpaper)}>
-          <span className="text-[13px]">自定义背景图…</span>
-        </button>
+
       </div>
     </>
   )

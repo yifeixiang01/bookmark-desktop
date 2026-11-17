@@ -411,7 +411,7 @@ export default function Home() {
         }}
       >
         <div className="mx-auto flex w-full max-w-5xl flex-col items-center px-1 pt-[5vh] sm:px-0">
-          <SearchBar engine={state.searchEngine} onEngineChange={store.setSearchEngine} />
+          <SearchBar partitions={state.partitions} engine={state.searchEngine} onEngineChange={store.setSearchEngine} />
           <p className="mt-3 text-sm text-white/70 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
             {activePartition.name} · {totalBookmarks} 个网站
             {state.locked && <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-xs">布局已锁定</span>}
@@ -464,6 +464,10 @@ export default function Home() {
                 if (group?.kind === 'group') setConfirm({ title: `解除卡片「${group.group.name}」？`, description: '卡片会被删除，其中的书签会释放到当前桌面。', action: () => store.dissolveGroup(id) })
               }}
               onDeleteGroup={(g) => {
+                if (g.bookmarks.length === 0) {
+                  store.deleteGroup(g.id)
+                  return
+                }
                 setConfirm({
                   title: `删除文件夹「${g.name}」？`,
                   description: `里面的 ${g.bookmarks.length} 个书签会一起删除，此操作不可撤销。`,
@@ -537,7 +541,6 @@ export default function Home() {
         editMode={editMode}
         locked={state.locked}
         iconSize={state.iconSize}
-        wallpaper={state.wallpaper}
         onClose={() => setCtxMenu(null)}
         onAddBookmark={() => setBookmarkForm({ open: true, defaultGroupId: null })}
         onAddGroup={() => setPrompt({ kind: 'add-group' })}
@@ -553,11 +556,6 @@ export default function Home() {
         onSortByColor={() => {
           store.sortByColor()
           showToast('已按颜色整理桌面图标')
-        }}
-        onWallpaper={store.setWallpaper}
-        onCustomWallpaper={() => {
-          const url = window.prompt('输入背景图片 URL')
-          if (url?.trim()) store.setWallpaper('custom:' + url.trim())
         }}
       />
 
