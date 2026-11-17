@@ -58,6 +58,17 @@ export function useBookmarkStore() {
     [update]
   )
 
+  const reorderPartitions = useCallback(
+    (sourceId: string, targetId: string) => update((d) => {
+      const from = d.partitions.findIndex((p) => p.id === sourceId)
+      const to = d.partitions.findIndex((p) => p.id === targetId)
+      if (from < 0 || to < 0 || from === to) return
+      const [partition] = d.partitions.splice(from, 1)
+      d.partitions.splice(to, 0, partition)
+    }),
+    [update]
+  )
+
   const deletePartition = useCallback(
     (id: string) => update((d) => {
       if (d.partitions.length <= 1) return
@@ -460,7 +471,7 @@ export function useBookmarkStore() {
     state,
     activePartition,
     findBookmark: (bid: string) => findBookmark(activePartition, bid),
-    addPartition, renamePartition, deletePartition, setActivePartition,
+    addPartition, renamePartition, deletePartition, setActivePartition, reorderPartitions,
     addGroup, renameGroup, deleteGroup,
     saveBookmark, saveBookmarkToNewGroup, moveBookmarkToDesktop, moveBookmarkToFolder, deleteBookmark,
     toggleDock, importGroups,

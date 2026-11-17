@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Loader2, Sparkles } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -155,21 +155,22 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md bg-white/95 backdrop-blur-xl">
-        <DialogHeader>
+      <DialogContent className="max-w-lg max-h-[90dvh] gap-0 overflow-y-auto rounded-2xl bg-white/95 p-0 backdrop-blur-xl">
+        <DialogHeader className="border-b border-slate-100 px-6 py-5 text-left">
           <DialogTitle>{editing ? '修改书签' : '添加书签'}</DialogTitle>
+          <DialogDescription>输入网址自动获取网站信息，也可以手动填写。</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4 py-1">
-          <div className="flex items-start gap-4">
-            <div className="relative pt-5">
+        <div className="flex flex-col gap-5 p-6 [&_label]:mb-2 [&_label]:block [&_input]:rounded-xl [&_input]:bg-white">
+          <div className="flex items-start gap-4 rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+            <div className="relative shrink-0 pt-7">
               <FaviconImg url={normalizedUrl || 'https://example.com'} name={name || '?'} customIcon={icon || undefined} size={52} />
               {fetchState === 'loading' && (
-                <span className="absolute inset-0 pt-5 grid place-items-center">
+                <span className="absolute inset-0 pt-7 grid place-items-center">
                   <Loader2 size={20} className="animate-spin rounded-xl bg-white/70 p-0.5 text-slate-500" />
                 </span>
               )}
             </div>
-            <div className="flex-1 flex flex-col gap-3">
+            <div className="min-w-0 flex-1 flex flex-col gap-3">
               <div>
                 <Label htmlFor="bm-url">网址</Label>
                 <Input
@@ -200,7 +201,7 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
             </div>
           </div>
           <div>
-            <Label htmlFor="bm-desc">描述（可选，鼠标悬停图标时显示）</Label>
+            <Label htmlFor="bm-desc">网站描述（可选）</Label>
             <Textarea
               id="bm-desc"
               value={description}
@@ -208,24 +209,25 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
               placeholder="一句话介绍这个网站，例如：全球最大代码托管平台"
               rows={2}
               maxLength={200}
-              className="resize-none"
+              className="resize-none rounded-xl bg-white"
             />
           </div>
           <div>
-            <Label htmlFor="bm-icon">自定义图标 URL（可选，留空自动抓取）</Label>
+            <Label htmlFor="bm-icon">自定义图标 URL（可选）</Label>
             <Input
               id="bm-icon"
               value={icon}
               onChange={(e) => { touched.current.icon = true; setIcon(e.target.value) }}
               placeholder="https://…/icon.png"
             />
+            <p className="mt-2 text-xs text-slate-400">留空将自动获取网站图标。</p>
           </div>
           <div>
-            <Label>放在哪里</Label>
+            <Label>保存位置</Label>
             <div className="flex flex-wrap gap-1.5 pt-1.5">
               <button
                 onClick={() => setGroupId(DESKTOP)}
-                className={`rounded-full px-3 py-1 text-xs transition-colors ${
+                className={`rounded-lg px-3 py-2 text-xs transition-colors ${
                   groupId === DESKTOP
                     ? 'bg-slate-800 text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -237,7 +239,7 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
                 <button
                   key={g.id}
                   onClick={() => setGroupId(g.id)}
-                  className={`rounded-full px-3 py-1 text-xs transition-colors ${
+                  className={`rounded-lg px-3 py-2 text-xs transition-colors ${
                     groupId === g.id
                       ? 'bg-slate-800 text-white'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -248,7 +250,7 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
               ))}
               <button
                 onClick={() => setGroupId(NEW_GROUP)}
-                className={`rounded-full px-3 py-1 text-xs transition-colors ${
+                className={`rounded-lg px-3 py-2 text-xs transition-colors ${
                   groupId === NEW_GROUP
                     ? 'bg-slate-800 text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -266,16 +268,19 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
               />
             )}
           </div>
-          <Button disabled={!canSave || saving} onClick={() => void handleSave()}>
+          <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+          <Button variant="outline" className="rounded-xl" disabled={saving} onClick={onClose}>取消</Button>
+          <Button className="min-w-28 rounded-xl" disabled={!canSave || saving} onClick={() => void handleSave()}>
             {saving ? (
               <span className="inline-flex items-center gap-2">
                 <Loader2 size={15} className="animate-spin" />
                 正在抓取网站图标…
               </span>
             ) : (
-              '保存'
+              editing ? '保存修改' : '添加书签'
             )}
           </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

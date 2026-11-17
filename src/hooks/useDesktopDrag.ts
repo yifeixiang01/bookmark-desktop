@@ -28,7 +28,7 @@ export interface GridFrame {
 export interface SettleInfo {
   toX: number
   toY: number
-  /** 飞行末段缩放：1=不变；>1=放大成文件夹瓷砖；<1=缩小被"吸"进目标 */
+  /** 飞行末段缩放：1=保持原始尺寸；<1=缩小被"吸"进目标 */
   scale: number
   /** 到达时是否淡出（合并/放入面板/无效落点） */
   fade: boolean
@@ -290,16 +290,14 @@ export function useDesktopDrag(opts: Opts) {
       const g = optsRef.current.gridRef.current
       const grect = g?.el.getBoundingClientRect() ?? null
       const iconPx = g?.iconPx ?? 56
-      // 幽灵锚点（translate -50%,-80%，含下方名称标签）到图标中心的纵向偏移
-      const ghostDy = Math.round(iconPx * 0.3 + 21)
 
       const slotIconCenter = (cell: GridPos, span: Span, visual: { w: number; h: number }) => {
         if (!g || !grect) return null
-        // 与 DesktopGrid 实际渲染一致：水平居中于格区、垂直顶部对齐（top + 2）；再乘整体缩放
+        // 与 DesktopGrid 实际渲染一致：水平居中于格区、垂直顶部对齐；再乘整体缩放
         const s = g.scale
         return {
           x: grect.left + g.offsetX * s + (cell.x * g.colW + (span.w * g.colW - visual.w) / 2 + visual.w / 2) * s,
-          y: grect.top + (cell.y * g.rowH + 2 + visual.h / 2) * s,
+          y: grect.top + (cell.y * g.rowH + visual.h / 2) * s,
         }
       }
       const panelCenter = () => {
@@ -324,7 +322,7 @@ export function useDesktopDrag(opts: Opts) {
         const p = target ? g?.placements.get(target.id) : null
         const c = target && p ? slotIconCenter(p, spanOf(target), dragVisualOf(target, iconPx)) : null
         plan = {
-          to: c ? { x: c.x, y: c.y + ghostDy } : null,
+          to: c ? { x: c.x, y: c.y } : null,
           scale: 0.25,
           fade: true,
           commit: () => onMerge(final.source, mergeTargetId),
@@ -338,15 +336,15 @@ export function useDesktopDrag(opts: Opts) {
           commit: () => onDropIntoPanel(final.source),
         }
       } else if (final.overCell && !final.overPanel) {
-        // 常规落位：幽灵飞到目标槽位（文件夹顺带放大成瓷砖尺寸），到位即提交
+        // 常规落位：幽灵保持原尺寸飞到目标槽位，到位即提交
         const srcItem = desktopItemOf(final.source, items)
         const span = sourceSpan(final.source, items)
         const visual = dragVisualOf(srcItem, iconPx)
         const c = slotIconCenter(final.overCell, span, visual)
         const cell = final.overCell
         plan = {
-          to: c ? { x: c.x, y: c.y + ghostDy } : null,
-          scale: srcItem?.kind === 'group' ? visual.w / iconPx : 1,
+          to: c ? { x: c.x, y: c.y } : null,
+          scale: 1,
           fade: false,
           commit: () => {
             // 标记后提交：DesktopGrid 下一次渲染让该项目直接出现在新格，禁掉旧位置滑动
@@ -361,8 +359,8 @@ export function useDesktopDrag(opts: Opts) {
         const c = srcItem && p ? slotIconCenter(p, spanOf(srcItem), dragVisualOf(srcItem, iconPx)) : null
         plan = c
           ? {
-              to: { x: c.x, y: c.y + ghostDy },
-              scale: srcItem?.kind === 'group' ? dragVisualOf(srcItem, iconPx).w / iconPx : 1,
+              to: { x: c.x, y: c.y },
+              scale: 1,
               fade: false,
               commit: null,
             }

@@ -10,6 +10,7 @@ interface Props {
   editMode: boolean
   iconPx: number
   enterDelay: number
+  preview?: boolean
   /** 打开文件夹面板，携带图标位置用于原位展开动画 */
   onOpen: (anchor: DOMRect) => void
   onRename: () => void
@@ -18,9 +19,9 @@ interface Props {
 
 /**
  * 文件夹图标（华为桌面式，图标可直接点击）：
- * 占 2x2 格（宽度=两个图标位），3x3 宫格；超过 8 个时第 9 格为堆叠预览，不足补虚线占位。
+ * 占 2x2 格（宽度=两个图标位），3x3 宫格；超过 8 个时第 9 格为堆叠预览，不足保留透明空位。
  */
-export function FolderTile({ group, editMode, iconPx, enterDelay, onOpen, onRename, onDelete }: Props) {
+export function FolderTile({ group, editMode, iconPx, enterDelay, preview = false, onOpen, onRename, onDelete }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const tip = useHoverTip()
 
@@ -83,7 +84,7 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, onOpen, onRena
         <button
           key={`pad-${i}`}
           onClick={openWithAnchor}
-          className="rounded-xl border border-dashed border-white/25"
+          className="rounded-xl"
           style={{ width: cellIcon, height: cellIcon }}
           title="打开文件夹"
         />
@@ -94,7 +95,7 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, onOpen, onRena
   return (
     <div
       ref={rootRef}
-      className="tile-enter relative flex flex-col items-center gap-1.5"
+      className={`${preview ? '' : 'tile-enter'} relative flex flex-col items-center gap-1.5`}
       style={{ width: tileSize, animationDelay: `${enterDelay}ms` }}
       onClickCapture={suppressClick}
       {...tip.bind}

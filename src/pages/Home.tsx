@@ -1,3 +1,5 @@
+import { FolderTile } from '@/components/FolderTile'
+import { dragVisualOf } from '@/lib/gridLayout'
 import { BookmarkSpaceDialog } from '@/components/BookmarkSpaceDialog'
 import { containingPartitions } from '@/lib/bookmarkActions'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -326,8 +328,25 @@ export default function Home() {
       )}
       {!editMode && (
       <SettingsMenu
-        editMode={editMode}
-        onToggleEdit={() => setEditMode((v) => !v)}
+        partitions={state.partitions}
+        onAddPartition={store.addPartition}
+        onRenamePartition={store.renamePartition}
+        onReorderPartitions={store.reorderPartitions}
+        onDeletePartition={(id) => {
+          const p = state.partitions.find((x) => x.id === id)
+          if (p) {
+            setConfirm({
+              title: `删除分区「${p.name}」？`,
+              description: '分区内的所有书签和文件夹会一起删除，此操作不可撤销。',
+              icon: (
+                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-amber-500/20 text-amber-300">
+                  <Layers size={26} />
+                </div>
+              ),
+              action: () => store.deletePartition(id),
+            })
+          }
+        }}
         wallpaper={state.wallpaper}
         onWallpaper={store.setWallpaper}
         accountLabel={user.email ?? user.name ?? '已登录'}
@@ -356,25 +375,7 @@ export default function Home() {
       <PartitionSidebar
         partitions={state.partitions}
         activeId={activePartition.id}
-        editMode={editMode}
         onSelect={store.setActivePartition}
-        onAdd={() => setPrompt({ kind: 'add-partition' })}
-        onRename={(id) => setPrompt({ kind: 'rename-partition', id })}
-        onDelete={(id) => {
-          const p = state.partitions.find((x) => x.id === id)
-          if (p) {
-            setConfirm({
-              title: `删除分区「${p.name}」？`,
-              description: '分区内的所有书签和文件夹会一起删除，此操作不可撤销。',
-              icon: (
-                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-amber-500/20 text-amber-300">
-                  <Layers size={26} />
-                </div>
-              ),
-              action: () => store.deletePartition(id),
-            })
-          }
-        }}
       />
 
       {/* 主区域：整页固定一屏高，桌面列表在内容超宽时横向滚动 */}
@@ -647,6 +648,8 @@ export default function Home() {
         (() => {
           const src = drag.source
           const settle = drag.settle
+          let folderPreview = false
+          let visualHeight = iconPx
           let name = ''
           let icon: React.ReactNode = null
           if (src.kind === 'desktop-item') {
@@ -659,17 +662,9 @@ export default function Home() {
               )
             } else {
               name = it.group.name
-              const mini = Math.round(iconPx * 0.38)
-              icon = (
-                <div
-                  className="grid grid-cols-2 place-items-center rounded-[24%] bg-white/85 shadow-lg backdrop-blur"
-                  style={{ width: iconPx, height: iconPx }}
-                >
-                  {it.group.bookmarks.slice(0, 4).map((b) => (
-                    <FaviconImg key={b.id} url={b.url} name={b.name} customIcon={b.icon} size={mini} />
-                  ))}
-                </div>
-              )
+              folderPreview = true
+              visualHeight = dragVisualOf(it, iconPx).h
+              icon = <FolderTile group={it.group} editMode={false} iconPx={iconPx} enterDelay={0} preview onOpen={() => {}} onRename={() => {}} onDelete={() => {}} />
             }
           } else {
             const found = store.findBookmark(src.bookmarkId)
@@ -686,15 +681,16 @@ export default function Home() {
               style={{
                 left: settle ? settle.toX : drag.x,
                 top: settle ? settle.toY : drag.y,
-                transform: `translate(-50%, -80%) scale(${gScale * (settle ? settle.scale : 1)})`,
+                transform: `translate(-50%, -${visualHeight / 2}px) scale(${gScale * (settle ? settle.scale : 1)})`,
+                transformOrigin: `50% ${visualHeight / 2}px`,
                 opacity: settle?.fade ? 0 : 1,
                 transition: settle
                   ? `left ${SETTLE_MS}ms cubic-bezier(.25,.8,.35,1), top ${SETTLE_MS}ms cubic-bezier(.25,.8,.35,1), transform ${SETTLE_MS}ms ease, opacity ${SETTLE_MS}ms ease`
                   : undefined,
               }}
             >
-              <div className="ghost-pop drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">{icon}</div>
-              <span className="max-w-24 truncate rounded bg-black/35 px-1.5 py-0.5 text-xs text-white backdrop-blur-sm">
+              <div>{icon}</div>
+              <span hidden={folderPreview} className="max-w-24 truncate rounded bg-black/35 px-1.5 py-0.5 text-xs text-white backdrop-blur-sm">
                 {name}
               </span>
             </div>
