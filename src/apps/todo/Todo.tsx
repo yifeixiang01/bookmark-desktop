@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { uid } from '@/lib/store'
-import type { TodoApp } from './types'
+import type { TodoApp, TodoAction } from './types'
 import type { ControlProps } from '../types'
 
-export function Todo({ app, disabled, onAction }: ControlProps<TodoApp>) {
+export function Todo({ app, disabled, onAction }: ControlProps<TodoApp, TodoAction>) {
   const [text, setText] = useState('')
   const completed = app.tasks.filter((t) => t.done).length
   return <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">

@@ -1,5 +1,4 @@
-import type { WaterApp } from './types'
-import type { AppAction } from '../types'
+import type { WaterApp, WaterAction } from './types'
 
 export const localDay = (now: number) => {
   const date = new Date(now)
@@ -16,7 +15,7 @@ export function settleWater(app: WaterApp, now: number): WaterApp {
 }
 
 
-export function actOnWater(current: WaterApp, action: Exclude<AppAction, string>, now: number): WaterApp {
+export function actOnWater(current: WaterApp, action: WaterAction, now: number): WaterApp {
   if (action.type === 'water-drink') return { ...current, cups: current.cups + 1, due: false, nextAt: current.enabled ? now + current.interval * 60_000 : null }
   if (action.type === 'water-toggle') return { ...current, enabled: !current.enabled, due: false, nextAt: current.enabled ? null : now + current.interval * 60_000 }
   if (action.type === 'water-interval' && [30, 45, 60, 90, 120].includes(action.minutes)) return { ...current, interval: action.minutes, due: false, nextAt: current.enabled ? now + action.minutes * 60_000 : null }

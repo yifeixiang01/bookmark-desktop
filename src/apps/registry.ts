@@ -1,42 +1,23 @@
 import type { AppType, DesktopApp, AppAction } from './types'
-import { createNote, actOnNote } from './note/model'
-import { createTodo, actOnTodo } from './todo/model'
-import { createWater, actOnWater, settleWater } from './water/model'
-import { createWoodfish, actOnWoodfish } from './woodfish/model'
-import { createPomodoro, finishPomodoro, actOnPomodoro } from './pomodoro/model'
+import { noteDefinition } from './note/definition'
+import { Card as NoteCard } from './note/Card'
+import { todoDefinition } from './todo/definition'
+import { Card as TodoCard } from './todo/Card'
+import { waterDefinition } from './water/definition'
+import { Card as WaterCard } from './water/Card'
+import { woodfishDefinition } from './woodfish/definition'
+import { Card as WoodfishCard } from './woodfish/Card'
+import { pomodoroDefinition } from './pomodoro/definition'
+import { Card as PomodoroCard } from './pomodoro/Card'
 
-export const APP_CATALOG = [
-  { type: 'pomodoro', name: '番茄钟', description: '25 分钟专注，5 分钟休息，找到自己的节奏。', emoji: '🍅', available: true },
-  { type: 'note', name: '便签', description: '随手记下灵感与重要的事，自动保存。', emoji: '📝', available: true },
-  { type: 'todo', name: '今日待办', description: '记录要做的事，一件件完成。', emoji: '✅', available: true },
-  { type: 'water', name: '喝水提醒', description: '定时补充水分，照顾忙碌中的自己。', emoji: '💧', available: true },
-  { type: 'woodfish', name: '敲木鱼', description: '敲一下木鱼，给心情留一点平静。', emoji: '🪵', available: true },
-  { type: 'pet', name: '桌宠', description: '让可爱的小伙伴陪你度过每一天。', emoji: '🐱', available: false },
-] as const
-
-export const appName = (type: AppType) => APP_CATALOG.find((a) => a.type === type)!.name
-export function createApp(type: AppType, now = Date.now()): DesktopApp {
-  switch (type) {
-    case 'note': return createNote()
-    case 'todo': return createTodo()
-    case 'water': return createWater(now)
-    case 'woodfish': return createWoodfish()
-    case 'pomodoro': return createPomodoro()
-  }
-}
-export function settleApp(app: DesktopApp, now: number): DesktopApp {
-  if (app.type === 'pomodoro') return finishPomodoro(app, now)
-  if (app.type === 'water') return settleWater(app, now)
-  return app
-}
+const definitions = { note: noteDefinition, todo: todoDefinition, water: waterDefinition, woodfish: woodfishDefinition, pomodoro: pomodoroDefinition }
+export const APP_CARDS = { note: NoteCard, todo: TodoCard, water: WaterCard, woodfish: WoodfishCard, pomodoro: PomodoroCard }
+export const APP_CATALOG = [definitions.pomodoro, definitions.note, definitions.todo, definitions.water, definitions.woodfish, { type: 'pet', name: '桌宠', description: '让可爱的小伙伴陪你度过每一天。', emoji: '🐱', available: false }] as const
+export const appName = (type: AppType) => definitions[type].name
+export const createApp = (type: AppType, now = Date.now()): DesktopApp => definitions[type].create(now)
+export const createAppPreview = (type: AppType): DesktopApp => definitions[type].preview()
+export const settleApp = (app: DesktopApp, now: number): DesktopApp => definitions[app.type].settle(app, now)
 export function actOnApp(app: DesktopApp, action: AppAction, now: number): DesktopApp {
-  const current = settleApp(app, now)
-  if (typeof action === 'string') return current.type === 'pomodoro' ? actOnPomodoro(current, action, now) : current
-  switch (current.type) {
-    case 'note': return actOnNote(current, action, now)
-    case 'todo': return actOnTodo(current, action)
-    case 'water': return actOnWater(current, action, now)
-    case 'woodfish': return actOnWoodfish(current, action)
-    default: return current
-  }
+ const current = settleApp(app, now)
+ return definitions[current.type].act(current, action, now)
 }

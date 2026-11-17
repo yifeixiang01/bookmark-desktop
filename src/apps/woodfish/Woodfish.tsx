@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Volume2, VolumeX } from 'lucide-react'
-import type { WoodfishApp } from './types'
+import type { WoodfishApp, WoodfishAction } from './types'
 import type { ControlProps } from '../types'
 
-export function Woodfish({ app, disabled, onAction }: ControlProps<WoodfishApp>) {
+export function Woodfish({ app, disabled, onAction }: ControlProps<WoodfishApp, WoodfishAction>) {
   const [hit, setHit] = useState(0)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const context = useRef<AudioContext | null>(null)

@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { Archive, History } from 'lucide-react'
 import { uid } from '@/lib/store'
 import { NoteHistory } from './NoteHistory'
-import type { NoteApp } from './types'
+import type { NoteApp, NoteAction } from './types'
 import type { ControlProps } from '../types'
 
 const colors = { cream: 'bg-[#fff7cf]/95', pink: 'bg-[#ffe4ec]/95', green: 'bg-[#e0f2df]/95' }
-export function Note({ app, disabled, onAction }: ControlProps<NoteApp>) {
+export function Note({ app, disabled, onAction }: ControlProps<NoteApp, NoteAction>) {
   const [historyOpen, setHistoryOpen] = useState(false)
   return <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
     <textarea aria-label="便签内容" placeholder="写下灵感，或一件别忘记的小事…" disabled={disabled} value={app.text} maxLength={5000} onChange={(e) => onAction({ type: 'note-text', text: e.target.value })} className="min-h-0 flex-1 resize-none bg-transparent text-sm leading-7 text-stone-700 outline-none placeholder:text-stone-400 disabled:opacity-80" style={{ touchAction: 'pan-y' }} />

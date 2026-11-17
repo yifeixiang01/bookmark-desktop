@@ -7,3 +7,5 @@ export interface PomodoroApp {
   completed: number
   finished: boolean
 }
+
+export type PomodoroAction = 'toggle' | 'reset' | 'focus' | 'break'

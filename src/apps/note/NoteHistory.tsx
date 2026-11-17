@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { Archive, Search } from 'lucide-react'
-import type { NoteApp } from './types'
-import type { AppAction } from '../types'
+import type { NoteApp, NoteAction } from './types'
 import { uid } from '@/lib/store'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const dateLabel = (time: number) => new Date(time).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
 
-export function NoteHistory({ app, onAction, onClose }: { app: NoteApp; onAction: (action: AppAction) => void; onClose: () => void }) {
+export function NoteHistory({ app, onAction, onClose }: { app: NoteApp; onAction: (action: NoteAction) => void; onClose: () => void }) {
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const history = [...(app.history ?? [])].sort((a, b) => b.archivedAt - a.archivedAt)

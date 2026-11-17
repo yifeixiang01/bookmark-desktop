@@ -1,6 +1,6 @@
-import type { PomodoroApp } from './types'
+import type { PomodoroApp, PomodoroAction } from './types'
 
-export type PomodoroAction = 'toggle' | 'reset' | 'focus' | 'break'
+export type { PomodoroAction } from './types'
 export const durationOf = (mode: PomodoroApp['mode']) => mode === 'focus' ? 25 * 60 : 5 * 60
 
 export function createPomodoro(): PomodoroApp {

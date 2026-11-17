@@ -1,9 +1,8 @@
-import type { NoteApp } from './types'
-import type { AppAction } from '../types'
+import type { NoteApp, NoteAction } from './types'
 
 export const createNote = (): NoteApp => ({ type: 'note', text: '', color: 'cream', history: [] })
 
-export function actOnNote(current: NoteApp, action: Exclude<AppAction, string>, now: number): NoteApp {
+export function actOnNote(current: NoteApp, action: NoteAction, now: number): NoteApp {
   if (action.type === 'note-text') return { ...current, text: action.text.slice(0, 5000), createdAt: current.createdAt ?? (action.text.trim() ? now : undefined) }
   if (action.type === 'note-color') return { ...current, color: action.color }
   if (action.type === 'note-archive') {

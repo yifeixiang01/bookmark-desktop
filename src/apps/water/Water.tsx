@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Bell, BellOff, Check } from 'lucide-react'
-import type { WaterApp } from './types'
+import type { WaterApp, WaterAction } from './types'
 import type { ControlProps } from '../types'
 
 const button = 'rounded-full bg-stone-800 px-4 py-2 text-xs font-medium text-white hover:bg-stone-700 disabled:opacity-50'
-export function Water({ app, disabled, onAction }: ControlProps<WaterApp>) {
+export function Water({ app, disabled, onAction }: ControlProps<WaterApp, WaterAction>) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     if (disabled || !app.enabled) return
