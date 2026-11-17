@@ -5,6 +5,7 @@ import { previewInsert, layoutItems, spanOf } from '@/lib/gridLayout'
 import { hostHue } from '@/lib/favicon'
 import { folderNameFor } from '@/lib/categorize'
 import { copyBookmark, moveGroup, removeBookmarkCopies, syncBookmark } from '@/lib/bookmarkActions'
+import { actOnPomodoro, createPomodoro, finishPomodoro, type PomodoroAction } from '@/lib/desktopApps'
 
 function activeOf(d: AppState): Partition | undefined {
   return d.partitions.find((x) => x.id === d.activePartitionId)
@@ -37,6 +38,34 @@ export function useBookmarkStore() {
 
   const activePartition =
     state.partitions.find((p) => p.id === state.activePartitionId) ?? state.partitions[0]
+
+  const addApp = useCallback(() => update((d) => {
+    activeOf(d)?.items.push({ id: uid(), kind: 'app', app: createPomodoro() })
+  }), [update])
+
+  const removeApp = useCallback((id: string) => update((d) => {
+    const p = activeOf(d)
+    if (p) p.items = p.items.filter((it) => !(it.kind === 'app' && it.id === id))
+  }), [update])
+
+  const appAction = useCallback((id: string, action: PomodoroAction) => update((d) => {
+    const item = activeOf(d)?.items.find((it) => it.id === id)
+    if (item?.kind === 'app') item.app = actOnPomodoro(item.app, action, Date.now())
+  }), [update])
+
+  const finishApps = useCallback(() => {
+    setState((prev) => {
+      const now = Date.now()
+      const expired = prev.partitions.some((p) => p.items.some((it) => it.kind === 'app' && it.app.endsAt !== null && it.app.endsAt <= now))
+      if (!expired) return prev
+      const draft: AppState = JSON.parse(JSON.stringify(prev))
+      for (const p of draft.partitions) for (const it of p.items) {
+        if (it.kind === 'app') it.app = finishPomodoro(it.app, now)
+      }
+      saveState(draft)
+      return draft
+    })
+  }, [])
 
   // ---------- 空间 ----------
   const addPartition = useCallback(
@@ -389,7 +418,7 @@ export function useBookmarkStore() {
       const p = activeOf(d)
       if (!p) return
       const standalone = p.items.filter((i) => i.kind === 'bookmark')
-      const folders = p.items.filter((i) => i.kind === 'group')
+      const folders = p.items.filter((i) => i.kind !== 'bookmark')
       standalone.sort((a, b) =>
         a.kind === 'bookmark' && b.kind === 'bookmark'
           ? hostHue(a.bookmark.url) - hostHue(b.bookmark.url)
@@ -486,6 +515,7 @@ export function useBookmarkStore() {
   }, [])
 
   return {
+    addApp, removeApp, appAction, finishApps,
     state,
     activePartition,
     findBookmark: (bid: string) => findBookmark(activePartition, bid),

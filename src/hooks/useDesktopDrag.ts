@@ -223,6 +223,7 @@ export function useDesktopDrag(opts: Opts) {
     let overItemId: string | null = null
     for (const it of g.items) {
       if (source.kind === 'desktop-item' && it.id === source.itemId) continue
+      if (it.kind === 'app') continue // 应用只能参与占位，不能作为书签合并目标
       const p = g.placements.get(it.id)
       if (!p) continue
       const s = spanOf(it)

@@ -108,7 +108,7 @@ export function allBookmarks(partition: Partition): Bookmark[] {
   const list: Bookmark[] = []
   for (const it of partition.items) {
     if (it.kind === 'bookmark') list.push(it.bookmark)
-    else list.push(...it.group.bookmarks)
+    else if (it.kind === 'group') list.push(...it.group.bookmarks)
   }
   return list
 }

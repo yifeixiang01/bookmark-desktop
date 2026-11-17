@@ -1,8 +1,9 @@
 import { FolderTile } from '@/components/FolderTile'
+import { AppTile } from '@/components/AppTile'
 import { dragVisualOf } from '@/lib/gridLayout'
 import { BookmarkSpaceDialog } from '@/components/BookmarkSpaceDialog'
 import { containingPartitions } from '@/lib/bookmarkActions'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Check, Layers } from 'lucide-react'
 import { useBookmarkStore } from '@/hooks/useBookmarkStore'
 import { useAuth } from '@/hooks/useAuth'
@@ -42,6 +43,15 @@ export default function Home() {
   const { state, activePartition } = store
   const cloud = useCloudSync(state, store.replaceState, !!user)
 
+  const { finishApps } = store
+  useEffect(() => {
+    if (!cloud.hydrated) return
+    finishApps()
+    const timer = window.setInterval(finishApps, 1000)
+    window.addEventListener('focus', finishApps)
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', finishApps) }
+  }, [cloud.hydrated, finishApps])
+
   const [movingGroup, setMovingGroup] = useState<string | null>(null)
   const [movingBookmark, setMovingBookmark] = useState<string | null>(null)
   const [spaceAction, setSpaceAction] = useState<{ mode: 'copy' | 'delete'; bookmark: Bookmark; sourceId: string } | null>(null)
@@ -60,11 +70,24 @@ export default function Home() {
   const [confirm, setConfirm] = useState<(ConfirmConfig & { action: () => void }) | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  const showToast = (msg: string) => {
+  const showToast = useCallback((msg: string) => {
     setToast(msg)
     clearTimeout(toastTimer.current)
     toastTimer.current = setTimeout(() => setToast(''), 2600)
-  }
+  }, [])
+
+  const runningAppIds = useRef(new Set<string>())
+  useEffect(() => {
+    const running = new Set<string>()
+    let finished = false
+    for (const p of state.partitions) for (const it of p.items) {
+      if (it.kind !== 'app') continue
+      if (it.app.endsAt !== null) running.add(it.id)
+      else if (it.app.finished && runningAppIds.current.has(it.id)) finished = true
+    }
+    runningAppIds.current = running
+    if (finished) showToast('番茄钟本轮已结束，记得休息和调整节奏')
+  }, [state.partitions, showToast])
 
   const editBookmark = (id: string) => {
     const found = store.findBookmark(id)
@@ -137,7 +160,7 @@ export default function Home() {
     const stale: Bookmark[] = []
     for (const p of state.partitions) {
       for (const it of p.items) {
-        const list = it.kind === 'bookmark' ? [it.bookmark] : it.group.bookmarks
+        const list = it.kind === 'bookmark' ? [it.bookmark] : it.kind === 'group' ? it.group.bookmarks : []
         for (const b of list) {
           if (/favicon\.ico(\?|#|$)/i.test(b.icon ?? '')) stale.push(b)
         }
@@ -188,7 +211,7 @@ export default function Home() {
     },
     onMerge: (source, targetItemId) => {
       const target = activePartition.items.find((i) => i.id === targetItemId)
-      if (!target) return
+      if (!target || target.kind === 'app') return
       if (source.kind === 'desktop-item') {
         const src = activePartition.items.find((i) => i.id === source.itemId)
         if (src?.kind !== 'bookmark') return
@@ -345,6 +368,9 @@ export default function Home() {
       )}
       {!editMode && (
       <SettingsMenu
+        currentPartitionName={activePartition.name}
+        appCount={activePartition.items.filter((it) => it.kind === 'app').length}
+        onAddApp={() => { store.addApp(); showToast(`已添加番茄钟到「${activePartition.name}」`) }}
         partitions={state.partitions}
         onAddPartition={store.addPartition}
         onRenamePartition={store.renamePartition}
@@ -354,7 +380,7 @@ export default function Home() {
           if (p) {
             setConfirm({
               title: `删除空间「${p.name}」？`,
-              description: '空间内的所有书签和文件夹会一起删除，此操作不可撤销。',
+              description: '空间内的所有书签、文件夹和应用卡片会一起删除，此操作不可撤销。',
               icon: (
                 <div className="grid h-14 w-14 place-items-center rounded-2xl bg-amber-500/20 text-amber-300">
                   <Layers size={26} />
@@ -429,6 +455,8 @@ export default function Home() {
           {/* 切空间时重挂载播放入场过渡 */}
           <div key={activePartition.id} className="partition-enter h-full min-w-full">
             <DesktopGrid
+              onAppAction={store.appAction}
+              onDeleteApp={(id) => setConfirm({ title: '移除番茄钟？', description: '这张卡片的计时和专注记录会一起移除。其他卡片不受影响。', action: () => store.removeApp(id) })}
               items={activePartition.items}
               editMode={editMode}
               locked={state.locked}
@@ -709,6 +737,11 @@ export default function Home() {
               icon = (
                 <FaviconImg url={it.bookmark.url} name={it.bookmark.name} customIcon={it.bookmark.icon} size={iconPx} />
               )
+            } else if (it.kind === 'app') {
+              folderPreview = true
+              const visual = dragVisualOf(it, iconPx)
+              visualHeight = visual.h
+              icon = <AppTile app={it.app} width={visual.w} height={visual.h} preview />
             } else {
               name = it.group.name
               folderPreview = true

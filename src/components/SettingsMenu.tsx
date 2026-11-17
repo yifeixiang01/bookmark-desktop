@@ -6,8 +6,12 @@ import { useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Settings, Plus, Trash2, Upload, Download, FileUp, Pencil, Check, LogOut, Cloud, CloudUpload } from 'lucide-react'
 import { WALLPAPERS } from './Wallpaper'
+import { APP_CATALOG } from '@/lib/desktopApps'
 
 interface Props {
+  currentPartitionName: string
+  appCount: number
+  onAddApp: () => void
   partitions: Partition[]
   onAddPartition: (name: string) => void
   onRenamePartition: (id: string, name: string) => void
@@ -24,6 +28,7 @@ interface Props {
 }
 
 export function SettingsMenu({
+  currentPartitionName, appCount, onAddApp,
   wallpaper, onWallpaper, onImportHTML, onExportJSON, onImportJSON,
   accountLabel, syncing, onLogout, partitions, onAddPartition, onRenamePartition, onDeletePartition, onReorderPartitions,
 }: Props) {
@@ -46,20 +51,31 @@ export function SettingsMenu({
             <Settings size={14} />设置
           </button>
         </DialogTrigger>
-        <DialogContent className="flex h-[min(640px,85dvh)] max-w-3xl flex-col gap-0 overflow-hidden bg-white/95 p-0 backdrop-blur-xl">
+        <DialogContent className="flex h-[min(640px,85dvh)] max-w-3xl flex-col gap-0 overflow-hidden bg-white/95 p-0 backdrop-blur-xl sm:max-w-3xl">
           <DialogHeader className="border-b px-6 py-5 text-left">
             <DialogTitle>设置</DialogTitle>
-            <DialogDescription>管理空间、背景、书签备份和账号。</DialogDescription>
+            <DialogDescription>管理空间、应用、背景、书签备份和账号。</DialogDescription>
           </DialogHeader>
           <div className="flex min-h-0 flex-1">
             <nav aria-label="设置分类" className="w-24 shrink-0 space-y-1 overflow-y-auto border-r bg-slate-50/80 p-2 sm:w-40 sm:p-3">
               {[
-                ['partitions', '空间管理'], ['wallpaper', '背景'], ['data', '数据备份'], ['account', '账号'],
+                ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '背景'], ['data', '数据备份'], ['account', '账号'],
               ].map(([id, label]) => (
                 <button key={id} type="button" aria-current={section === id ? 'page' : undefined} onClick={() => setSection(id)} className={`w-full rounded-xl px-2 py-3 text-left text-xs transition-colors sm:px-3 sm:text-sm ${section === id ? 'bg-slate-800 font-medium text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70'}`}>{label}</button>
               ))}
             </nav>
             <div className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
+          <section hidden={section !== 'apps'} className="space-y-4">
+            <div><h3 className="text-base font-semibold">应用中心</h3><p className="mt-1 text-xs leading-5 text-slate-500">把小应用放到「{currentPartitionName}」，在桌面直接使用。每张卡片默认占 3 × 3 个图标位。</p></div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {APP_CATALOG.map((app) => <article key={app.type} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4">
+                <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-2xl" aria-hidden="true">{app.emoji}</span>
+                <h4 className="text-sm font-semibold text-slate-800">{app.name}</h4>
+                <p className="mb-4 mt-1 flex-1 text-xs leading-5 text-slate-500">{app.description}</p>
+                {app.available ? <><button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-slate-800 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700" onClick={onAddApp}><Plus size={14} />添加到当前桌面</button><p role="status" className="mt-2 text-center text-[11px] text-slate-400">{appCount ? `当前桌面已添加 ${appCount} 张` : '可添加多个，独立计时'}</p></> : <button type="button" disabled className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-400">即将上线</button>}
+              </article>)}
+            </div>
+          </section>
           <section hidden={section !== 'account'} className="space-y-4">
             <h3 className="text-base font-semibold">账号</h3>
           <div className="rounded-xl bg-slate-100 px-3 py-2">
@@ -111,7 +127,7 @@ export function SettingsMenu({
             </div>
             </SortableContext>
             </DndContext>
-            <p className="text-xs text-slate-500">删除空间会移除其中的书签和文件夹，其他空间的书签不受影响。</p>
+            <p className="text-xs text-slate-500">删除空间会移除其中的书签、文件夹和应用卡片，其他空间不受影响。</p>
           </section>
           <section hidden={section !== 'wallpaper'} className="space-y-3">
           <h3 className="text-base font-semibold">背景</h3>
