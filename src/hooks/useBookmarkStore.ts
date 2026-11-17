@@ -4,13 +4,13 @@ import { allBookmarks, findBookmark, loadState, saveState, uid } from '@/lib/sto
 import { findFreeRect, layoutItems, rectsOverlap, spanOf } from '@/lib/gridLayout'
 import { hostHue } from '@/lib/favicon'
 import { folderNameFor } from '@/lib/categorize'
-import { copyBookmark, removeBookmarkCopies, syncBookmark } from '@/lib/bookmarkActions'
+import { copyBookmark, moveGroup, removeBookmarkCopies, syncBookmark } from '@/lib/bookmarkActions'
 
 function activeOf(d: AppState): Partition | undefined {
   return d.partitions.find((x) => x.id === d.activePartitionId)
 }
 
-/** 从分区任意位置移除一个书签（独立位或文件夹内），返回是否移除过 */
+/** 从空间任意位置移除一个书签（独立位或文件夹内），返回是否移除过 */
 function removeBookmarkEverywhere(p: Partition, bookmarkId: string) {
   p.items = p.items.filter((it) => !(it.kind === 'bookmark' && it.bookmark.id === bookmarkId))
   for (const it of p.items) {
@@ -38,11 +38,11 @@ export function useBookmarkStore() {
   const activePartition =
     state.partitions.find((p) => p.id === state.activePartitionId) ?? state.partitions[0]
 
-  // ---------- 分区 ----------
+  // ---------- 空间 ----------
   const addPartition = useCallback(
     (name: string) => {
       update((d) => {
-        const p: Partition = { id: uid(), name: name || '新分区', items: [], dock: [] }
+        const p: Partition = { id: uid(), name: name || '新空间', items: [], dock: [] }
         d.partitions.push(p)
         d.activePartitionId = p.id
       })
@@ -118,13 +118,7 @@ export function useBookmarkStore() {
   )
 
   const moveGroupToPartition = useCallback((groupId: string, partitionId: string) => update((d) => {
-    const from = activeOf(d)
-    const to = d.partitions.find((p) => p.id === partitionId)
-    if (!from || !to || from.id === to.id) return
-    const index = from.items.findIndex((it) => it.kind === 'group' && it.group.id === groupId)
-    if (index < 0) return
-    const [item] = from.items.splice(index, 1)
-    if (item.kind === 'group') to.items.push(item)
+    moveGroup(d, groupId, partitionId)
   }), [update])
 
   const dissolveGroup = useCallback((groupId: string) => update((d) => {
@@ -233,6 +227,17 @@ export function useBookmarkStore() {
     }),
     [update]
   )
+
+  const moveBookmarkToPartition = useCallback((bookmarkId: string, targetId: string) => update((d) => {
+    const from = activeOf(d)
+    const to = d.partitions.find((p) => p.id === targetId)
+    if (!from || !to || from.id === to.id) return
+    const found = findBookmark(from, bookmarkId)
+    if (!found) return
+    copyBookmark(d, found.bookmark, from.id, [targetId])
+    removeBookmarkEverywhere(from, bookmarkId)
+    from.dock = from.dock.filter((id) => id !== bookmarkId)
+  }), [update])
 
   const toggleDock = useCallback(
     (bookmarkId: string) => update((d) => {
@@ -496,7 +501,7 @@ export function useBookmarkStore() {
     addGroup, renameGroup, deleteGroup, moveGroupToPartition, dissolveGroup,
     saveBookmark, saveBookmarkToNewGroup, moveBookmarkToDesktop, moveBookmarkToFolder, deleteBookmark,
     toggleDock, importGroups,
-    deleteBookmarkScoped, copyBookmarkToPartitions,
+    deleteBookmarkScoped, copyBookmarkToPartitions, moveBookmarkToPartition,
     placeItemAt, mergeBookmarks, mergeFromFolder, addBookmarkToFolder,
     toggleLocked, setIconSize, sortByColor, setBookmarkIcon,
     batchDelete, batchMoveToFolder, batchMoveToNewFolder, batchMoveToPartition,

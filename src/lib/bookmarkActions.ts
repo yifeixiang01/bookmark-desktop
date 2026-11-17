@@ -37,3 +37,17 @@ export function copyBookmark(state: AppState, bookmark: Bookmark, sourceId: stri
     p.items.push({ id: uid(), kind: 'bookmark', bookmark: { ...bookmark } })
   }
 }
+
+export function moveGroup(state: AppState, groupId: string, targetId: string) {
+  const from = state.partitions.find((p) => p.id === state.activePartitionId)
+  const to = state.partitions.find((p) => p.id === targetId)
+  if (!from || !to || from === to) return
+  const item = from.items.find((it) => it.kind === 'group' && it.group.id === groupId)
+  if (!item || item.kind !== 'group') return
+  for (const bookmark of item.group.bookmarks) removeBookmarkCopies(to, bookmark)
+  from.items = from.items.filter((it) => it !== item)
+  const ids = new Set(item.group.bookmarks.map((b) => b.id))
+  from.dock = from.dock.filter((id) => !ids.has(id))
+  delete item.pos
+  to.items.push(item)
+}

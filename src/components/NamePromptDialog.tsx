@@ -12,7 +12,7 @@ interface Props {
   onConfirm: (value: string) => void
 }
 
-/** 通用的单字段命名弹窗：新建/重命名分区、分组共用 */
+/** 通用的单字段命名弹窗：新建/重命名空间、分组共用 */
 export function NamePromptDialog({ open, title, defaultValue = '', placeholder, onClose, onConfirm }: Props) {
   const [value, setValue] = useState(defaultValue)
   useEffect(() => {

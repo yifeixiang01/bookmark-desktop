@@ -42,6 +42,8 @@ export default function Home() {
   const { state, activePartition } = store
   const cloud = useCloudSync(state, store.replaceState, !!user)
 
+  const [movingGroup, setMovingGroup] = useState<string | null>(null)
+  const [movingBookmark, setMovingBookmark] = useState<string | null>(null)
   const [spaceAction, setSpaceAction] = useState<{ mode: 'copy' | 'delete'; bookmark: Bookmark; sourceId: string } | null>(null)
   const [editMode, setEditMode] = useState(false)
   const [openGroup, setOpenGroup] = useState<{ id: string; rect: DOMRect } | null>(null)
@@ -77,6 +79,11 @@ export default function Home() {
     }
     store.toggleDock(id)
     showToast(pinned ? '已从 Dock 移除，书签仍保留在原位置' : '已添加到 Dock')
+  }
+
+  const openMoveBookmark = (id: string) => {
+    if (state.partitions.length < 2) { showToast('没有其他空间，请先创建'); return }
+    setMovingBookmark(id)
   }
 
   const openSpaceAction = (id: string, mode: 'copy' | 'delete') => {
@@ -221,7 +228,7 @@ export default function Home() {
     [activePartition]
   )
 
-  // 切分区 / 退出编辑模式时清空勾选
+  // 切空间 / 退出编辑模式时清空勾选
   useEffect(() => {
     setSelected(new Set())
     setOpenGroup(null)
@@ -236,7 +243,7 @@ export default function Home() {
     return () => { document.body.style.cursor = '' }
   }, [drag])
 
-  // 键盘：←/→ 切换分区，/ 聚焦搜索
+  // 键盘：←/→ 切换空间，/ 聚焦搜索
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
@@ -270,10 +277,10 @@ export default function Home() {
     if (!prompt) return null
     switch (prompt.kind) {
       case 'add-partition':
-        return { title: '新建分区', defaultValue: '', placeholder: '例如：办公、休闲、学习', onConfirm: (v: string) => store.addPartition(v) }
+        return { title: '新建空间', defaultValue: '', placeholder: '例如：办公、休闲、学习', onConfirm: (v: string) => store.addPartition(v) }
       case 'rename-partition': {
         const p = state.partitions.find((x) => x.id === prompt.id)
-        return { title: '重命名分区', defaultValue: p?.name ?? '', onConfirm: (v: string) => store.renamePartition(prompt.id, v) }
+        return { title: '重命名空间', defaultValue: p?.name ?? '', onConfirm: (v: string) => store.renamePartition(prompt.id, v) }
       }
       case 'add-group':
         return { title: '新建文件夹', defaultValue: '', placeholder: '例如：开发工具', onConfirm: (v: string) => store.addGroup(v) }
@@ -346,8 +353,8 @@ export default function Home() {
           const p = state.partitions.find((x) => x.id === id)
           if (p) {
             setConfirm({
-              title: `删除分区「${p.name}」？`,
-              description: '分区内的所有书签和文件夹会一起删除，此操作不可撤销。',
+              title: `删除空间「${p.name}」？`,
+              description: '空间内的所有书签和文件夹会一起删除，此操作不可撤销。',
               icon: (
                 <div className="grid h-14 w-14 place-items-center rounded-2xl bg-amber-500/20 text-amber-300">
                   <Layers size={26} />
@@ -390,7 +397,7 @@ export default function Home() {
 
       {/* 主区域：整页固定一屏高，桌面列表在内容超宽时横向滚动 */}
       <main
-        className="flex h-screen w-full flex-col pl-3 pr-[68px] sm:pl-6 sm:pr-24"
+        className="flex h-screen w-full flex-col pl-3 pr-[96px] sm:pl-6 sm:pr-[112px]"
         onClickCapture={(e) => {
           // 文件夹面板打开时，点桌面空白处关闭（点图标/按钮/输入框不打扰；拖拽落点不触发）
           if (!openGroup || dragState.suppressClick) return
@@ -419,7 +426,7 @@ export default function Home() {
             dockItems.length ? 'pb-24' : 'pb-4'
           }`}
         >
-          {/* 切分区时重挂载播放入场过渡 */}
+          {/* 切空间时重挂载播放入场过渡 */}
           <div key={activePartition.id} className="partition-enter h-full min-w-full">
             <DesktopGrid
               items={activePartition.items}
@@ -442,12 +449,16 @@ export default function Home() {
                   })
                 }
               }}
-              onCopyBookmark={(id) => openSpaceAction(id, 'copy')}
+              onMoveBookmark={openMoveBookmark}
+        onCopyBookmark={(id) => openSpaceAction(id, 'copy')}
               onDeleteBookmark={(item) => openSpaceAction(item.bookmark.id, 'delete')}
               onToggleDock={toggleDockBookmark}
               onOpenGroup={(id, rect) => setOpenGroup({ id, rect })}
               onRenameGroup={(id) => setPrompt({ kind: 'rename-group', id })}
-              onMoveGroup={() => setPicker({ kind: 'partition' })}
+              onMoveGroup={(id) => {
+                if (state.partitions.length < 2) { showToast('没有其他空间，请先创建'); return }
+                setMovingGroup(id)
+              }}
               onDissolveGroup={(id) => {
                 const group = activePartition.items.find((it) => it.kind === 'group' && it.group.id === id)
                 if (group?.kind === 'group') setConfirm({ title: `解除卡片「${group.group.name}」？`, description: '卡片会被删除，其中的书签会释放到当前桌面。', action: () => store.dissolveGroup(id) })
@@ -475,7 +486,7 @@ export default function Home() {
         </div>
       </main>
 
-      <Dock onEdit={editBookmark} onDelete={(id) => openSpaceAction(id, 'delete')} onCopy={(id) => openSpaceAction(id, 'copy')} items={dockItems} editMode={editMode} iconPx={iconPx} onRemove={toggleDockBookmark} />
+      <Dock onMove={openMoveBookmark} onEdit={editBookmark} onDelete={(id) => openSpaceAction(id, 'delete')} onCopy={(id) => openSpaceAction(id, 'copy')} items={dockItems} editMode={editMode} iconPx={iconPx} onRemove={toggleDockBookmark} />
 
       {/* 批量整理操作条 */}
       {editMode && selected.size > 0 && (
@@ -492,7 +503,7 @@ export default function Home() {
               className="rounded-full px-3 py-1.5 text-[13px] text-white hover:bg-white/15"
               onClick={() => setPicker({ kind: 'partition' })}
             >
-              移到分区
+              移到空间
             </button>
           )}
           <button
@@ -569,6 +580,7 @@ export default function Home() {
           const found = store.findBookmark(bid)
           if (found) setBookmarkForm({ open: true, editing: { groupId: gid, bookmark: found.bookmark } })
         }}
+        onMoveBookmark={openMoveBookmark}
         onCopyBookmark={(id) => openSpaceAction(id, 'copy')}
         onDeleteBookmark={(id) => openSpaceAction(id, 'delete')}
         onToggleDock={toggleDockBookmark}
@@ -595,6 +607,29 @@ export default function Home() {
         }}
       />
 
+      <OptionPickerDialog
+        open={movingGroup !== null}
+        title="移动卡片到其他空间"
+        options={state.partitions.filter((p) => p.id !== activePartition.id).map((p) => ({ id: p.id, label: p.name }))}
+        onPick={(id) => {
+          if (movingGroup) store.moveGroupToPartition(movingGroup, id)
+          setMovingGroup(null)
+          setOpenGroup(null)
+          showToast('卡片已移动，目标空间的重复书签已合并到卡片内')
+        }}
+        onClose={() => setMovingGroup(null)}
+      />
+      <OptionPickerDialog
+        open={movingBookmark !== null}
+        title="移动到其他空间"
+        options={state.partitions.filter((p) => p.id !== activePartition.id).map((p) => ({ id: p.id, label: p.name }))}
+        onPick={(id) => {
+          if (movingBookmark) store.moveBookmarkToPartition(movingBookmark, id)
+          setMovingBookmark(null)
+          showToast('已移动到所选空间')
+        }}
+        onClose={() => setMovingBookmark(null)}
+      />
       {spaceAction && (
         <BookmarkSpaceDialog
           bookmark={spaceAction.bookmark}
@@ -635,7 +670,7 @@ export default function Home() {
       />
       <OptionPickerDialog
         open={picker?.kind === 'partition'}
-        title={`把 ${selected.size} 个书签移到分区`}
+        title={`把 ${selected.size} 个书签移到空间`}
         options={state.partitions
           .filter((p) => p.id !== activePartition.id)
           .map((p) => ({ id: p.id, label: p.name }))}
@@ -643,7 +678,7 @@ export default function Home() {
           store.batchMoveToPartition(selectedIds, pid)
           setSelected(new Set())
           const p = state.partitions.find((x) => x.id === pid)
-          showToast(`已移到「${p?.name ?? '分区'}」`)
+          showToast(`已移到「${p?.name ?? '空间'}」`)
         }}
         onClose={() => setPicker(null)}
       />

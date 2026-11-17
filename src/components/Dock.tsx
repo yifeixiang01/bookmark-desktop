@@ -8,17 +8,18 @@ interface Props {
   iconPx: number
   onEdit: (id: string) => void
   onDelete: (id: string) => void
+  onMove: (id: string) => void
   onCopy: (id: string) => void
   onRemove: (id: string) => void
 }
 
 /** 底部 Dock 栏：固定最高频的书签（华为桌面式：无底板，图标直接落在壁纸上） */
-export function Dock({ items, editMode, iconPx, onRemove, onEdit, onDelete, onCopy }: Props) {
+export function Dock({ items, editMode, iconPx, onRemove, onEdit, onDelete, onCopy, onMove }: Props) {
   if (!items.length) return null
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-end gap-3 sm:gap-4 px-2 py-1">
       {items.map((b) => (
-        <BookmarkContextMenu pinned onToggleDock={() => onRemove(b.id)} key={b.id} onEdit={() => onEdit(b.id)} onDelete={() => onDelete(b.id)} onCopy={() => onCopy(b.id)}>
+        <BookmarkContextMenu onMove={() => onMove(b.id)} pinned onToggleDock={() => onRemove(b.id)} key={b.id} onEdit={() => onEdit(b.id)} onDelete={() => onDelete(b.id)} onCopy={() => onCopy(b.id)}>
         <div className="relative group">
           <a
             href={b.url}

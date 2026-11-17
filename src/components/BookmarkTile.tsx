@@ -13,6 +13,7 @@ interface Props {
   iconPx: number
   enterDelay: number
   onToggleSelect: () => void
+  onMove: () => void
   onCopy: () => void
   onEdit: () => void
   onDelete: () => void
@@ -22,7 +23,7 @@ interface Props {
 /** 桌面独立书签图标：直接落在壁纸上，名称在下方（手机桌面式） */
 export function BookmarkTile({
   bookmark, editMode, pinned, selected, iconPx, enterDelay,
-  onToggleSelect, onEdit, onDelete, onToggleDock, onCopy,
+  onToggleSelect, onEdit, onDelete, onToggleDock, onCopy, onMove,
 }: Props) {
   const tip = useHoverTip()
 
@@ -45,7 +46,7 @@ export function BookmarkTile({
   )
 
   return (
-    <BookmarkContextMenu pinned={pinned} onToggleDock={onToggleDock} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
+    <BookmarkContextMenu onMove={onMove} pinned={pinned} onToggleDock={onToggleDock} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
     <div
       className="tile-enter relative flex w-20 flex-col items-center gap-1.5"
       style={{ animationDelay: `${enterDelay}ms` }}

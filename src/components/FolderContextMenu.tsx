@@ -7,7 +7,7 @@ export function FolderContextMenu({ children, onDelete, onMove, onEdit, onDissol
     <ContextMenuTrigger asChild onContextMenu={(e) => e.stopPropagation()}>{children}</ContextMenuTrigger>
     <ContextMenuContent className="z-[90] min-w-44 rounded-xl bg-white/95 p-1.5 backdrop-blur-xl" onPointerDown={(e) => e.stopPropagation()}>
       <ContextMenuItem onSelect={onEdit}><Pencil />编辑当前卡片</ContextMenuItem>
-      <ContextMenuItem onSelect={onMove}><ArrowRight />移动到其他分区</ContextMenuItem>
+      <ContextMenuItem onSelect={onMove}><ArrowRight />移动到其他空间</ContextMenuItem>
       <ContextMenuItem onSelect={onDissolve}><Expand />解除卡片</ContextMenuItem>
       <ContextMenuItem variant="destructive" onSelect={onDelete}><Trash2 />删除卡片</ContextMenuItem>
     </ContextMenuContent>

@@ -1,4 +1,4 @@
-// 数据模型 —— 华为手机桌面式：分区 > 桌面项目（独立书签 | 文件夹）
+// 数据模型 —— 华为手机桌面式：空间 > 桌面项目（独立书签 | 文件夹）
 export interface Bookmark {
   id: string
   name: string

@@ -15,6 +15,7 @@ interface Props {
   onClose: () => void
   onRename: (groupId: string) => void
   onAddBookmark: (groupId: string) => void
+  onMoveBookmark: (bookmarkId: string) => void
   onCopyBookmark: (bookmarkId: string) => void
   onEditBookmark: (groupId: string, bookmarkId: string) => void
   onDeleteBookmark: (bookmarkId: string) => void
@@ -39,7 +40,7 @@ const PAGE_ROWS = 3
 /** 面板内的单个书签格：支持悬停提示、拖出到桌面、编辑角标 */
 function PanelBookmarkCell({
   bookmark: b, editMode, pinned, dragging, onPress,
-  onToggleDock, onMoveToDesktop, onEdit, onDelete, onCopy,
+  onToggleDock, onMoveToDesktop, onEdit, onDelete, onCopy, onMove,
 }: {
   bookmark: Bookmark
   editMode: boolean
@@ -48,13 +49,14 @@ function PanelBookmarkCell({
   onPress?: (e: React.PointerEvent, bookmarkId: string) => void
   onToggleDock: () => void
   onMoveToDesktop: () => void
+  onMove: () => void
   onCopy: () => void
   onEdit: () => void
   onDelete: () => void
 }) {
   const tip = useHoverTip()
   return (
-    <BookmarkContextMenu pinned={pinned} onToggleDock={onToggleDock} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
+    <BookmarkContextMenu onMove={onMove} pinned={pinned} onToggleDock={onToggleDock} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
     <div
       className={`relative flex flex-col items-center gap-1.5 ${dragging ? 'opacity-25' : ''}`}
       onPointerDown={(e) => {
@@ -135,7 +137,7 @@ type Cell = { kind: 'bm'; b: Bookmark } | { kind: 'add' }
  */
 export function FolderPanel({
   group, anchor, editMode, dockIds, dragBookmarkId, dropHighlight, panelRef, onPressBookmark,
-  onClose, onRename, onAddBookmark, onCopyBookmark, onEditBookmark, onDeleteBookmark, onToggleDock, onMoveToDesktop,
+  onClose, onRename, onAddBookmark, onMoveBookmark, onCopyBookmark, onEditBookmark, onDeleteBookmark, onToggleDock, onMoveToDesktop,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [activePage, setActivePage] = useState(0)
@@ -253,6 +255,7 @@ export function FolderPanel({
                     onPress={onPressBookmark}
                     onToggleDock={() => onToggleDock(cell.b.id)}
                     onMoveToDesktop={() => onMoveToDesktop(cell.b.id)}
+                    onMove={() => onMoveBookmark(cell.b.id)}
                     onCopy={() => onCopyBookmark(cell.b.id)}
                     onEdit={() => onEditBookmark(group.id, cell.b.id)}
                     onDelete={() => onDeleteBookmark(cell.b.id)}

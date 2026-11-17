@@ -14,7 +14,7 @@ interface Props {
   onClose: () => void
 }
 
-/** 通用选项弹窗：批量移动的「选择文件夹 / 选择分区」共用 */
+/** 通用选项弹窗：批量移动的「选择文件夹 / 选择空间」共用 */
 export function OptionPickerDialog({ open, title, options, allowNew, onPick, onPickNew, onClose }: Props) {
   const [newName, setNewName] = useState('')
   useEffect(() => {

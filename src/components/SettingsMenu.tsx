@@ -49,12 +49,12 @@ export function SettingsMenu({
         <DialogContent className="flex h-[min(640px,85dvh)] max-w-3xl flex-col gap-0 overflow-hidden bg-white/95 p-0 backdrop-blur-xl">
           <DialogHeader className="border-b px-6 py-5 text-left">
             <DialogTitle>设置</DialogTitle>
-            <DialogDescription>管理分区、背景、书签备份和账号。</DialogDescription>
+            <DialogDescription>管理空间、背景、书签备份和账号。</DialogDescription>
           </DialogHeader>
           <div className="flex min-h-0 flex-1">
             <nav aria-label="设置分类" className="w-24 shrink-0 space-y-1 overflow-y-auto border-r bg-slate-50/80 p-2 sm:w-40 sm:p-3">
               {[
-                ['partitions', '分区管理'], ['wallpaper', '背景'], ['data', '数据备份'], ['account', '账号'],
+                ['partitions', '空间管理'], ['wallpaper', '背景'], ['data', '数据备份'], ['account', '账号'],
               ].map(([id, label]) => (
                 <button key={id} type="button" aria-current={section === id ? 'page' : undefined} onClick={() => setSection(id)} className={`w-full rounded-xl px-2 py-3 text-left text-xs transition-colors sm:px-3 sm:text-sm ${section === id ? 'bg-slate-800 font-medium text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70'}`}>{label}</button>
               ))}
@@ -72,17 +72,17 @@ export function SettingsMenu({
             <button className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50" onClick={() => { setOpen(false); onLogout() }}><LogOut size={14} />退出登录</button>
           </section>
           <section hidden={section !== 'partitions'} className="space-y-3">
-            <h3 className="text-sm font-medium">分区管理</h3>
+            <h3 className="text-sm font-medium">空间管理</h3>
             <form className="flex gap-2" onSubmit={(e) => {
               e.preventDefault()
               if (!newPartition.trim()) return
               onAddPartition(newPartition.trim())
               setNewPartition('')
             }}>
-              <input aria-label="新分区名称" placeholder="输入新分区名称" className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm" value={newPartition} onChange={(e) => setNewPartition(e.target.value)} />
+              <input aria-label="新空间名称" placeholder="输入新空间名称" className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm" value={newPartition} onChange={(e) => setNewPartition(e.target.value)} />
               <button disabled={!newPartition.trim()} className="flex items-center gap-1 rounded-md bg-slate-800 px-3 text-sm text-white disabled:opacity-40"><Plus size={14} />新增</button>
             </form>
-            <p className="text-xs text-slate-500">拖动左侧手柄调整顺序，自动保存并同步到分区栏。</p>
+            <p className="text-xs text-slate-500">拖动左侧手柄调整顺序，自动保存并同步到空间栏。</p>
             <DndContext sensors={sensors} modifiers={[({ transform }) => ({ ...transform, x: 0 })]} collisionDetection={closestCenter} onDragEnd={({ active, over }) => {
               if (over && active.id !== over.id) onReorderPartitions(String(active.id), String(over.id))
             }}>
@@ -97,21 +97,21 @@ export function SettingsMenu({
                     onRenamePartition(p.id, renaming.name.trim())
                     setRenaming(null)
                   }}>
-                    <input aria-label="分区名称" autoFocus className="min-w-0 flex-1 rounded border px-2 text-sm" value={renaming.name} onChange={(e) => setRenaming({ id: p.id, name: e.target.value })} />
+                    <input aria-label="空间名称" autoFocus className="min-w-0 flex-1 rounded border px-2 text-sm" value={renaming.name} onChange={(e) => setRenaming({ id: p.id, name: e.target.value })} />
                     <button className="text-sm text-sky-700" disabled={!renaming.name.trim()}>保存</button>
                     <button type="button" className="text-sm text-slate-500" onClick={() => setRenaming(null)}>取消</button>
                   </form>
                 ) : <>
                   <span className="min-w-0 flex-1 truncate text-sm">{p.name}</span>
-                  <button type="button" aria-label={`修改分区 ${p.name}`} className="rounded p-2 hover:bg-slate-100" onClick={() => setRenaming({ id: p.id, name: p.name })}><Pencil size={14} /></button>
-                  <button type="button" aria-label={`删除分区 ${p.name}`} title={partitions.length <= 1 ? '至少保留一个分区' : '删除分区'} disabled={partitions.length <= 1} className="rounded p-2 text-red-600 hover:bg-red-50 disabled:opacity-30" onClick={() => { setOpen(false); onDeletePartition(p.id) }}><Trash2 size={14} /></button>
+                  <button type="button" aria-label={`修改空间 ${p.name}`} className="rounded p-2 hover:bg-slate-100" onClick={() => setRenaming({ id: p.id, name: p.name })}><Pencil size={14} /></button>
+                  <button type="button" aria-label={`删除空间 ${p.name}`} title={partitions.length <= 1 ? '至少保留一个空间' : '删除空间'} disabled={partitions.length <= 1} className="rounded p-2 text-red-600 hover:bg-red-50 disabled:opacity-30" onClick={() => { setOpen(false); onDeletePartition(p.id) }}><Trash2 size={14} /></button>
                 </>}
               </SortablePartitionRow>
             ))}
             </div>
             </SortableContext>
             </DndContext>
-            <p className="text-xs text-slate-500">删除分区会移除其中的书签和文件夹，其他分区的书签不受影响。</p>
+            <p className="text-xs text-slate-500">删除空间会移除其中的书签和文件夹，其他空间的书签不受影响。</p>
           </section>
           <section hidden={section !== 'wallpaper'} className="space-y-3">
           <h3 className="text-base font-semibold">背景</h3>

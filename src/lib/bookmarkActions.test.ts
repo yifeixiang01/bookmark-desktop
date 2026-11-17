@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AppState, Bookmark, Partition } from '@/types/bookmark'
-import { containingPartitions, copyBookmark, removeBookmarkCopies, syncBookmark } from './bookmarkActions'
+import { containingPartitions, copyBookmark, moveGroup, removeBookmarkCopies, syncBookmark } from './bookmarkActions'
 import { allBookmarks } from './store'
 
 const bookmark: Bookmark = { id: 'original', name: 'Example', url: 'https://example.com', icon: 'old.png', description: 'Old' }
@@ -15,6 +15,18 @@ function fixture(): AppState {
 }
 
 describe('cross-space bookmark actions', () => {
+  it('moves a whole card, replacing destination duplicates and removing stale Dock references', () => {
+    const state = fixture()
+    state.activePartitionId = 'b'
+    moveGroup(state, 'folder', 'a')
+    expect(state.partitions[1].items).toEqual([])
+    expect(state.partitions[1].dock).toEqual([])
+    expect(state.partitions[0].dock).toEqual([])
+    expect(state.partitions[0].items).toHaveLength(1)
+    expect(state.partitions[0].items[0].kind).toBe('group')
+    expect(allBookmarks(state.partitions[0]).map((b) => b.id)).toEqual(['imported'])
+    expect(state.activePartitionId).toBe('b')
+  })
   it('finds existing copies by ID or equivalent URL, including folder contents', () => {
     expect(containingPartitions(fixture(), bookmark).map((p) => p.id)).toEqual(['a', 'b'])
   })
