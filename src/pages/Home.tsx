@@ -465,8 +465,9 @@ export default function Home() {
         <div
           ref={desktopScrollRef}
           className={`no-scrollbar relative mt-[2vh] w-full min-h-0 flex-1 overflow-x-auto overflow-y-hidden ${
-            dockItems.length ? 'pb-24' : 'pb-4'
+            dockItems.length ? '' : 'pb-4'
           }`}
+          style={dockItems.length ? { paddingBottom: Math.round(iconPx * 1.35) + 48 } : undefined}
         >
           {/* 切空间时重挂载播放入场过渡 */}
           <div key={activePartition.id} className="partition-enter h-full min-w-full">

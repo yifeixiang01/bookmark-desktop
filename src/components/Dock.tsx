@@ -17,10 +17,11 @@ interface Props {
 export function Dock({ items, editMode, iconPx, onRemove, onEdit, onDelete, onCopy, onMove }: Props) {
   if (!items.length) return null
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-end gap-3 sm:gap-4 px-2 py-1">
+    <div className="no-scrollbar fixed bottom-0 left-1/2 z-20 max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-x-auto px-4 pb-5 pt-10">
+    <div className="flex w-max items-end gap-4 sm:gap-5">
       {items.map((b) => (
         <BookmarkContextMenu onMove={() => onMove(b.id)} pinned onToggleDock={() => onRemove(b.id)} key={b.id} onEdit={() => onEdit(b.id)} onDelete={() => onDelete(b.id)} onCopy={() => onCopy(b.id)}>
-        <div className="relative group">
+        <div className="relative group shrink-0">
           <a
             href={b.url}
             target="_blank"
@@ -28,7 +29,7 @@ export function Dock({ items, editMode, iconPx, onRemove, onEdit, onDelete, onCo
             title={b.name}
             className="block transition-transform hover:-translate-y-1.5 hover:scale-110"
           >
-            <FaviconImg url={b.url} name={b.name} customIcon={b.icon} size={Math.round(iconPx * 0.93)} className="shadow-lg shadow-black/25" />
+            <FaviconImg url={b.url} name={b.name} customIcon={b.icon} size={Math.round(iconPx * 1.35)} className="shadow-lg shadow-black/25" />
           </a>
           <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-black/70 px-2 py-0.5 text-[11px] text-white opacity-0 group-hover:opacity-100 transition-opacity">
             {b.name}
@@ -45,6 +46,7 @@ export function Dock({ items, editMode, iconPx, onRemove, onEdit, onDelete, onCo
         </div>
         </BookmarkContextMenu>
       ))}
+    </div>
     </div>
   )
 }
