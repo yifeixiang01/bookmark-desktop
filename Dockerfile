@@ -1,4 +1,4 @@
-# 书签桌面 — 全栈一体化镜像（前端静态资源 + Hono/tRPC 后端 + MySQL）
+# 书签桌面 — 全栈一体化镜像（前端静态资源 + Hono/tRPC 后端，连接 PostgreSQL）
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./

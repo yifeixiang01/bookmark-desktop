@@ -6,7 +6,7 @@
 
 - **前端**：React 19 + TypeScript + Vite + Tailwind CSS + shadcn/ui
 - **后端**：Hono + tRPC 11 + Drizzle ORM
-- **数据库**：MySQL 8（兼容 TiDB / MariaDB 10.5+）
+- **数据库**：PostgreSQL 17（兼容 Supabase）
 - **构建产物**：单进程一体化 —— `dist/boot.js` 同时托管前端静态资源与 API
 
 ## 部署到自己的服务器
@@ -14,7 +14,7 @@
 ### 前置要求
 
 - Node.js 20+
-- MySQL 8 数据库（自建或使用云数据库）
+- PostgreSQL 数据库（自建或使用 Supabase）
 
 ### 方式一：Node.js 直接运行
 
@@ -27,7 +27,7 @@ cp .env.example .env
 # 编辑 .env：必填 DATABASE_URL 和 APP_SECRET，详见文件内注释
 
 # 3. 创建数据库（仅需一次）
-#    mysql> CREATE DATABASE bookmark CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+#    createdb bookmark
 
 # 4. 初始化表结构（仅需一次，后续表结构变更时重跑）
 npm run db:push
@@ -47,14 +47,14 @@ docker build -t bookmark-desktop .
 docker run -d -p 3000:3000 --name bookmark bookmark-desktop
 
 # 3. 初始化表结构（仅需一次，在能连到数据库的机器上执行）
-DATABASE_URL="mysql://..." npx drizzle-kit push
+DATABASE_URL="postgresql://..." npx drizzle-kit push
 ```
 
 ### 环境变量
 
 | 变量 | 必填 | 说明 |
 | --- | --- | --- |
-| `DATABASE_URL` | ✅ | MySQL 连接串，如 `mysql://root:pass@127.0.0.1:3306/bookmark` |
+| `DATABASE_URL` | ✅ | PostgreSQL 连接串，如 `postgresql://postgres:pass@127.0.0.1:5432/bookmark` |
 | `APP_SECRET` | ✅ | 登录会话 JWT 签名密钥，用 `openssl rand -hex 32` 生成 |
 | `APP_ID` | 否 | 会话 clientId 占位，默认 `bookmark-desktop` |
 | `OWNER_UNION_ID` | 否 | 管理员账号，邮箱用户填 `email:你的邮箱` |
@@ -74,3 +74,9 @@ npm run build      # 构建前端 + 打包后端到 dist/
 npm start          # 生产模式启动
 npm run db:push    # 同步数据库表结构
 ```
+
+## 升级已有部署
+
+生产服务会在监听端口前执行增量数据库升级，补齐 `user_states.revision` 和浏览器扩展授权表。升级可重复执行，只添加字段和表，不覆盖已有书签与应用数据。Docker 镜像也包含该升级流程，无需另行安装 SQL 客户端。数据库账号需要创建表和修改表的权限；升级失败时服务不会启动，具体错误会写入部署日志。首次部署仍需先执行 `npm run db:push` 初始化基础表。
+
+如果旧部署登录后出现“云端数据加载失败”，且数据库日志报 `column "revision" does not exist`，可重新部署包含自动升级的新镜像；也可连接生产数据库手动执行 `db/extension-upgrade.sql` 后刷新页面。只升级本地数据库不会修改云端数据库。

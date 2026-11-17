@@ -2,7 +2,6 @@ import { beforeAll, afterAll, describe, it, expect, vi } from 'vitest'
 import postgres from 'postgres'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { randomBytes, createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import * as schema from '../db/schema'
 
 vi.hoisted(() => { process.env.APP_SECRET = 'integration-test-only-secret'; process.env.PUBLIC_APP_URL = 'https://bookmark.yifeixiang.com.cn' })
@@ -13,6 +12,7 @@ import { signSessionToken } from './kimi/session'
 import { Session } from '../contracts/constants'
 import { stateRouter } from './state-router'
 import { ensureState, findStateByUser } from './queries/user-states'
+import { upgradeSchema } from './queries/upgrade-schema'
 
 const url = process.env.TEST_DATABASE_URL
 const suite = url ? describe : describe.skip
@@ -32,7 +32,11 @@ suite('extension HTTP and state concurrency (isolated PostgreSQL schema)', () =>
     client = postgres(url!, { prepare: false, connection: { search_path: schemaName } })
     database = drizzle(client, { schema })
     await client.unsafe('CREATE TABLE users (id serial PRIMARY KEY, "unionId" varchar(255) NOT NULL UNIQUE, name varchar(255), email varchar(320), avatar text, "passwordHash" varchar(255), role varchar(16) NOT NULL DEFAULT \'user\', "createdAt" timestamptz NOT NULL DEFAULT now(), "updatedAt" timestamptz NOT NULL DEFAULT now(), "lastSignInAt" timestamptz NOT NULL DEFAULT now()); CREATE TABLE user_states (id serial PRIMARY KEY, "userId" integer NOT NULL UNIQUE, state jsonb NOT NULL, "updatedAt" timestamptz NOT NULL DEFAULT now());')
-    await client.begin(async tx => { await tx.unsafe(readFileSync(new URL('../db/extension-upgrade.sql', import.meta.url), 'utf8').replace(/^BEGIN;|^COMMIT;/gm, '')) })
+    await client.unsafe(`INSERT INTO users ("unionId") VALUES ('migration-preservation-test'); INSERT INTO user_states ("userId", state) VALUES (1, '{"preserved":true}');`)
+    await upgradeSchema()
+    await upgradeSchema()
+    const [preserved] = await client`SELECT state, revision FROM user_states WHERE "userId" = 1`
+    expect(preserved).toMatchObject({ state: { preserved: true }, revision: 0 })
     ;[user, otherUser] = await database.insert(schema.users).values([{ unionId: 'email:test@example.com', email: 'test@example.com' }, { unionId: 'email:other@example.com' }]).returning()
     cookie = `${Session.cookieName}=${await signSessionToken({ unionId: user.unionId, clientId: 'bookmark-desktop' })}`
   })
