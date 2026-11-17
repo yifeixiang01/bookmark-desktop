@@ -72,9 +72,10 @@ export function DesktopGrid(props: Props) {
   // 更高的屏幕向下取 2 的整数倍；空间不足 6 行时整个网格等比缩小（scale），而不是压缩行距
   const rows = Math.max(6, Math.floor(fitRows / 2) * 2)
   const scale = Math.min(1, availH / (rows * rowH))
-  const { placements, cols: usedCols } = layoutItems(items, rows)
+  const visibleCols = Math.max(2, Math.floor(availW / (colW * scale)))
+  const { placements, cols: usedCols } = layoutItems(items, rows, visibleCols)
   // 至少铺满一屏；尾部始终多留一列空位，便于拖放与新增
-  const minCols = Math.max(4, Math.floor(availW / (colW * scale)))
+  const minCols = visibleCols
   const cols = Math.max(usedCols + 1, minCols)
 
   // 回写几何信息给拖拽管理器（el 用内层网格：mx-auto 居中，rect 随滚动实时测量）
@@ -85,6 +86,7 @@ export function DesktopGrid(props: Props) {
         offsetX: 0,
         cols,
         rows,
+        visibleCols,
         colW,
         rowH,
         iconPx,
@@ -136,7 +138,7 @@ export function DesktopGrid(props: Props) {
     <div ref={ref} className="h-full min-w-full p-2">
       {/* 外层尺寸 = 缩放后的可视尺寸；内层网格以自然尺寸渲染再整体缩放 */}
       <div
-        className="mx-auto"
+        className="ml-0"
         style={{ width: Math.ceil(cols * colW * scale), height: Math.ceil(rows * rowH * scale) }}
       >
         <div

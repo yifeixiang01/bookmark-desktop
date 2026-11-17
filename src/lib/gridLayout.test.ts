@@ -1,6 +1,23 @@
 import { expect, it } from 'vitest'
 import type { DesktopItem } from '@/types/bookmark'
-import { previewInsert } from './gridLayout'
+import { layoutItems, previewInsert } from './gridLayout'
+
+it('reflows offscreen saved positions into available visible cells without changing saved data', () => {
+  const items = [icon('a'), icon('b')]
+  items[0].pos = { x: 8, y: 0 }
+  items[1].pos = { x: 0, y: 0 }
+  const { placements } = layoutItems(items, 6, 4)
+  expect(placements.get('a')).toEqual({ x: 0, y: 1 })
+  expect(placements.get('b')).toEqual({ x: 0, y: 0 })
+  expect(items[0].pos).toEqual({ x: 8, y: 0 })
+})
+
+it('keeps cards within the visible width and allows overflow when the screen is full', () => {
+  const items = Array.from({ length: 6 }, (_, i) => icon(String(i)))
+  expect(layoutItems(items, 2, 2).cols).toBe(3)
+  const card: DesktopItem = { id: 'card', kind: 'group', pos: { x: 3, y: 0 }, group: { id: 'g', name: 'g', bookmarks: [] } }
+  expect(layoutItems([card], 6, 4).placements.get('card')).toEqual({ x: 0, y: 0 })
+})
 
 const icon = (id: string): DesktopItem => ({ id, kind: 'bookmark', bookmark: { id, name: id, url: 'https://example.com' } })
 

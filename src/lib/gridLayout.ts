@@ -13,6 +13,7 @@ export interface Span {
 }
 
 export function spanOf(item: DesktopItem): Span {
+  if (item.kind === 'app') return { w: 3, h: 3 }
   if (item.kind !== 'group') return { w: 1, h: 1 }
   return { w: 2, h: 2 }
 }
@@ -33,6 +34,7 @@ export function dragVisualOf(
   iconPx: number
 ): { w: number; h: number; ratio: number } {
   if (!item || item.kind === 'bookmark') return { w: iconPx, h: iconPx, ratio: 0.22 }
+  if (item.kind === 'app') return { w: 3 * (iconPx + 40) - 16, h: 3 * (iconPx + 56) - 16, ratio: 0.08 }
   const t = folderTilePx(iconPx)
   return { w: t, h: t, ratio: 0.15 }
 }
@@ -174,7 +176,8 @@ export function previewInsert(
  */
 export function layoutItems(
   items: DesktopItem[],
-  rows: number
+  rows: number,
+  visibleCols = Infinity
 ): { placements: Map<string, GridPos>; cols: number } {
   const placements = new Map<string, GridPos>()
   const pending: DesktopItem[] = []
@@ -182,7 +185,7 @@ export function layoutItems(
   for (const it of items) {
     const span = spanOf(it)
     const p = it.pos
-    if (p && p.x >= 0 && p.y >= 0 && p.y + span.h <= rows && !rectTaken(items, placements, it.id, p.x, p.y, span)) {
+    if (p && p.x >= 0 && p.x + span.w <= visibleCols && p.y >= 0 && p.y + span.h <= rows && !rectTaken(items, placements, it.id, p.x, p.y, span)) {
       placements.set(it.id, { x: p.x, y: p.y })
     } else {
       pending.push(it)

@@ -268,7 +268,7 @@ export function useBookmarkStore() {
   // ---------- 拖拽 ----------
   /** 自由落位：把桌面项目放到指定格；压到其他项目时优先互换位置，否则为被压项另找空位（rows 为固定行数，列向右不限） */
   const placeItemAt = useCallback(
-    (itemId: string, pos: GridPos, rows: number) => update((d) => {
+    (itemId: string, pos: GridPos, rows: number, visibleCols = Infinity) => update((d) => {
       const p = activeOf(d)
       if (!p) return
       const item = p.items.find((i) => i.id === itemId)
@@ -279,7 +279,7 @@ export function useBookmarkStore() {
 
       // 先按当前布局固化所有项目的坐标：没有 pos 的项目由布局引擎自动填充空位，
       // 若不固化，移动任意项目后它们会重新流式补位（后面的图标跟着移动）
-      const { placements: current } = layoutItems(p.items, rows)
+      const { placements: current } = layoutItems(p.items, rows, visibleCols)
       for (const it of p.items) {
         const cp = current.get(it.id)
         if (cp) it.pos = { ...cp }

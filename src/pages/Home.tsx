@@ -180,7 +180,7 @@ export default function Home() {
     onPlace: (source, cell) => {
       const rows = gridRef.current?.rows ?? 4
       if (source.kind === 'desktop-item') {
-        store.placeItemAt(source.itemId, cell, rows)
+        store.placeItemAt(source.itemId, cell, rows, gridRef.current?.visibleCols)
       } else {
         store.moveBookmarkToDesktop(source.bookmarkId, cell)
         showToast('已移出到桌面')
