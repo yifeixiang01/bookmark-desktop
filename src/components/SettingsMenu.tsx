@@ -73,6 +73,15 @@ export function SettingsMenu({
           </section>
           <section hidden={section !== 'partitions'} className="space-y-3">
             <h3 className="text-sm font-medium">分区管理</h3>
+            <form className="flex gap-2" onSubmit={(e) => {
+              e.preventDefault()
+              if (!newPartition.trim()) return
+              onAddPartition(newPartition.trim())
+              setNewPartition('')
+            }}>
+              <input aria-label="新分区名称" placeholder="输入新分区名称" className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm" value={newPartition} onChange={(e) => setNewPartition(e.target.value)} />
+              <button disabled={!newPartition.trim()} className="flex items-center gap-1 rounded-md bg-slate-800 px-3 text-sm text-white disabled:opacity-40"><Plus size={14} />新增</button>
+            </form>
             <p className="text-xs text-slate-500">拖动左侧手柄调整顺序，自动保存并同步到分区栏。</p>
             <DndContext sensors={sensors} modifiers={[({ transform }) => ({ ...transform, x: 0 })]} collisionDetection={closestCenter} onDragEnd={({ active, over }) => {
               if (over && active.id !== over.id) onReorderPartitions(String(active.id), String(over.id))
@@ -102,15 +111,6 @@ export function SettingsMenu({
             </div>
             </SortableContext>
             </DndContext>
-            <form className="flex gap-2" onSubmit={(e) => {
-              e.preventDefault()
-              if (!newPartition.trim()) return
-              onAddPartition(newPartition.trim())
-              setNewPartition('')
-            }}>
-              <input aria-label="新分区名称" placeholder="输入新分区名称" className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm" value={newPartition} onChange={(e) => setNewPartition(e.target.value)} />
-              <button disabled={!newPartition.trim()} className="flex items-center gap-1 rounded-md bg-slate-800 px-3 text-sm text-white disabled:opacity-40"><Plus size={14} />新增</button>
-            </form>
             <p className="text-xs text-slate-500">删除分区会移除其中的书签和文件夹，其他分区的书签不受影响。</p>
           </section>
           <section hidden={section !== 'wallpaper'} className="space-y-3">

@@ -18,7 +18,7 @@ export function Dock({ items, editMode, iconPx, onRemove, onEdit, onDelete, onCo
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-end gap-3 sm:gap-4 px-2 py-1">
       {items.map((b) => (
-        <BookmarkContextMenu key={b.id} onEdit={() => onEdit(b.id)} onDelete={() => onDelete(b.id)} onCopy={() => onCopy(b.id)}>
+        <BookmarkContextMenu pinned onToggleDock={() => onRemove(b.id)} key={b.id} onEdit={() => onEdit(b.id)} onDelete={() => onDelete(b.id)} onCopy={() => onCopy(b.id)}>
         <div className="relative group">
           <a
             href={b.url}

@@ -69,6 +69,16 @@ export default function Home() {
     if (found) setBookmarkForm({ open: true, editing: { groupId: found.group?.id ?? null, bookmark: found.bookmark } })
   }
 
+  const toggleDockBookmark = (id: string) => {
+    const pinned = activePartition.dock.includes(id)
+    if (!pinned && activePartition.dock.length >= 12) {
+      showToast('Dock 最多可固定 12 个书签，请先移除部分图标')
+      return
+    }
+    store.toggleDock(id)
+    showToast(pinned ? '已从 Dock 移除，书签仍保留在原位置' : '已添加到 Dock')
+  }
+
   const openSpaceAction = (id: string, mode: 'copy' | 'delete') => {
     if (mode === 'copy' && state.partitions.length < 2) {
       showToast('没有其他空间，请先创建')
@@ -433,7 +443,7 @@ export default function Home() {
               }}
               onCopyBookmark={(id) => openSpaceAction(id, 'copy')}
               onDeleteBookmark={(item) => openSpaceAction(item.bookmark.id, 'delete')}
-              onToggleDock={store.toggleDock}
+              onToggleDock={toggleDockBookmark}
               onOpenGroup={(id, rect) => setOpenGroup({ id, rect })}
               onRenameGroup={(id) => setPrompt({ kind: 'rename-group', id })}
               onDeleteGroup={(g) => {
@@ -459,7 +469,7 @@ export default function Home() {
         </div>
       </main>
 
-      <Dock onEdit={editBookmark} onDelete={(id) => openSpaceAction(id, 'delete')} onCopy={(id) => openSpaceAction(id, 'copy')} items={dockItems} editMode={editMode} iconPx={iconPx} onRemove={(id) => store.toggleDock(id)} />
+      <Dock onEdit={editBookmark} onDelete={(id) => openSpaceAction(id, 'delete')} onCopy={(id) => openSpaceAction(id, 'copy')} items={dockItems} editMode={editMode} iconPx={iconPx} onRemove={toggleDockBookmark} />
 
       {/* 批量整理操作条 */}
       {editMode && selected.size > 0 && (
@@ -555,7 +565,7 @@ export default function Home() {
         }}
         onCopyBookmark={(id) => openSpaceAction(id, 'copy')}
         onDeleteBookmark={(id) => openSpaceAction(id, 'delete')}
-        onToggleDock={store.toggleDock}
+        onToggleDock={toggleDockBookmark}
         onMoveToDesktop={(bid) => {
           store.moveBookmarkToDesktop(bid)
           showToast('已移出到桌面')

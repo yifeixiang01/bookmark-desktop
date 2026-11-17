@@ -54,7 +54,7 @@ function PanelBookmarkCell({
 }) {
   const tip = useHoverTip()
   return (
-    <BookmarkContextMenu onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
+    <BookmarkContextMenu pinned={pinned} onToggleDock={onToggleDock} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
     <div
       className={`relative flex flex-col items-center gap-1.5 ${dragging ? 'opacity-25' : ''}`}
       onPointerDown={(e) => {

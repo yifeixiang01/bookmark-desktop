@@ -45,7 +45,7 @@ export function BookmarkTile({
   )
 
   return (
-    <BookmarkContextMenu onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
+    <BookmarkContextMenu pinned={pinned} onToggleDock={onToggleDock} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
     <div
       className="tile-enter relative flex w-20 flex-col items-center gap-1.5"
       style={{ animationDelay: `${enterDelay}ms` }}

@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react'
-import { Copy, Pencil, Trash2 } from 'lucide-react'
+import { Copy, Pencil, Pin, PinOff, Trash2 } from 'lucide-react'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from './ui/context-menu'
 
-export function BookmarkContextMenu({ children, onEdit, onDelete, onCopy }: {
+export function BookmarkContextMenu({ children, onEdit, onDelete, onCopy, pinned, onToggleDock }: {
   children: ReactNode
   onEdit: () => void
   onDelete: () => void
   onCopy: () => void
+  pinned: boolean
+  onToggleDock: () => void
 }) {
   return (
     <ContextMenu>
@@ -15,6 +17,10 @@ export function BookmarkContextMenu({ children, onEdit, onDelete, onCopy }: {
         <ContextMenuItem onSelect={onEdit}><Pencil />修改</ContextMenuItem>
         <ContextMenuItem variant="destructive" onSelect={onDelete}><Trash2 />删除</ContextMenuItem>
         <ContextMenuItem onSelect={onCopy}><Copy />复制到其它空间</ContextMenuItem>
+        <ContextMenuItem onSelect={onToggleDock}>
+          {pinned ? <PinOff /> : <Pin />}
+          {pinned ? '从 Dock 移除' : '添加到 Dock'}
+        </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   )
