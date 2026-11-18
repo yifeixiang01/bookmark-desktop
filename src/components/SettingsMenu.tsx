@@ -4,8 +4,8 @@ import { SortablePartitionRow } from './SortablePartitionRow'
 import type { AppType, Partition } from '@/types/bookmark'
 import { useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
-import { Settings, Plus, Trash2, Upload, Download, FileUp, Pencil, Check, LogOut, Cloud, CloudUpload } from 'lucide-react'
-import { WALLPAPERS } from './Wallpaper'
+import { Settings, Plus, Trash2, Upload, Download, FileUp, Pencil, LogOut, Cloud, CloudUpload } from 'lucide-react'
+import { WallpaperPicker } from './WallpaperPicker'
 import { APP_CATALOG } from '@/apps'
 import { AppPreview } from '@/apps/AppPreview'
 import { AppIcon } from '@/apps/AppIcon'
@@ -144,30 +144,7 @@ export function SettingsMenu({
           <section hidden={section !== 'wallpaper'} className="space-y-3">
           <h3 className="text-base font-semibold">壁纸背景</h3>
           <p className="pb-2 text-xs font-medium text-slate-500">内置壁纸</p>
-          <div className="grid grid-cols-3 gap-2">
-            {WALLPAPERS.map((w) => (
-              <button
-                key={w.id}
-                type="button"
-                aria-label={`使用壁纸背景：${w.name}`}
-                aria-pressed={wallpaper === w.id}
-                onClick={() => onWallpaper(w.id)}
-                className={`relative aspect-video w-full overflow-hidden rounded-lg border-2 transition-[border-color,transform,box-shadow] hover:-translate-y-0.5 hover:shadow-sm ${
-                  wallpaper === w.id ? 'border-slate-800' : 'border-transparent hover:border-slate-300'
-                }`}
-                style={{
-                  background: `linear-gradient(180deg,rgba(10,24,32,0.18),rgba(10,24,32,0.05) 48%,rgba(7,18,24,0.38)), url("${w.image}") center / cover, ${w.fallback}`,
-                }}
-                title={w.name}
-              >
-                {wallpaper === w.id && (
-                  <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-slate-800 text-white">
-                    <Check size={10} />
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+          <WallpaperPicker value={wallpaper} onChange={onWallpaper} />
           <p className="pt-3 pb-1 text-xs font-medium text-slate-500">自定义图片 URL</p>
           <form
             onSubmit={(e) => {
