@@ -99,7 +99,7 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, preview = fals
   )
 
   return (
-    <FolderContextMenu onDelete={onDelete} onMove={() => onMove?.()} onEdit={onRename} onDissolve={() => onDissolve?.()}><div
+    <FolderContextMenu showDissolve={group.bookmarks.length > 0} onDelete={onDelete} onMove={() => onMove?.()} onEdit={onRename} onDissolve={() => onDissolve?.()}><div
       ref={rootRef}
       className={`${preview ? '' : 'tile-enter'} relative flex flex-col items-center gap-1.5`}
       style={{ width: tileSize, animationDelay: `${Math.min(enterDelay, 160)}ms` }}
