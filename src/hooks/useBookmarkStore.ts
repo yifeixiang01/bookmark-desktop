@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import type { AppState, Bookmark, GridPos, Group, IconSize, Partition, AppType } from '@/types/bookmark'
 import { allBookmarks, findBookmark, loadState, saveState, uid } from '@/lib/store'
-import { previewInsert, layoutItems, spanOf } from '@/lib/gridLayout'
+import { previewInsert, layoutItems, removeGroupPreservingLayout, spanOf } from '@/lib/gridLayout'
 import { hostHue } from '@/lib/favicon'
 import { folderNameFor } from '@/lib/categorize'
 import { copyBookmark, moveGroup, removeBookmarkCopies, syncBookmark } from '@/lib/bookmarkActions'
@@ -140,10 +140,10 @@ export function useBookmarkStore() {
   )
 
   const deleteGroup = useCallback(
-    (groupId: string) => update((d) => {
+    (groupId: string, rows = 6, pageCols?: number) => update((d) => {
       const p = activeOf(d)
       if (!p) return
-      p.items = p.items.filter((x) => !(x.kind === 'group' && x.group.id === groupId))
+      p.items = removeGroupPreservingLayout(p.items, groupId, rows, pageCols)
     }),
     [update]
   )

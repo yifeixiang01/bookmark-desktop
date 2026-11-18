@@ -1,7 +1,21 @@
 import { expect, it } from 'vitest'
 import type { DesktopItem } from '@/types/bookmark'
-import { layoutItems, previewInsert, rectsOverlap, spanOf } from './gridLayout'
+import { layoutItems, previewInsert, rectsOverlap, removeGroupPreservingLayout, spanOf } from './gridLayout'
 import { createPomodoro } from '@/apps/pomodoro/model'
+
+it('keeps automatically placed cards and icons stationary after deleting an earlier card', () => {
+  const items: DesktopItem[] = [
+    { id: 'first', kind: 'group', group: { id: 'g1', name: 'First', bookmarks: [] } },
+    { id: 'second', kind: 'group', group: { id: 'g2', name: 'Second', bookmarks: [] } },
+    icon('bookmark'),
+  ]
+  const before = layoutItems(items, 6, 4).placements
+  const remaining = removeGroupPreservingLayout(items, 'g1', 6, 4)
+  const after = layoutItems(remaining, 6, 4).placements
+  expect(remaining).toHaveLength(2)
+  for (const item of remaining) expect(after.get(item.id)).toEqual(before.get(item.id))
+  expect(items[1].pos).toBeUndefined()
+})
 
 it('preserves saved positions beyond the viewport instead of moving them to the first empty cell', () => {
   const items = [icon('a'), icon('b')]

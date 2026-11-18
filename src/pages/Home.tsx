@@ -475,14 +475,14 @@ export default function Home() {
               }}
               onDeleteGroup={(g) => {
                 if (g.bookmarks.length === 0) {
-                  store.deleteGroup(g.id)
+                  store.deleteGroup(g.id, gridRef.current?.rows, gridRef.current?.pageCols)
                   return
                 }
                 setConfirm({
                   title: `删除文件夹「${g.name}」？`,
                   description: `里面的 ${g.bookmarks.length} 个书签会一起删除，此操作不可撤销。`,
                   icon: folderIcon(g),
-                  action: () => store.deleteGroup(g.id),
+                  action: () => store.deleteGroup(g.id, gridRef.current?.rows, gridRef.current?.pageCols),
                 })
               }}
               onAddClick={createFolder}

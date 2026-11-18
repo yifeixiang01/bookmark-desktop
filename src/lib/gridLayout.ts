@@ -211,3 +211,12 @@ export function layoutItems(
   }
   return { placements, cols }
 }
+
+/** Persist the rendered layout before removing an item so automatic cells stay put. */
+export function removeGroupPreservingLayout(items: DesktopItem[], groupId: string, rows: number, pageCols?: number): DesktopItem[] {
+  const { placements } = layoutItems(items, rows, pageCols)
+  return items.filter((it) => it.kind !== 'group' || it.group.id !== groupId).map((it) => ({
+    ...it,
+    pos: { ...placements.get(it.id)! },
+  }))
+}
