@@ -131,7 +131,7 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, preview = fals
           if (e.key === 'Escape') nameEditor.onCancel()
         }}
         onBlur={nameEditor.onConfirm}
-        className="w-full rounded-md border border-white/60 bg-slate-900/70 px-2 py-1 text-center text-xs text-white outline-none focus:ring-2 focus:ring-sky-300"
+        className="w-full rounded-md border border-white/60 bg-slate-900/70 px-2 py-1 text-center text-xs text-white outline-none focus:border-sky-300 focus:ring-1 focus:ring-sky-300/70"
       /> : <span
         className="max-w-full cursor-pointer truncate text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]"
         title={group.name}
