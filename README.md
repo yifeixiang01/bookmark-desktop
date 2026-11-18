@@ -80,3 +80,12 @@ npm run db:push    # 同步数据库表结构
 生产服务会在监听端口前执行增量数据库升级，补齐 `user_states.revision` 和浏览器扩展授权表。升级可重复执行，只添加字段和表，不覆盖已有书签与应用数据。Docker 镜像也包含该升级流程，无需另行安装 SQL 客户端。数据库账号需要创建表和修改表的权限；升级失败时服务不会启动，具体错误会写入部署日志。首次部署仍需先执行 `npm run db:push` 初始化基础表。
 
 如果旧部署登录后出现“云端数据加载失败”，且数据库日志报 `column "revision" does not exist`，可重新部署包含自动升级的新镜像；也可连接生产数据库手动执行 `db/extension-upgrade.sql` 后刷新页面。只升级本地数据库不会修改云端数据库。
+
+## 移动端 PWA
+
+生产构建包含 PWA 清单、独立窗口启动配置、安装图标和 Service Worker。部署到 HTTPS 域名后，安装的应用默认打开 `/mobile`。本地可使用 `npm run build` 和 `npm run preview` 在 localhost 验证；开发模式不会注册 Service Worker。
+
+- Android Chrome / Edge：打开移动端管理菜单，点击“安装到主屏幕”（浏览器满足安装条件时显示），也可以通过浏览器菜单安装。
+- iPhone / iPad：使用 Safari 打开网站，点“分享 → 添加到主屏幕”。
+- Service Worker 只缓存公开的断网提示页，不缓存登录页面、用户书签或 API 响应。离线打开时显示重连页面；读取书签与云端同步仍需联网。
+- 更新通过浏览器正常的 Service Worker 生命周期生效，不强制刷新正在编辑的页面。代理或 CDN 请对 `/sw.js` 和 HTML 使用重新验证策略，避免长期缓存。

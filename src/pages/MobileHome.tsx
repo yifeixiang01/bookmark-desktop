@@ -14,6 +14,7 @@ import type { Bookmark } from '@/types/bookmark'
 import { FaviconImg } from '@/components/FaviconImg'
 import { BookmarkFormDialog } from '@/components/BookmarkFormDialog'
 import { NamePromptDialog } from '@/components/NamePromptDialog'
+import { PwaInstall } from '@/components/PwaInstall'
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -222,6 +223,7 @@ export default function MobileHome() {
       </MobileSheet>
 
       <MobileSheet open={accountOpen} onOpenChange={setAccountOpen} title="账号与数据" description={user.email ?? user.name ?? '已登录'}>
+        <PwaInstall />
         <button className="mobile-action-row" onClick={() => { setAccountOpen(false); setAddOpen(true) }}><span className="mobile-action-icon"><Plus size={20} /></span><span><strong>添加收藏</strong><small>添加书签、文件夹或空间</small></span><ChevronRight size={18} /></button>
         <button className="mobile-action-row" onClick={() => { setAccountOpen(false); setQuery(''); setEditMode((value) => !value) }}><span className="mobile-action-icon"><Settings2 size={20} /></span><span><strong>{editMode ? '完成整理' : '整理书签'}</strong><small>调整图标顺序、编辑或删除书签</small></span><ChevronRight size={18} /></button>
         <div className="mobile-account-status"><Cloud size={19} /><div><strong>{cloud.error ? '云端同步需要留意' : cloud.syncing ? '正在保存修改' : '收藏随行，多端共享'}</strong><p>{cloud.error ? '本地修改已保留，请先导出备份' : '手机与电脑使用同一份书签数据'}</p></div></div>
