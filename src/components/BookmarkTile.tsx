@@ -47,7 +47,7 @@ export function BookmarkTile({
     <BookmarkContextMenu onMove={onMove} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
     <div
       className="tile-enter relative flex w-20 flex-col items-center gap-1.5"
-      style={{ animationDelay: `${enterDelay}ms` }}
+      style={{ animationDelay: `${Math.min(enterDelay, 160)}ms` }}
       onClickCapture={suppressClick}
       {...tip.bind}
     >

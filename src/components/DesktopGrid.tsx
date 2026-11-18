@@ -221,7 +221,7 @@ export function DesktopGrid(props: Props) {
               key={item.id}
               onPointerDown={locked || item.kind === 'app' ? undefined : (e) => props.onPress(e, { kind: 'desktop-item', itemId: item.id })}
               className={`absolute flex items-start justify-center ${
-                noSlide ? '' : 'transition-[left,top] duration-200 ease-out'
+                !noSlide && drag ? 'transition-[left,top] duration-200 ease-out' : ''
               } ${locked || item.kind === 'app' ? '' : 'cursor-grab'} ${editMode ? 'jiggle' : ''} ${isSource ? 'opacity-25' : ''} ${
                 isMergeTarget ? 'z-10 scale-110 drop-shadow-[0_0_14px_rgba(255,255,255,0.55)]' : ''
               }`}

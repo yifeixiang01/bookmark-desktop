@@ -102,7 +102,7 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, preview = fals
     <FolderContextMenu onDelete={onDelete} onMove={() => onMove?.()} onEdit={onRename} onDissolve={() => onDissolve?.()}><div
       ref={rootRef}
       className={`${preview ? '' : 'tile-enter'} relative flex flex-col items-center gap-1.5`}
-      style={{ width: tileSize, animationDelay: `${enterDelay}ms` }}
+      style={{ width: tileSize, animationDelay: `${Math.min(enterDelay, 160)}ms` }}
       onClickCapture={suppressClick}
       {...tip.bind}
       onClick={(e) => { if ((e.target as HTMLElement).closest('input')) return; if (editMode && onToggleSelect && !(e.target as HTMLElement).closest('button')) onToggleSelect(); else if (!editMode) openWithAnchor() }}
