@@ -81,7 +81,11 @@ export default function App() {
     }
     void start()
     const changed = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
-      if (area === 'local' && changes.session?.newValue) void refresh(latest.current.page)
+      if (area !== 'local' || !changes.session) return
+      if (!changes.session.newValue) {
+        setAccount(null); setSpaces([]); setSelected([]); setNeedsLogin(true); setLoading(false)
+      } else if (captureMode) void refresh(latest.current.page)
+      else void refreshAccount()
     }
     chrome.storage.onChanged.addListener(changed)
     return () => { disposed = true; chrome.storage.onChanged.removeListener(changed) }
@@ -126,9 +130,9 @@ export default function App() {
     {loading ? <div className="empty">正在加载账号信息…</div> : needsLogin ? <section className="login"><p>登录 Dandan 后，收藏会同步到你的账号。</p><button className="primary" disabled={busy} onClick={login}>{busy ? '请在打开的网站完成授权…' : '登录并授权'}</button><a href={`${SITE}/login`} target="_blank" rel="noreferrer">没有账号？前往官网注册 ↗</a></section> : account ? <section className="account-card">
       <div className="avatar">{(account.name || account.email || 'D').slice(0, 1).toUpperCase()}</div>
       <strong>{account.name || 'Dandan 用户'}</strong><span>{account.email || '已登录账号'}</span>
-      <div className="account-stats"><div><b>{spaces.length}</b><small>个空间</small></div><div><b>已连接</b><small>同步状态</small></div></div>
+      <div className="account-stats"><div><b>{spaces.length}</b><small>个空间</small></div><div><b>已授权</b><small>账号状态</small></div></div>
       <button className="secondary" disabled={busy} onClick={logout}>退出登录</button>
-    </section> : null}
+    </section> : <button className="secondary" onClick={refreshAccount}>重新连接</button>}
     {error && <p className="error" role="alert">{error}</p>}
   </main>
   return <main>
