@@ -347,6 +347,11 @@ export default function Home() {
   return (
     <div className="h-screen select-none overflow-hidden font-sans">
       <Wallpaper id={state.wallpaper} />
+      {!editMode && state.locked && (
+        <span role="status" className="fixed right-[104px] top-4 z-20 rounded-full border border-white/15 bg-black/25 px-3 py-2 text-[13px] text-white/90 backdrop-blur-md">
+          布局已锁定
+        </span>
+      )}
 
       {/* 编辑模式下隐藏设置入口，换成显眼的「完成」按钮 */}
       {editMode && (
@@ -433,7 +438,6 @@ export default function Home() {
           <SearchBar partitions={state.partitions} engine={state.searchEngine} onEngineChange={store.setSearchEngine} />
           <p className="mt-3 text-sm text-white/70 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
             {activePartition.name} · {totalBookmarks} 个网站
-            {state.locked && <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-xs">布局已锁定</span>}
             {editMode && <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-xs">编辑模式 · 点图标可勾选</span>}
           </p>
         </div>
