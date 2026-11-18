@@ -1,48 +1,61 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Folder,
-  LogOut,
-  Menu,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-  X,
+  ArrowDownToLine, ArrowLeft, ArrowRight, Bookmark as BookmarkIcon,
+  ChevronRight, Cloud, Folder, FolderPlus, Layers3, Loader2,
+  LogOut, Pencil, Plus, Search, Settings2, Trash2, X,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useBookmarkStore } from '@/hooks/useBookmarkStore'
 import { useCloudSync } from '@/hooks/useCloudSync'
 import { mobileItems } from '@/lib/mobileLayout'
-import { allBookmarks, exportJSON } from '@/lib/store'
+import { searchBookmarks } from '@/lib/searchBookmarks'
+import { exportJSON } from '@/lib/store'
 import type { Bookmark } from '@/types/bookmark'
 import { FaviconImg } from '@/components/FaviconImg'
 import { BookmarkFormDialog } from '@/components/BookmarkFormDialog'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { NamePromptDialog } from '@/components/NamePromptDialog'
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import './MobileHome.css'
 
 type BookmarkEditor = {
   open: boolean
   defaultGroupId?: string | null
   editing?: { groupId: string | null; bookmark: Bookmark } | null
 }
+type NamePrompt = { title: string; value?: string; save: (name: string) => void }
+type DeletePrompt = { name: string; description: string; action: () => void }
+
+function MobileSheet({ open, onOpenChange, title, description, children }: {
+  open: boolean; onOpenChange: (open: boolean) => void
+  title: string; description: string; children: ReactNode
+}) {
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="mobile-sheet">
+        <DrawerHeader className="mobile-sheet-header">
+          <DrawerTitle className="pr-12 text-left text-xl text-[#193f39]">{title}</DrawerTitle>
+          <DrawerDescription className="mt-1 text-left">{description}</DrawerDescription>
+          <DrawerClose className="mobile-icon-button absolute right-5 top-7" aria-label="关闭面板"><X size={20} /></DrawerClose>
+        </DrawerHeader>
+        <div className="mobile-sheet-body">{children}</div>
+      </DrawerContent>
+    </Drawer>
+  )
+}
 
 function LoadingScreen({ retry, failed }: { retry: () => void; failed: boolean }) {
   return (
-    <main className="grid min-h-dvh place-items-center bg-slate-100 px-6 text-center">
-      <div>
-        {failed ? (
-          <>
-            <p className="text-sm text-slate-600">数据加载失败，请检查本地服务或网络。</p>
-            <button onClick={retry} className="mt-4 rounded-md bg-slate-900 px-4 py-2 text-sm text-white">重试</button>
-          </>
-        ) : (
-          <>
-            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-slate-300 border-t-slate-800" />
-            <p className="mt-3 text-sm text-slate-500">正在读取书签...</p>
-          </>
-        )}
+    <main className="mobile-home grid min-h-dvh place-items-center px-6 text-center">
+      <div className="mobile-loading">
+        <span className="mobile-brand-mark mx-auto"><BookmarkIcon size={25} /></span>
+        <h1 className="mt-5 text-xl font-semibold">书签桌面</h1>
+        <p className="mt-2 text-sm text-slate-500">{failed ? '暂时无法读取书签，请检查网络后重试' : '正在为你准备空间…'}</p>
+        {failed ? <button onClick={retry} className="mobile-primary mt-5 px-7">重新加载</button>
+          : <Loader2 className="mx-auto mt-5 animate-spin text-[#367467]" size={20} aria-label="正在加载" />}
       </div>
     </main>
   )
@@ -58,222 +71,173 @@ export default function MobileHome() {
   const [openGroupId, setOpenGroupId] = useState<string | null>(null)
   const [editor, setEditor] = useState<BookmarkEditor>({ open: false })
   const [accountOpen, setAccountOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
+  const [namePrompt, setNamePrompt] = useState<NamePrompt | null>(null)
+  const [deletePrompt, setDeletePrompt] = useState<DeletePrompt | null>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
 
   const groups = useMemo(
     () => activePartition.items.flatMap((item) => item.kind === 'group' ? [item.group] : []),
     [activePartition.items],
   )
   const orderedItems = useMemo(() => mobileItems(activePartition), [activePartition])
-  const openGroup = useMemo(
-    () => groups.find((group) => group.id === openGroupId) ?? null,
-    [groups, openGroupId],
+  const openGroup = groups.find((group) => group.id === openGroupId) ?? null
+  const normalizedQuery = query.trim()
+  const searchResults = useMemo(
+    () => searchBookmarks([activePartition], query),
+    [activePartition, query],
   )
-  const normalizedQuery = query.trim().toLocaleLowerCase()
-  const searchResults = useMemo(() => {
-    if (!normalizedQuery) return []
-    return allBookmarks(activePartition).filter((bookmark) =>
-      `${bookmark.name} ${bookmark.url} ${bookmark.description ?? ''}`.toLocaleLowerCase().includes(normalizedQuery)
-    )
-  }, [activePartition, normalizedQuery])
 
   if (authLoading || !user || !cloud.hydrated) {
     return <LoadingScreen retry={cloud.retryLoad} failed={cloud.loadError} />
   }
 
   const editBookmark = (bookmark: Bookmark, groupId: string | null) => {
+    setOpenGroupId(null)
     setEditor({ open: true, editing: { bookmark, groupId } })
   }
-
+  const deleteBookmark = (bookmark: Bookmark) => {
+    setOpenGroupId(null)
+    setDeletePrompt({ name: bookmark.name, description: '此书签将从当前空间移除。', action: () => store.deleteBookmark(bookmark.id) })
+  }
   const saveBookmark = (groupId: string | null, bookmark: Bookmark, newGroupName?: string) => {
     if (newGroupName) store.saveBookmarkToNewGroup(newGroupName, bookmark)
     else store.saveBookmark(groupId, bookmark)
   }
+  const switchPartition = (id: string) => {
+    if (id === activePartition.id) return
+    setOpenGroupId(null)
+    setEditMode(false)
+    setQuery('')
+    store.setActivePartition(id)
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }
+  const reorderButtons = (id: string, index: number, edit?: () => void) => (
+    <div className="mobile-reorder">
+      <button aria-label="向前移动" disabled={index === 0} onClick={() => store.reorderMobileItem(id, -1)}><ArrowLeft size={16} /></button>
+      {edit && <button aria-label="编辑书签" onClick={edit}><Pencil size={15} /></button>}
+      <button aria-label="向后移动" disabled={index === orderedItems.length - 1} onClick={() => store.reorderMobileItem(id, 1)}><ArrowRight size={16} /></button>
+    </div>
+  )
 
   return (
-    <main className="min-h-dvh bg-[#f5f6f8] pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-slate-900">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur">
-        <div className="flex h-10 items-center justify-between">
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase text-slate-400">书签桌面</p>
-            <h1 className="truncate text-lg font-semibold">{activePartition.name}</h1>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              aria-label={editMode ? '完成排序' : '整理书签'}
-              onClick={() => setEditMode((value) => !value)}
-              className="grid h-10 w-10 place-items-center rounded-md text-slate-600 active:bg-slate-100"
-            >
-              {editMode ? <Check size={20} /> : <Pencil size={19} />}
-            </button>
-            <button
-              type="button"
-              aria-label="账号菜单"
-              onClick={() => setAccountOpen(true)}
-              className="grid h-10 w-10 place-items-center rounded-md text-slate-600 active:bg-slate-100"
-            >
-              <Menu size={21} />
-            </button>
-          </div>
-        </div>
-
-        <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">
+    <main className="mobile-home">
+      <header className="mobile-header">
+        <div className="mobile-header-inner">
+        <nav className="mobile-spaces no-scrollbar" aria-label="书签空间">
           {state.partitions.map((partition) => (
-            <button
-              key={partition.id}
-              type="button"
-              onClick={() => store.setActivePartition(partition.id)}
-              className={`shrink-0 rounded-md px-3 py-2 text-sm ${
-                partition.id === activePartition.id
-                  ? 'bg-slate-900 font-medium text-white'
-                  : 'bg-slate-100 text-slate-600'
-              }`}
-            >
+            <button key={partition.id} type="button" aria-current={partition.id === activePartition.id ? 'page' : undefined} onClick={(event) => { switchPartition(partition.id); event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }) }}>
               {partition.name}
             </button>
           ))}
+          <button type="button" aria-label="新建空间" className="mobile-space-add" onClick={() => setNamePrompt({ title: '新建空间', save: store.addPartition })}><Plus size={18} /></button>
+        </nav>
         </div>
-
-        <label className="mt-3 flex h-11 items-center gap-2 rounded-md bg-slate-100 px-3 text-slate-400 focus-within:ring-2 focus-within:ring-slate-300">
-          <Search size={18} />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="搜索当前空间"
-            className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
-          />
-          {query && <button type="button" aria-label="清空搜索" onClick={() => setQuery('')}><X size={17} /></button>}
-        </label>
+        <div className="mobile-search-row">
+          <div className="mobile-search">
+            <Search size={18} aria-hidden="true" />
+            <input ref={searchRef} type="search" aria-label="搜索书签" enterKeyHint="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索当前空间的书签" />
+            {query && <button type="button" aria-label="清空搜索" onClick={() => { setQuery(''); searchRef.current?.focus() }}><X size={18} /></button>}
+          </div>
+          <button type="button" aria-label="空间管理与账号" onClick={() => setAccountOpen(true)} className="mobile-icon-button"><Settings2 size={19} /></button>
+        </div>
       </header>
+      <div className="mobile-content">
+        {cloud.error && <div role="alert" className="mobile-error">{cloud.error}<button onClick={() => exportJSON(state)}>导出本地备份<ArrowDownToLine size={14} /></button></div>}
 
-      {cloud.error && (
-        <div role="alert" className="mx-4 mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          {cloud.error}
-        </div>
-      )}
-
-      <section className="px-4 py-5">
-        {normalizedQuery ? (
-          <div className="divide-y divide-slate-200 border-y border-slate-200 bg-white">
-            {searchResults.map((bookmark) => (
-              <a key={bookmark.id} href={bookmark.url} target="_blank" rel="noreferrer" className="flex min-h-16 items-center gap-3 px-2 py-3 active:bg-slate-50">
-                <FaviconImg url={bookmark.url} name={bookmark.name} customIcon={bookmark.icon} size={40} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{bookmark.name}</span>
-                  <span className="mt-0.5 block truncate text-xs text-slate-400">{bookmark.url}</span>
-                </span>
-              </a>
-            ))}
-            {!searchResults.length && <p className="py-12 text-center text-sm text-slate-400">没有匹配的书签</p>}
-          </div>
-        ) : (
-          <>
-            <div className="mb-4 flex items-end justify-between">
-              <div>
-                <h2 className="text-sm font-semibold">全部项目</h2>
-                <p className="mt-0.5 text-xs text-slate-400">{allBookmarks(activePartition).length} 个书签</p>
-              </div>
-              {editMode && <p className="text-xs text-slate-500">用箭头调整手机端顺序</p>}
-            </div>
-
-            <div className="grid grid-cols-4 gap-x-3 gap-y-6">
-              {orderedItems.map((item, index) => (
-                <div key={item.id} className="relative min-w-0 text-center">
-                  {item.kind === 'bookmark' ? (
-                    <>
-                      <a href={item.bookmark.url} target="_blank" rel="noreferrer" className="mx-auto grid h-14 w-14 place-items-center active:scale-95">
-                        <FaviconImg url={item.bookmark.url} name={item.bookmark.name} customIcon={item.bookmark.icon} size={48} />
-                      </a>
-                      <p className="mt-2 truncate text-xs text-slate-700">{item.bookmark.name}</p>
-                      {editMode && (
-                        <>
-                        <button aria-label="删除书签" onClick={() => { if (window.confirm(`删除「${item.bookmark.name}」？`)) store.deleteBookmark(item.bookmark.id) }} className="absolute right-0 top-0 grid h-7 w-7 place-items-center rounded-full bg-white text-red-500 shadow"><Trash2 size={13} /></button>
-                        <div className="mt-1 flex justify-center gap-1">
-                          <button aria-label="向前移动" disabled={index === 0} onClick={() => store.reorderMobileItem(item.id, -1)} className="grid h-7 w-7 place-items-center rounded bg-white text-slate-500 shadow-sm disabled:opacity-25"><ArrowLeft size={14} /></button>
-                          <button aria-label="编辑书签" onClick={() => editBookmark(item.bookmark, null)} className="grid h-7 w-7 place-items-center rounded bg-white text-slate-500 shadow-sm"><Pencil size={13} /></button>
-                          <button aria-label="向后移动" disabled={index === orderedItems.length - 1} onClick={() => store.reorderMobileItem(item.id, 1)} className="grid h-7 w-7 place-items-center rounded bg-white text-slate-500 shadow-sm disabled:opacity-25"><ArrowRight size={14} /></button>
-                        </div>
-                        </>
-                      )}
-                    </>
-                  ) : item.kind === 'group' ? (
-                    <>
-                      <button type="button" onClick={() => setOpenGroupId(item.group.id)} className="mx-auto grid h-14 w-14 place-items-center rounded-md bg-slate-200 text-slate-600 active:scale-95">
-                        <Folder size={27} fill="currentColor" className="opacity-80" />
-                        <span className="absolute mt-8 rounded bg-white px-1 text-[10px] text-slate-500 shadow-sm">{item.group.bookmarks.length}</span>
-                      </button>
-                      <p className="mt-2 truncate text-xs text-slate-700">{item.group.name}</p>
-                      {editMode && (
-                        <div className="mt-1 flex justify-center gap-1">
-                          <button aria-label="向前移动" disabled={index === 0} onClick={() => store.reorderMobileItem(item.id, -1)} className="grid h-7 w-7 place-items-center rounded bg-white text-slate-500 shadow-sm disabled:opacity-25"><ArrowLeft size={14} /></button>
-                          <button aria-label="向后移动" disabled={index === orderedItems.length - 1} onClick={() => store.reorderMobileItem(item.id, 1)} className="grid h-7 w-7 place-items-center rounded bg-white text-slate-500 shadow-sm disabled:opacity-25"><ArrowRight size={14} /></button>
-                        </div>
-                      )}
-                    </>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-            {!orderedItems.length && <p className="py-16 text-center text-sm text-slate-400">这个空间还没有书签</p>}
-          </>
-        )}
-      </section>
-
-      <button
-        type="button"
-        onClick={() => setEditor({ open: true, defaultGroupId: null })}
-        aria-label="添加书签"
-        className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-5 z-20 grid h-14 w-14 place-items-center rounded-full bg-slate-900 text-white shadow-lg active:scale-95"
-      >
-        <Plus size={24} />
-      </button>
-
-      <Dialog open={!!openGroup} onOpenChange={(open) => !open && setOpenGroupId(null)}>
-        <DialogContent className="max-h-[82dvh] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-md p-0">
-          <DialogHeader className="border-b px-5 py-4 text-left">
-            <DialogTitle>{openGroup?.name}</DialogTitle>
-            <DialogDescription>{openGroup?.bookmarks.length ?? 0} 个书签</DialogDescription>
-          </DialogHeader>
-          <div className="divide-y px-3 pb-3">
-            {openGroup?.bookmarks.map((bookmark) => (
-              <div key={bookmark.id} className="flex min-h-16 items-center gap-3 py-2">
-                <a href={bookmark.url} target="_blank" rel="noreferrer" className="flex min-w-0 flex-1 items-center gap-3">
-                  <FaviconImg url={bookmark.url} name={bookmark.name} customIcon={bookmark.icon} size={40} />
-                  <span className="min-w-0 flex-1 text-left">
-                    <span className="block truncate text-sm font-medium">{bookmark.name}</span>
-                    <span className="block truncate text-xs text-slate-400">{bookmark.url}</span>
-                  </span>
+        <section className="mobile-library" aria-label={normalizedQuery ? '搜索结果' : '空间项目'}>
+          {editMode && <div className="mobile-edit-bar"><span>整理书签</span><button onClick={() => setEditMode(false)}>完成</button></div>}
+          {normalizedQuery ? (
+            <div className="mobile-grid" key={`search-${activePartition.id}`}>
+              {searchResults.map(({ bookmark, spaceId }) => (
+                <a key={`${spaceId}-${bookmark.id}`} href={bookmark.url} target="_blank" rel="noreferrer" className="mobile-tile mobile-tile-link">
+                  <span className="mobile-tile-icon"><FaviconImg url={bookmark.url} name={bookmark.name} customIcon={bookmark.icon} size={46} /></span>
+                  <span className="mobile-tile-name">{bookmark.name}</span>
                 </a>
-                <button aria-label="编辑书签" onClick={() => editBookmark(bookmark, openGroup.id)} className="grid h-10 w-10 place-items-center text-slate-400"><Pencil size={17} /></button>
-                <button aria-label="删除书签" onClick={() => { if (window.confirm(`删除「${bookmark.name}」？`)) store.deleteBookmark(bookmark.id) }} className="grid h-10 w-10 place-items-center text-red-500"><Trash2 size={17} /></button>
+              ))}
+              {!searchResults.length && <div className="mobile-empty col-span-full"><Search size={28} /><h3>没有找到相关书签</h3><p>试试其他名称、网址或描述关键词</p><button onClick={() => { setQuery(''); searchRef.current?.focus() }}>清空搜索</button></div>}
+            </div>
+          ) : (
+            <>
+              {editMode && <p role="status" className="mobile-edit-hint">点击箭头调整顺序，点击铅笔编辑内容</p>}
+              <div className={`mobile-grid ${editMode ? 'is-editing' : ''}`} key={activePartition.id}>
+                {orderedItems.map((item, index) => (
+                  <div key={item.id} className="mobile-tile" style={{ animationDelay: `${Math.min(index, 12) * 25}ms` }}>
+                    {item.kind === 'bookmark' ? (
+                      <>
+                        {editMode ? (
+                          <button type="button" aria-label={`编辑${item.bookmark.name}`} onClick={() => editBookmark(item.bookmark, null)} className="mobile-tile-link"><span className="mobile-tile-icon"><FaviconImg url={item.bookmark.url} name={item.bookmark.name} customIcon={item.bookmark.icon} size={46} /></span><span className="mobile-tile-name">{item.bookmark.name}</span></button>
+                        ) : (
+                          <a href={item.bookmark.url} target="_blank" rel="noreferrer" className="mobile-tile-link"><span className="mobile-tile-icon"><FaviconImg url={item.bookmark.url} name={item.bookmark.name} customIcon={item.bookmark.icon} size={46} /></span><span className="mobile-tile-name">{item.bookmark.name}</span></a>
+                        )}
+                        {editMode && <><button aria-label={`删除${item.bookmark.name}`} onClick={() => deleteBookmark(item.bookmark)} className="mobile-delete"><X size={13} /></button>{reorderButtons(item.id, index)}</>}
+                      </>
+                    ) : item.kind === 'group' ? (
+                      <>
+                        <button type="button" onClick={() => setOpenGroupId(item.group.id)} className="mobile-tile-link" aria-label={`打开文件夹${item.group.name}，${item.group.bookmarks.length}个书签`}>
+                          <span className="mobile-folder-icon">
+                            {item.group.bookmarks.length ? item.group.bookmarks.slice(0, 4).map((bookmark) => <FaviconImg key={bookmark.id} url={bookmark.url} name={bookmark.name} customIcon={bookmark.icon} size={21} className="!rounded-md" />) : <Folder size={27} className="col-span-2 row-span-2 text-[#719185]" />}
+                            <span className="mobile-folder-count">{item.group.bookmarks.length}</span>
+                          </span>
+                          <span className="mobile-tile-name">{item.group.name}</span>
+                        </button>
+                        {editMode && reorderButtons(item.id, index)}
+                      </>
+                    ) : null}
+                  </div>
+                ))}
+                {!!orderedItems.length && !editMode && <button type="button" className="mobile-tile mobile-tile-link mobile-add-tile" onClick={() => setAddOpen(true)}><span className="mobile-tile-icon"><Plus size={24} strokeWidth={1.5} /></span><span className="mobile-tile-name">添加收藏</span></button>}
               </div>
-            ))}
-            <button onClick={() => { setEditor({ open: true, defaultGroupId: openGroup?.id }); setOpenGroupId(null) }} className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-md border border-dashed text-sm text-slate-500"><Plus size={17} />添加到文件夹</button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              {!orderedItems.length && <div className="mobile-empty"><BookmarkIcon size={30} /><h3>留一点空间，给新的灵感</h3><p>把喜欢的网站收进来，随时随地打开</p><button onClick={() => setEditor({ open: true, defaultGroupId: null })}><Plus size={16} />添加第一个书签</button></div>}
+            </>
+          )}
+        </section>
+      </div>
 
-      <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
-        <DialogContent className="max-w-[calc(100%-1.5rem)] rounded-md p-0">
-          <DialogHeader className="border-b px-5 py-4 text-left">
-            <DialogTitle>账号与数据</DialogTitle>
-            <DialogDescription>{user.email ?? user.name ?? '已登录'}</DialogDescription>
-          </DialogHeader>
-          <div className="p-3">
-            <button onClick={() => exportJSON(state)} className="flex h-12 w-full items-center px-3 text-left text-sm text-slate-700 active:bg-slate-50">导出书签备份</button>
-            <button onClick={logout} className="flex h-12 w-full items-center gap-2 px-3 text-left text-sm text-red-600 active:bg-red-50"><LogOut size={17} />退出登录</button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <MobileSheet open={!!openGroup} onOpenChange={(open) => !open && setOpenGroupId(null)} title={openGroup?.name ?? '文件夹'} description={`${openGroup?.bookmarks.length ?? 0} 个书签 · 下滑关闭`}>
+        <div className="mobile-folder-actions">
+          <button onClick={() => { if (!openGroup) return; const group = openGroup; setOpenGroupId(null); setNamePrompt({ title: '重命名文件夹', value: group.name, save: (name) => store.renameGroup(group.id, name) }) }}><Pencil size={15} />重命名</button>
+          <button className="text-red-500" onClick={() => { if (!openGroup) return; const group = openGroup; setOpenGroupId(null); setDeletePrompt({ name: group.name, description: `文件夹及其中的 ${group.bookmarks.length} 个书签将从当前空间移除。`, action: () => store.deleteGroup(group.id) }) }}><Trash2 size={15} />删除文件夹</button>
+        </div>
+        <div className="mobile-folder-list">
+          {openGroup?.bookmarks.map((bookmark) => (
+            <div key={bookmark.id} className="mobile-folder-row">
+              <a href={bookmark.url} target="_blank" rel="noreferrer" className="flex min-w-0 flex-1 items-center gap-3">
+                <FaviconImg url={bookmark.url} name={bookmark.name} customIcon={bookmark.icon} size={40} />
+                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{bookmark.name}</span><span className="mt-1 block truncate text-xs text-[#839088]">{bookmark.url}</span></span>
+              </a>
+              <button aria-label={`编辑${bookmark.name}`} onClick={() => editBookmark(bookmark, openGroup.id)} className="mobile-icon-button"><Pencil size={16} /></button>
+              <button aria-label={`删除${bookmark.name}`} onClick={() => deleteBookmark(bookmark)} className="mobile-icon-button text-red-500"><Trash2 size={16} /></button>
+            </div>
+          ))}
+          {!openGroup?.bookmarks.length && <p className="py-8 text-center text-sm text-[#839088]">文件夹还是空的，添加一个喜欢的网站吧</p>}
+        </div>
+        <button onClick={() => { setEditor({ open: true, defaultGroupId: openGroup?.id }); setOpenGroupId(null) }} className="mobile-primary mt-4 w-full"><Plus size={18} />添加到文件夹</button>
+      </MobileSheet>
 
-      <BookmarkFormDialog
-        open={editor.open}
-        groups={groups}
-        editing={editor.editing}
-        defaultGroupId={editor.defaultGroupId}
-        onClose={() => setEditor({ open: false })}
-        onSave={saveBookmark}
-      />
+      <MobileSheet open={addOpen} onOpenChange={setAddOpen} title="收藏新的灵感" description={`添加到「${activePartition.name}」`}>
+        <button className="mobile-action-row" onClick={() => { setAddOpen(false); setEditor({ open: true, defaultGroupId: null }) }}><span className="mobile-action-icon"><BookmarkIcon size={21} /></span><span><strong>添加书签</strong><small>保存网址，自动获取网站信息</small></span><ChevronRight size={18} /></button>
+        <button className="mobile-action-row" onClick={() => { setAddOpen(false); setNamePrompt({ title: '新建文件夹', save: store.addGroup }) }}><span className="mobile-action-icon"><FolderPlus size={21} /></span><span><strong>新建文件夹</strong><small>把相似的收藏放在一起</small></span><ChevronRight size={18} /></button>
+        <button className="mobile-action-row" onClick={() => { setAddOpen(false); setNamePrompt({ title: '新建空间', save: store.addPartition }) }}><span className="mobile-action-icon"><Layers3 size={21} /></span><span><strong>新建空间</strong><small>为工作、生活划分独立空间</small></span><ChevronRight size={18} /></button>
+      </MobileSheet>
+
+      <MobileSheet open={accountOpen} onOpenChange={setAccountOpen} title="账号与数据" description={user.email ?? user.name ?? '已登录'}>
+        <button className="mobile-action-row" onClick={() => { setAccountOpen(false); setAddOpen(true) }}><span className="mobile-action-icon"><Plus size={20} /></span><span><strong>添加收藏</strong><small>添加书签、文件夹或空间</small></span><ChevronRight size={18} /></button>
+        <button className="mobile-action-row" onClick={() => { setAccountOpen(false); setQuery(''); setEditMode((value) => !value) }}><span className="mobile-action-icon"><Settings2 size={20} /></span><span><strong>{editMode ? '完成整理' : '整理书签'}</strong><small>调整图标顺序、编辑或删除书签</small></span><ChevronRight size={18} /></button>
+        <div className="mobile-account-status"><Cloud size={19} /><div><strong>{cloud.error ? '云端同步需要留意' : cloud.syncing ? '正在保存修改' : '收藏随行，多端共享'}</strong><p>{cloud.error ? '本地修改已保留，请先导出备份' : '手机与电脑使用同一份书签数据'}</p></div></div>
+        <button className="mobile-action-row" onClick={() => exportJSON(state)}><span className="mobile-action-icon"><ArrowDownToLine size={20} /></span><span><strong>导出书签备份</strong><small>下载完整的 JSON 数据文件</small></span><ChevronRight size={18} /></button>
+        <button className="mobile-action-row" onClick={() => { setAccountOpen(false); setNamePrompt({ title: '重命名空间', value: activePartition.name, save: (name) => store.renamePartition(activePartition.id, name) }) }}><span className="mobile-action-icon"><Pencil size={20} /></span><span><strong>重命名当前空间</strong><small className="max-w-48 truncate">{activePartition.name}</small></span><ChevronRight size={18} /></button>
+        <button onClick={logout} className="mobile-logout"><LogOut size={17} />退出登录</button>
+      </MobileSheet>
+
+      <AlertDialog open={!!deletePrompt} onOpenChange={(open) => !open && setDeletePrompt(null)}>
+        <AlertDialogContent className="max-w-[calc(100%-2.5rem)] rounded-3xl p-6 sm:max-w-sm">
+          <AlertDialogHeader><span className="mb-2 grid h-12 w-12 place-items-center self-center rounded-2xl bg-red-50 text-red-500"><Trash2 size={23} /></span><AlertDialogTitle className="break-all text-center">删除「{deletePrompt?.name}」？</AlertDialogTitle><AlertDialogDescription className="text-center">{deletePrompt?.description}此操作无法撤销。</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter className="mt-2 grid grid-cols-2"><AlertDialogCancel className="m-0 h-11 rounded-xl">取消</AlertDialogCancel><AlertDialogAction className="h-11 rounded-xl bg-red-500 hover:bg-red-600" onClick={() => { deletePrompt?.action(); setDeletePrompt(null) }}>确认删除</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <NamePromptDialog mobile open={!!namePrompt} title={namePrompt?.title ?? ''} defaultValue={namePrompt?.value} placeholder="输入一个名字" onClose={() => setNamePrompt(null)} onConfirm={(name) => namePrompt?.save(name)} />
+      <BookmarkFormDialog mobile open={editor.open} groups={groups} editing={editor.editing} defaultGroupId={editor.defaultGroupId} onClose={() => setEditor({ open: false })} onSave={saveBookmark} />
     </main>
   )
 }

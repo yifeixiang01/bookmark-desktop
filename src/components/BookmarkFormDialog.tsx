@@ -11,6 +11,7 @@ import { trpc } from '@/providers/trpc'
 import { FaviconImg } from './FaviconImg'
 
 interface Props {
+  mobile?: boolean
   open: boolean
   groups: Group[]
   /** 编辑已有书签时传入；groupId 为 null 表示桌面独立书签 */
@@ -32,7 +33,7 @@ function shortLabel(title: string): string {
   return first && first.length <= 12 ? first : title
 }
 
-export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onClose, onSave }: Props) {
+export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onClose, onSave, mobile }: Props) {
   const [name, setName] = useState('')
   const [url, setUrl] = useState('')
   const [icon, setIcon] = useState('')
@@ -155,7 +156,7 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bookmark-dialog max-w-xl max-h-[92dvh] gap-0 overflow-hidden rounded-3xl bg-white/95 p-0 backdrop-blur-xl">
+      <DialogContent className={`bookmark-dialog max-w-xl max-h-[92dvh] gap-0 overflow-hidden rounded-3xl bg-white/95 p-0 backdrop-blur-xl ${mobile ? 'mobile-form-dialog' : ''}`}>
         <DialogHeader className="bookmark-dialog-header px-6 py-5 text-left sm:px-7">
           <div className="flex items-start gap-3">
             <span className="bookmark-dialog-mark"><Globe2 size={18} /></span>

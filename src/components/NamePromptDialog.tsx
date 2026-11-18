@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
 interface Props {
+  mobile?: boolean
   open: boolean
   title: string
   defaultValue?: string
@@ -13,7 +14,7 @@ interface Props {
 }
 
 /** 通用的单字段命名弹窗：新建/重命名空间、分组共用 */
-export function NamePromptDialog({ open, title, defaultValue = '', placeholder, onClose, onConfirm }: Props) {
+export function NamePromptDialog({ open, title, defaultValue = '', placeholder, onClose, onConfirm, mobile }: Props) {
   const [value, setValue] = useState(defaultValue)
   useEffect(() => {
     if (open) setValue(defaultValue)
@@ -27,7 +28,7 @@ export function NamePromptDialog({ open, title, defaultValue = '', placeholder, 
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-xs bg-white/95 backdrop-blur-xl">
+      <DialogContent className={`max-w-xs bg-white/95 backdrop-blur-xl ${mobile ? 'mobile-form-dialog' : ''}`}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
