@@ -4,7 +4,7 @@ import { applyNoteAction, migrateNoteHistory } from './state'
 import { createNote } from './model'
 import { parseStateJSON } from '@/lib/store'
 
-const space = (): Partition => ({ id: 'p', name: '空间', dock: [], items: [
+const space = (): Partition => ({ id: 'p', name: '空间', items: [
   { id: 'a', kind: 'app', app: { ...createNote(), text: '第一张' } },
   { id: 'b', kind: 'app', app: { ...createNote(), text: '第二张' } },
 ] })

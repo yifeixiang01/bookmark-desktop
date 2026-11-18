@@ -22,6 +22,16 @@ it('preserves a card straddling the right edge and grows the scrollable grid', (
   expect(layoutItems([card], 6).cols).toBe(5)
 })
 
+it('keeps multi-column items entirely inside a responsive page', () => {
+  const group: DesktopItem = { id: 'group', kind: 'group', pos: { x: 4, y: 0 }, group: { id: 'g', name: 'g', bookmarks: [] } }
+  const app: DesktopItem = { id: 'app', kind: 'app', pos: { x: 9, y: 0 }, app: createPomodoro() }
+  const { placements } = layoutItems([group, app], 7, 5)
+  for (const item of [group, app]) {
+    const position = placements.get(item.id)!
+    expect(position.x % 5 + spanOf(item).w).toBeLessThanOrEqual(5)
+  }
+})
+
 const icon = (id: string): DesktopItem => ({ id, kind: 'bookmark', bookmark: { id, name: id, url: 'https://example.com' } })
 
 it('reserves nine slots for an app and places bookmarks outside its footprint', () => {

@@ -49,15 +49,13 @@ export interface Partition {
   items: DesktopItem[]
   /** 移动端顶层项目顺序；与 PC 端自由网格坐标互不影响。 */
   mobileOrder?: string[]
-  /** Dock 栏固定的书签 id 列表 */
-  dock: string[]
   /** 该空间共享的便签归档；删除便签卡片不会删除这里的历史。 */
   noteHistory?: import('@/apps/note/types').NoteArchive[]
 }
 
 export type IconSize = 's' | 'm' | 'l'
 
-/** 各档图标边长（px），桌面独立图标基准；文件夹/Dock 按比例缩放 */
+/** 各档图标边长（px），桌面独立图标基准。 */
 export const ICON_PX: Record<IconSize, number> = { s: 44, m: 56, l: 68 }
 
 export interface AppState {

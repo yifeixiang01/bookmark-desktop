@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Plus } from 'lucide-react'
 import type { DesktopItem, GridPos } from '@/types/bookmark'
 import { dragVisualOf, findFreeRect, layoutItems, previewInsert, spanOf } from '@/lib/gridLayout'
@@ -14,12 +14,12 @@ interface Props {
   editMode: boolean
   locked: boolean
   iconPx: number
-  dockIds: string[]
   selected: ReadonlySet<string>
   /** 当前拖拽状态（幽灵在 Home 渲染；这里画源位变暗 / 合并高亮 / 目标格指示） */
   drag: DragInfo | null
   /** 网格几何信息回写，供拖拽管理器命中检测 */
   gridRef: React.RefObject<GridFrame | null>
+  scrollRef: React.RefObject<HTMLDivElement | null>
   onPress: (e: React.PointerEvent, source: DragSource) => void
   onToggleSelect: (bookmarkId: string) => void
   onToggleSelectGroup?: (groupId: string) => void
@@ -27,7 +27,6 @@ interface Props {
   onCopyBookmark: (bookmarkId: string) => void
   onEditBookmark: (bookmarkId: string) => void
   onDeleteBookmark: (item: Extract<DesktopItem, { kind: 'bookmark' }>) => void
-  onToggleDock: (bookmarkId: string) => void
   onOpenGroup: (groupId: string, anchor: DOMRect) => void
   onRenameGroup: (groupId: string) => void
   onDeleteGroup: (group: Extract<DesktopItem, { kind: 'group' }>['group']) => void
@@ -39,7 +38,7 @@ interface Props {
   onAddClick: () => void
 }
 
-/** 测量外层可用区域（高 → 定行数；宽 → 定最少列数） */
+/** 测量外层可用区域（高 → 定行数；宽 → 定每页列数） */
 function useContainerSize() {
   const ref = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
@@ -58,30 +57,48 @@ function useContainerSize() {
 
 /**
  * 桌面网格（手机桌面式自由摆放 + 横向翻页）：
- * 行数由可视高度固定，列数随内容向右延伸（超出后由外层容器横向滚动）；
+ * 行数和每页列数由视口决定，内容超出后按整页横向翻动；
  * 书签占 1x1 格、文件夹占 2x2 格；位置变化带滑动过渡。
  * 外层留 8px 内边距：编辑模式的删除/重命名角标凸出图标边缘，避免被滚动容器裁剪。
  */
 export function DesktopGrid(props: Props) {
-  const { items, editMode, locked, iconPx, dockIds, selected, drag, gridRef } = props
+  const { items, editMode, locked, iconPx, selected, drag, gridRef, scrollRef } = props
   const { ref, w, h } = useContainerSize()
   const gridElRef = useRef<HTMLDivElement>(null)
+  const [activePage, setActivePage] = useState(0)
 
   const colW = iconPx + 40
   const EDGE_PAD = 8
   const rowH = iconPx + 56
   const availW = (w || 960) - EDGE_PAD * 2
-  const availH = (h || 560) - EDGE_PAD * 2
+  const DOTS_H = 26
+  const availH = (h || 560) - EDGE_PAD * 2 - DOTS_H
   const fitRows = Math.max(3, Math.floor(availH / rowH))
-  // 垂直方向至少 6 行（6 个图标位）：一个文件夹占 2 行，保证一屏纵向能放 3 个文件夹；
-  // 更高的屏幕向下取 2 的整数倍；空间不足 6 行时整个网格等比缩小（scale），而不是压缩行距
-  const rows = Math.max(6, Math.floor(fitRows / 2) * 2)
+  // 垂直方向至少 6 行；按实际可用高度逐行扩展，释放 Dock 后的空间可直接增加一行。
+  const rows = Math.max(6, fitRows)
   const scale = Math.min(1, availH / (rows * rowH))
   const visibleCols = Math.max(2, Math.floor(availW / (colW * scale)))
-  const { placements, cols: usedCols } = layoutItems(items, rows)
-  // 至少铺满一屏；尾部始终多留一列空位，便于拖放与新增
-  const minCols = visibleCols
-  const cols = Math.max(usedCols + 1, minCols)
+  const { placements, cols: usedCols } = layoutItems(items, rows, visibleCols)
+  const requiredCols = Math.max(usedCols + (editMode ? 1 : 0), visibleCols)
+  const pageCount = Math.max(1, Math.ceil(requiredCols / visibleCols))
+  const cols = pageCount * visibleCols
+  const pageWidth = visibleCols * colW * scale
+  const pageHeight = rows * rowH * scale
+
+  useEffect(() => {
+    setActivePage((page) => Math.min(page, pageCount - 1))
+  }, [pageCount])
+
+  useLayoutEffect(() => {
+    const page = Math.min(activePage, pageCount - 1)
+    if (scrollRef.current) scrollRef.current.scrollLeft = page * pageWidth
+  }, [activePage, pageCount, pageWidth, scrollRef])
+
+  const goToPage = (page: number) => {
+    const next = Math.max(0, Math.min(page, pageCount - 1))
+    scrollRef.current?.scrollTo({ left: next * pageWidth, behavior: 'smooth' })
+    setActivePage(next)
+  }
 
   // 回写几何信息给拖拽管理器（el 用内层网格：mx-auto 居中，rect 随滚动实时测量）
   useLayoutEffect(() => {
@@ -90,6 +107,7 @@ export function DesktopGrid(props: Props) {
         el: gridElRef.current,
         offsetX: 0,
         cols,
+        pageCols: visibleCols,
         rows,
         colW,
         rowH,
@@ -124,12 +142,12 @@ export function DesktopGrid(props: Props) {
     const srcCell = placements.get(dragSourceItemId)
     const same = srcCell && srcCell.x === drag.overCell.x && srcCell.y === drag.overCell.y
     if (!same) {
-      previewMoves = previewInsert(items, placements, dragSourceItemId, dragSpan, drag.overCell, rows)
+      previewMoves = previewInsert(items, placements, dragSourceItemId, dragSpan, drag.overCell, rows, visibleCols)
       if (previewMoves.size === 0) previewMoves = null
     }
   }
 
-  const addCell: GridPos = findFreeRect(items, placements, rows, { w: 1, h: 1 })
+  const addCell: GridPos = findFreeRect(items, placements, rows, { w: 1, h: 1 }, '', 0, visibleCols)
 
   const cellStyle = (cell: GridPos, span: { w: number; h: number }): React.CSSProperties => ({
     left: cell.x * colW,
@@ -139,15 +157,28 @@ export function DesktopGrid(props: Props) {
   })
 
   return (
-    <div ref={ref} className="h-full min-w-full p-2">
-      {/* 外层尺寸 = 缩放后的可视尺寸；内层网格以自然尺寸渲染再整体缩放 */}
+    <div ref={ref} className="flex h-full min-w-full flex-col items-center px-2 pt-2">
       <div
-        className="ml-0"
-        style={{ width: Math.ceil(cols * colW * scale), height: Math.ceil(rows * rowH * scale) }}
+        ref={scrollRef}
+        className="no-scrollbar max-w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden"
+        style={{ width: pageWidth, height: pageHeight }}
+        onScroll={(event) => setActivePage(Math.round(event.currentTarget.scrollLeft / pageWidth))}
+        onWheel={(event) => {
+          if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
+          event.preventDefault()
+          const current = Math.round(event.currentTarget.scrollLeft / pageWidth)
+          goToPage(current + (event.deltaY > 0 ? 1 : -1))
+        }}
       >
+      <div className="relative" style={{ width: pageCount * pageWidth, height: pageHeight }}>
+        <div className="pointer-events-none absolute inset-0 flex">
+          {Array.from({ length: pageCount }).map((_, page) => (
+            <div key={page} className="h-full shrink-0 snap-start" style={{ width: pageWidth }} />
+          ))}
+        </div>
         <div
           ref={gridElRef}
-          className="relative"
+          className="relative z-10"
           style={{
             width: cols * colW,
             height: rows * rowH,
@@ -196,7 +227,6 @@ export function DesktopGrid(props: Props) {
                 <BookmarkTile
                   bookmark={item.bookmark}
                   editMode={editMode}
-                  pinned={dockIds.includes(item.bookmark.id)}
                   selected={selected.has(item.bookmark.id)}
                   iconPx={iconPx}
                   enterDelay={Math.min(index * 28, 380)}
@@ -205,7 +235,6 @@ export function DesktopGrid(props: Props) {
                   onCopy={() => props.onCopyBookmark(item.bookmark.id)}
                   onEdit={() => props.onEditBookmark(item.bookmark.id)}
                   onDelete={() => props.onDeleteBookmark(item)}
-                  onToggleDock={() => props.onToggleDock(item.bookmark.id)}
                 />
               ) : item.kind === 'group' ? (
                 <FolderTile
@@ -246,6 +275,19 @@ export function DesktopGrid(props: Props) {
           </div>
         </div>}
         </div>
+      </div>
+      </div>
+      <div className="flex h-[26px] shrink-0 items-center justify-center gap-2" aria-label={`第 ${activePage + 1} 页，共 ${pageCount} 页`}>
+        {Array.from({ length: pageCount }).map((_, page) => (
+          <button
+            key={page}
+            type="button"
+            aria-label={`转到第 ${page + 1} 页`}
+            aria-current={page === activePage ? 'page' : undefined}
+            onClick={() => goToPage(page)}
+            className={`h-2 rounded-full transition-all ${page === activePage ? 'w-5 bg-white' : 'w-2 bg-white/45 hover:bg-white/70'}`}
+          />
+        ))}
       </div>
     </div>
   )

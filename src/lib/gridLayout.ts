@@ -75,7 +75,8 @@ export function findFreeRect(
   rows: number,
   span: Span,
   excludeId = '',
-  fromX = 0
+  fromX = 0,
+  pageCols?: number
 ): GridPos {
   let maxX = fromX
   for (const it of items) {
@@ -84,12 +85,15 @@ export function findFreeRect(
     if (p) maxX = Math.max(maxX, p.x + spanOf(it).w)
   }
   for (let x = fromX; x <= maxX; x++) {
+    if (pageCols && x % pageCols + span.w > pageCols) continue
     for (let y = 0; y + span.h <= rows; y++) {
       if (!rectTaken(items, placements, excludeId, x, y, span)) return { x, y }
     }
   }
-  // 理论上不可达（maxX 列必为空），兜底放到最右一列
-  return { x: maxX + 1, y: 0 }
+  // 理论上不可达（maxX 列必为空），兜底放到下一个不跨页的位置。
+  let fallbackX = maxX + 1
+  while (pageCols && fallbackX % pageCols + span.w > pageCols) fallbackX++
+  return { x: fallbackX, y: 0 }
 }
 
 /**
@@ -102,7 +106,8 @@ export function previewInsert(
   sourceId: string,
   span: Span,
   cell: GridPos,
-  rows: number
+  rows: number,
+  pageCols?: number
 ): Map<string, GridPos> {
   const map = new Map(placements)
   const others = items.filter((i) => i.id !== sourceId)
@@ -158,6 +163,7 @@ export function previewInsert(
         for (const y of dy ? [origin.y + dy, origin.y - dy] : [origin.y]) {
           const x = origin.x + dx
           if (x < 0 || y < 0 || y + size.h > rows) continue
+          if (pageCols && x % pageCols + size.w > pageCols) continue
           if (rectsOverlap(x, y, size, cell.x, cell.y, span)) continue
           if (!rectTaken(others, map, o.id, x, y, size)) target = { x, y }
           if (target) break
@@ -176,7 +182,8 @@ export function previewInsert(
  */
 export function layoutItems(
   items: DesktopItem[],
-  rows: number
+  rows: number,
+  pageCols?: number
 ): { placements: Map<string, GridPos>; cols: number } {
   const placements = new Map<string, GridPos>()
   const pending: DesktopItem[] = []
@@ -186,14 +193,15 @@ export function layoutItems(
     const p = it.pos
     // Columns grow horizontally. A saved position beyond the viewport is still
     // valid and must remain reachable by scrolling, including right-edge drops.
-    if (p && p.x >= 0 && p.y >= 0 && p.y + span.h <= rows && !rectTaken(items, placements, it.id, p.x, p.y, span)) {
+    const staysOnPage = !pageCols || !p || p.x % pageCols + span.w <= pageCols
+    if (p && staysOnPage && p.x >= 0 && p.y >= 0 && p.y + span.h <= rows && !rectTaken(items, placements, it.id, p.x, p.y, span)) {
       placements.set(it.id, { x: p.x, y: p.y })
     } else {
       pending.push(it)
     }
   }
   for (const it of pending) {
-    placements.set(it.id, findFreeRect(items, placements, rows, spanOf(it), it.id))
+    placements.set(it.id, findFreeRect(items, placements, rows, spanOf(it), it.id, 0, pageCols))
   }
 
   let cols = 0

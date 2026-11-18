@@ -33,7 +33,7 @@ import type { AppState, NoteApp } from '@/types/bookmark'
 
   it('preserves dated archives through backup export/import', () => {
     const note = actOnApp({ type: 'note', text: '保留往日便签', color: 'green', createdAt: 100 }, { type: 'note-archive', id: 'saved' }, 200)
-    const state: AppState = { version: 1, activePartitionId: 'p', wallpaper: 'dusk-ridge', searchEngine: 'baidu', locked: false, iconSize: 'm', partitions: [{ id: 'p', name: '主页', dock: [], items: [{ id: 'note', kind: 'app', app: note }] }] }
+    const state: AppState = { version: 1, activePartitionId: 'p', wallpaper: 'dusk-ridge', searchEngine: 'baidu', locked: false, iconSize: 'm', partitions: [{ id: 'p', name: '主页', items: [{ id: 'note', kind: 'app', app: note }] }] }
     const restored = parseStateJSON(JSON.stringify(state))!.partitions[0]
     expect(restored.noteHistory).toEqual((note as NoteApp).history)
     expect(restored.items[0]).toMatchObject({ id: 'note', app: { type: 'note', text: '', color: 'green' } })

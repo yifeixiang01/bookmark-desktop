@@ -1,5 +1,5 @@
 import { BookmarkContextMenu } from './BookmarkContextMenu'
-import { Check, Pin } from 'lucide-react'
+import { Check } from 'lucide-react'
 import type { Bookmark } from '@/types/bookmark'
 import { dragState } from '@/lib/dragState'
 import { FaviconImg } from './FaviconImg'
@@ -8,7 +8,6 @@ import { TipBubble, useHoverTip } from './HoverTip'
 interface Props {
   bookmark: Bookmark
   editMode: boolean
-  pinned: boolean
   selected: boolean
   iconPx: number
   enterDelay: number
@@ -17,13 +16,12 @@ interface Props {
   onCopy: () => void
   onEdit: () => void
   onDelete: () => void
-  onToggleDock: () => void
 }
 
 /** 桌面独立书签图标：直接落在壁纸上，名称在下方（手机桌面式） */
 export function BookmarkTile({
-  bookmark, editMode, pinned, selected, iconPx, enterDelay,
-  onToggleSelect, onEdit, onDelete, onToggleDock, onCopy, onMove,
+  bookmark, editMode, selected, iconPx, enterDelay,
+  onToggleSelect, onEdit, onDelete, onCopy, onMove,
 }: Props) {
   const tip = useHoverTip()
 
@@ -46,7 +44,7 @@ export function BookmarkTile({
   )
 
   return (
-    <BookmarkContextMenu onMove={onMove} pinned={pinned} onToggleDock={onToggleDock} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
+    <BookmarkContextMenu onMove={onMove} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
     <div
       className="tile-enter relative flex w-20 flex-col items-center gap-1.5"
       style={{ animationDelay: `${enterDelay}ms` }}
@@ -87,20 +85,10 @@ export function BookmarkTile({
           >
             ×
           </button>
-          {selected ? (
+          {selected && (
             <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 p-1 text-white shadow">
               <Check size={11} />
             </span>
-          ) : (
-            <button
-              title={pinned ? '从 Dock 移除' : '固定到 Dock'}
-              onClick={onToggleDock}
-              className={`absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full p-1 shadow ${
-                pinned ? 'bg-amber-400 text-white' : 'bg-white/90 text-slate-500 hover:bg-white'
-              }`}
-            >
-              <Pin size={10} />
-            </button>
           )}
           <button
             title="编辑"

@@ -81,7 +81,7 @@ export function useBookmarkStore() {
   const addPartition = useCallback(
     (name: string) => {
       update((d) => {
-        const p: Partition = { id: uid(), name: name || '新空间', items: [], dock: [] }
+        const p: Partition = { id: uid(), name: name || '新空间', items: [] }
         d.partitions.push(p)
         d.activePartitionId = p.id
       })
@@ -146,11 +146,6 @@ export function useBookmarkStore() {
     (groupId: string) => update((d) => {
       const p = activeOf(d)
       if (!p) return
-      const target = p.items.find((x) => x.kind === 'group' && x.group.id === groupId)
-      if (target && target.kind === 'group') {
-        const ids = new Set(target.group.bookmarks.map((b) => b.id))
-        p.dock = p.dock.filter((bid) => !ids.has(bid))
-      }
       p.items = p.items.filter((x) => !(x.kind === 'group' && x.group.id === groupId))
     }),
     [update]
@@ -167,7 +162,6 @@ export function useBookmarkStore() {
     const item = index >= 0 ? p.items[index] : null
     if (!item || item.kind !== 'group') return
     p.items.splice(index, 1)
-    p.dock = p.dock.filter((id) => !item.group.bookmarks.some((b) => b.id === id))
     for (const bookmark of item.group.bookmarks) p.items.push({ id: uid(), kind: 'bookmark', bookmark })
   }), [update])
 
@@ -246,7 +240,6 @@ export function useBookmarkStore() {
       const p = activeOf(d)
       if (!p) return
       removeBookmarkEverywhere(p, bookmarkId)
-      p.dock = p.dock.filter((id) => id !== bookmarkId)
     }),
     [update]
   )
@@ -275,18 +268,7 @@ export function useBookmarkStore() {
     if (!found) return
     copyBookmark(d, found.bookmark, from.id, [targetId])
     removeBookmarkEverywhere(from, bookmarkId)
-    from.dock = from.dock.filter((id) => id !== bookmarkId)
   }), [update])
-
-  const toggleDock = useCallback(
-    (bookmarkId: string) => update((d) => {
-      const p = activeOf(d)
-      if (!p) return
-      if (p.dock.includes(bookmarkId)) p.dock = p.dock.filter((id) => id !== bookmarkId)
-      else if (p.dock.length < 12) p.dock.push(bookmarkId)
-    }),
-    [update]
-  )
 
   const importGroups = useCallback(
     (groups: Group[]) => update((d) => {
@@ -307,7 +289,7 @@ export function useBookmarkStore() {
   // ---------- 拖拽 ----------
   /** 自由落位：把桌面项目放到指定格；压到其他项目时优先互换位置，否则为被压项另找空位（rows 为固定行数，列向右不限） */
   const placeItemAt = useCallback(
-    (itemId: string, pos: GridPos, rows: number) => update((d) => {
+    (itemId: string, pos: GridPos, rows: number, pageCols?: number) => update((d) => {
       const p = activeOf(d)
       if (!p) return
       const item = p.items.find((i) => i.id === itemId)
@@ -318,14 +300,14 @@ export function useBookmarkStore() {
 
       // 先按当前布局固化所有项目的坐标：没有 pos 的项目由布局引擎自动填充空位，
       // 若不固化，移动任意项目后它们会重新流式补位（后面的图标跟着移动）
-      const { placements: current } = layoutItems(p.items, rows)
+      const { placements: current } = layoutItems(p.items, rows, pageCols)
       for (const it of p.items) {
         const cp = current.get(it.id)
         if (cp) it.pos = { ...cp }
       }
 
       const cell = { x: nx, y: ny }
-      const moved = previewInsert(p.items, current, itemId, span, cell, rows)
+      const moved = previewInsert(p.items, current, itemId, span, cell, rows, pageCols)
       item.pos = cell
       for (const it of p.items) {
         const target = moved.get(it.id)
@@ -447,7 +429,6 @@ export function useBookmarkStore() {
       const p = activeOf(d)
       if (!p) return
       for (const id of ids) removeBookmarkEverywhere(p, id)
-      p.dock = p.dock.filter((x) => !ids.includes(x))
     }),
     [update]
   )
@@ -504,7 +485,6 @@ export function useBookmarkStore() {
           to.items.push(item)
         }
       }
-      from.dock = from.dock.filter((x) => !ids.includes(x))
     }),
     [update]
   )
@@ -540,7 +520,7 @@ export function useBookmarkStore() {
     addPartition, renamePartition, deletePartition, setActivePartition, reorderPartitions,
     addGroup, renameGroup, deleteGroup, moveGroupToPartition, dissolveGroup,
     saveBookmark, saveBookmarkToNewGroup, moveBookmarkToDesktop, moveBookmarkToFolder, deleteBookmark,
-    toggleDock, importGroups,
+    importGroups,
     deleteBookmarkScoped, copyBookmarkToPartitions, moveBookmarkToPartition,
     placeItemAt, mergeBookmarks, mergeFromFolder, addBookmarkToFolder,
     toggleLocked, setIconSize, sortByColor, setBookmarkIcon,

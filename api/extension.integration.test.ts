@@ -81,7 +81,7 @@ suite('extension HTTP and state concurrency (isolated PostgreSQL schema)', () =>
     const list = await (await request('/spaces', undefined, headers)).json() as { spaces: { id: string }[] }
     const first = list.spaces[0].id
     const { mutateState } = await import('./queries/user-states')
-    await mutateState(user.id, state => { state.partitions.push({ id: 'second', name: '工作', items: [], dock: [] }); return { state, result: null } })
+    await mutateState(user.id, state => { state.partitions.push({ id: 'second', name: '工作', items: [] }); return { state, result: null } })
     const body = { title: 'Example', url: 'https://example.com/', spaceIds: [first, 'second'] }
     const results = await Promise.all([request('/bookmarks', body, headers), request('/bookmarks', body, headers)])
     const json = await Promise.all(results.map(async r => await r.json() as { added: string[] }))

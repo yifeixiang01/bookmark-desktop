@@ -3,8 +3,8 @@ import type { Partition } from '@/types/bookmark'
 import { searchBookmarks } from './searchBookmarks'
 
 const spaces: Partition[] = [
-  { id: 'a', name: '办公', dock: [], items: [{ id: 'one', kind: 'bookmark', bookmark: { id: 'b', name: 'GitHub', url: 'https://github.com', description: '代码托管' } }] },
-  { id: 'c', name: '学习', dock: [], items: [{ id: 'two', kind: 'group', group: { id: 'g', name: '卡片', bookmarks: [{ id: 'b', name: 'GitHub', url: 'https://github.com', description: '代码托管' }] } }] },
+  { id: 'a', name: '办公', items: [{ id: 'one', kind: 'bookmark', bookmark: { id: 'b', name: 'GitHub', url: 'https://github.com', description: '代码托管' } }] },
+  { id: 'c', name: '学习', items: [{ id: 'two', kind: 'group', group: { id: 'g', name: '卡片', bookmarks: [{ id: 'b', name: 'GitHub', url: 'https://github.com', description: '代码托管' }] } }] },
 ]
 
 it('matches partial names, URLs and descriptions across desktop and card bookmarks', () => {

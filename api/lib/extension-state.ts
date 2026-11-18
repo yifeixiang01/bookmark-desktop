@@ -3,7 +3,7 @@ import type { AppState, Bookmark } from '../../src/types/bookmark';
 
 export function defaultState(): AppState {
   const id = randomUUID();
-  return { version: 1, partitions: [{ id, name: '我的空间', items: [], dock: [] }], activePartitionId: id, wallpaper: 'dusk-ridge', searchEngine: 'baidu', locked: false, iconSize: 'm' };
+  return { version: 1, partitions: [{ id, name: '我的空间', items: [] }], activePartitionId: id, wallpaper: 'dusk-ridge', searchEngine: 'baidu', locked: false, iconSize: 'm' };
 }
 export function canonicalUrl(value: string) {
   const url = new URL(value);

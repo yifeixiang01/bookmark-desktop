@@ -37,7 +37,7 @@ import type { AppState } from '@/types/bookmark'
   })
 
 it('preserves app cards in backups and excludes them from bookmark queries', () => {
-  const state: AppState = { version: 1, activePartitionId: 'p', wallpaper: 'dusk-ridge', searchEngine: 'baidu', locked: false, iconSize: 'm', partitions: [{ id: 'p', name: '主页', dock: [], items: [
+  const state: AppState = { version: 1, activePartitionId: 'p', wallpaper: 'dusk-ridge', searchEngine: 'baidu', locked: false, iconSize: 'm', partitions: [{ id: 'p', name: '主页', items: [
     { id: 'app', kind: 'app', pos: { x: 3, y: 0 }, app: createPomodoro() },
     { id: 'bm', kind: 'bookmark', bookmark: { id: 'b', name: 'Example', url: 'https://example.com' } },
   ] }] }

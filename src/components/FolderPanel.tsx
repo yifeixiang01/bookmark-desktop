@@ -1,6 +1,6 @@
 import { BookmarkContextMenu } from './BookmarkContextMenu'
 import { useEffect, useRef, useState } from 'react'
-import { FolderOutput, Pin, Plus } from 'lucide-react'
+import { FolderOutput, Plus } from 'lucide-react'
 import type { Bookmark, Group } from '@/types/bookmark'
 import { FaviconImg } from './FaviconImg'
 import { dragState } from '@/lib/dragState'
@@ -11,7 +11,6 @@ interface Props {
   /** 被点击的文件夹图标在视口中的位置，用于原位展开 */
   anchor: DOMRect | null
   editMode: boolean
-  dockIds: string[]
   onClose: () => void
   onRename: (groupId: string) => void
   onAddBookmark: (groupId: string) => void
@@ -19,7 +18,6 @@ interface Props {
   onCopyBookmark: (bookmarkId: string) => void
   onEditBookmark: (groupId: string, bookmarkId: string) => void
   onDeleteBookmark: (bookmarkId: string) => void
-  onToggleDock: (bookmarkId: string) => void
   onMoveToDesktop: (bookmarkId: string) => void
   /** 拖拽中的面板书签 id（半透明源位） */
   dragBookmarkId?: string | null
@@ -39,15 +37,13 @@ const PAGE_ROWS = 3
 
 /** 面板内的单个书签格：支持悬停提示、拖出到桌面、编辑角标 */
 function PanelBookmarkCell({
-  bookmark: b, editMode, pinned, dragging, onPress,
-  onToggleDock, onMoveToDesktop, onEdit, onDelete, onCopy, onMove,
+  bookmark: b, editMode, dragging, onPress,
+  onMoveToDesktop, onEdit, onDelete, onCopy, onMove,
 }: {
   bookmark: Bookmark
   editMode: boolean
-  pinned: boolean
   dragging: boolean
   onPress?: (e: React.PointerEvent, bookmarkId: string) => void
-  onToggleDock: () => void
   onMoveToDesktop: () => void
   onMove: () => void
   onCopy: () => void
@@ -56,7 +52,7 @@ function PanelBookmarkCell({
 }) {
   const tip = useHoverTip()
   return (
-    <BookmarkContextMenu onMove={onMove} pinned={pinned} onToggleDock={onToggleDock} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
+    <BookmarkContextMenu onMove={onMove} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
     <div
       className={`relative flex flex-col items-center gap-1.5 ${dragging ? 'opacity-25' : ''}`}
       onPointerDown={(e) => {
@@ -90,15 +86,6 @@ function PanelBookmarkCell({
       </span>
       {editMode && (
         <div className="absolute -top-1.5 -right-0.5 flex gap-0.5">
-          <button
-            title={pinned ? '从 Dock 移除' : '固定到 Dock'}
-            onClick={onToggleDock}
-            className={`flex h-[18px] w-[18px] items-center justify-center rounded-full p-[3px] shadow ${
-              pinned ? 'bg-amber-400 text-white' : 'bg-white text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            <Pin size={10} />
-          </button>
           <button
             title="移出到桌面"
             onClick={onMoveToDesktop}
@@ -136,8 +123,8 @@ type Cell = { kind: 'bm'; b: Bookmark } | { kind: 'add' }
  * 关闭方式：Esc、× 按钮、点击桌面空白处（由 Home 的 clickCapture 处理）。
  */
 export function FolderPanel({
-  group, anchor, editMode, dockIds, dragBookmarkId, dropHighlight, panelRef, onPressBookmark,
-  onClose, onRename, onAddBookmark, onMoveBookmark, onCopyBookmark, onEditBookmark, onDeleteBookmark, onToggleDock, onMoveToDesktop,
+  group, anchor, editMode, dragBookmarkId, dropHighlight, panelRef, onPressBookmark,
+  onClose, onRename, onAddBookmark, onMoveBookmark, onCopyBookmark, onEditBookmark, onDeleteBookmark, onMoveToDesktop,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [activePage, setActivePage] = useState(0)
@@ -250,10 +237,8 @@ export function FolderPanel({
                     key={cell.b.id}
                     bookmark={cell.b}
                     editMode={editMode}
-                    pinned={dockIds.includes(cell.b.id)}
                     dragging={dragBookmarkId === cell.b.id}
                     onPress={onPressBookmark}
-                    onToggleDock={() => onToggleDock(cell.b.id)}
                     onMoveToDesktop={() => onMoveToDesktop(cell.b.id)}
                     onMove={() => onMoveBookmark(cell.b.id)}
                     onCopy={() => onCopyBookmark(cell.b.id)}

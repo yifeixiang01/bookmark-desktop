@@ -6,7 +6,6 @@ function partition(): Partition {
   return {
     id: 'space',
     name: '主页',
-    dock: [],
     items: [
       { id: 'a', kind: 'bookmark', bookmark: { id: 'ba', name: 'A', url: 'https://a.test' }, pos: { x: 4, y: 2 } },
       { id: 'app', kind: 'app', app: { type: 'note', text: '', color: 'cream', createdAt: 0 } },

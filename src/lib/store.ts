@@ -52,7 +52,6 @@ function seedState(): AppState {
       groupItem(dev),
       groupItem(shopping),
     ],
-    dock: [baidu.id, bilibili.id, shopping.bookmarks[0].id],
   }
   return {
     version: 1,
@@ -67,7 +66,7 @@ function seedState(): AppState {
 
 /** 旧版结构（partition.groups）迁移为 items 混合布局 */
 function migrate(parsed: AppState): AppState {
-  for (const p of parsed.partitions as Array<Partition & { groups?: Group[] }>) {
+  for (const p of parsed.partitions as Array<Partition & { groups?: Group[]; dock?: string[] }>) {
     if (!Array.isArray(p.items)) {
       p.items = (p.groups ?? []).map((g) =>
         groupItem(g)
@@ -78,6 +77,8 @@ function migrate(parsed: AppState): AppState {
       // 旧数据可能带 size 字段（已废弃的小/大文件夹开关），迁移时剔除
       if (it.kind === 'group') delete (it.group as unknown as Record<string, unknown>).size
     }
+    // Dock 已移除；读取旧数据时丢弃历史固定记录。
+    delete p.dock
     migrateNoteHistory(p)
   }
   parsed.locked ??= false

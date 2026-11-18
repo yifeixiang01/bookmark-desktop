@@ -6,7 +6,7 @@ describe('extension bookmark operations', () => {
     const state = defaultState()
     expect(state.partitions).toHaveLength(1)
     const first = state.partitions[0].id
-    state.partitions.push({ id: 'second', name: '工作', items: [], dock: [] })
+    state.partitions.push({ id: 'second', name: '工作', items: [] })
     const result = addToSpaces(state, { title: 'Example', url: 'https://example.com', spaceIds: [first, 'second', first] })
     expect(result.added).toEqual([first, 'second'])
     expect(state.partitions.map(p => p.items.length)).toEqual([1, 1])

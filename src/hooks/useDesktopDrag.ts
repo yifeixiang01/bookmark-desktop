@@ -13,6 +13,8 @@ export interface GridFrame {
   el: HTMLElement
   offsetX: number
   cols: number
+  /** 每页逻辑列数；多格项目不能跨越分页边界。 */
+  pageCols: number
   /** 固定行数（由可视高度决定），命中与落位都钳制在 0..rows-span.h */
   rows: number
   colW: number
@@ -217,7 +219,9 @@ export function useDesktopDrag(opts: Opts) {
     if (relX < -g.colW || relX > g.cols * g.colW + g.colW || relY < -g.rowH * 2) {
       return { overCell: null, overItemId: null, overPanel }
     }
-    const cx = Math.max(0, Math.min(Math.floor(relX / g.colW), g.cols - span.w))
+    const rawX = Math.max(0, Math.min(Math.floor(relX / g.colW), g.cols - 1))
+    const pageStart = Math.floor(rawX / g.pageCols) * g.pageCols
+    const cx = Math.min(rawX, pageStart + g.pageCols - span.w)
     const cy = Math.max(0, Math.min(Math.floor(relY / g.rowH), Math.max(0, g.rows - span.h)))
     let overItemId: string | null = null
     for (const it of g.items) {

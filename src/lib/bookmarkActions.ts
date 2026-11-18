@@ -27,7 +27,6 @@ export function removeBookmarkCopies(p: Partition, bookmark: Bookmark) {
   for (const it of p.items) {
     if (it.kind === 'group') it.group.bookmarks = it.group.bookmarks.filter((b) => !ids.has(b.id))
   }
-  p.dock = p.dock.filter((id) => !ids.has(id))
 }
 
 export function copyBookmark(state: AppState, bookmark: Bookmark, sourceId: string, targetIds: string[]) {
@@ -46,8 +45,6 @@ export function moveGroup(state: AppState, groupId: string, targetId: string) {
   if (!item || item.kind !== 'group') return
   for (const bookmark of item.group.bookmarks) removeBookmarkCopies(to, bookmark)
   from.items = from.items.filter((it) => it !== item)
-  const ids = new Set(item.group.bookmarks.map((b) => b.id))
-  from.dock = from.dock.filter((id) => !ids.has(id))
   delete item.pos
   to.items.push(item)
 }

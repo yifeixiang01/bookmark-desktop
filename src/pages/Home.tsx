@@ -28,7 +28,6 @@ import { OptionPickerDialog } from '@/components/OptionPickerDialog'
 import { ConfirmDialog, type ConfirmConfig } from '@/components/ConfirmDialog'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { DesktopContextMenu } from '@/components/DesktopContextMenu'
-import { Dock } from '@/components/Dock'
 
 type NamePrompt =
   | { kind: 'add-partition' }
@@ -100,21 +99,6 @@ export default function Home() {
     if (finished || waterDue) showToast([finished ? '番茄钟本轮已结束，记得休息' : '', waterDue ? '该喝水啦，给自己补充水分' : ''].filter(Boolean).join(' · '))
   }, [state.partitions, showToast])
 
-  const editBookmark = (id: string) => {
-    const found = store.findBookmark(id)
-    if (found) setBookmarkForm({ open: true, editing: { groupId: found.group?.id ?? null, bookmark: found.bookmark } })
-  }
-
-  const toggleDockBookmark = (id: string) => {
-    const pinned = activePartition.dock.includes(id)
-    if (!pinned && activePartition.dock.length >= 12) {
-      showToast('Dock 最多可固定 12 个书签，请先移除部分图标')
-      return
-    }
-    store.toggleDock(id)
-    showToast(pinned ? '已从 Dock 移除，书签仍保留在原位置' : '已添加到 Dock')
-  }
-
   const openMoveBookmark = (id: string) => {
     if (state.partitions.length < 2) { showToast('没有其他空间，请先创建'); return }
     setMovingBookmark(id)
@@ -141,23 +125,8 @@ export default function Home() {
   // ---------- 桌面拖拽（自研指针拖拽：幽灵跟随指针，杜绝漂移） ----------
   const gridRef = useRef<GridFrame | null>(null)
   const panelElRef = useRef<HTMLDivElement | null>(null)
-  /** 桌面横向滚动容器：整页不再纵向滚动，列表超宽时左右滑 */
+  /** 桌面分页容器：由 DesktopGrid 控制整页吸附与圆点导航。 */
   const desktopScrollRef = useRef<HTMLDivElement | null>(null)
-
-  // 鼠标滚轮（纵向）→ 桌面横向滚动；触控板自带横向 deltaX 时不干预
-  useEffect(() => {
-    const el = desktopScrollRef.current
-    if (!el) return
-    const onWheel = (e: WheelEvent) => {
-      if (e.target instanceof HTMLElement && e.target.closest('textarea,select,[data-app-scroll]')) return
-      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return
-      if (el.scrollWidth <= el.clientWidth) return
-      e.preventDefault()
-      el.scrollLeft += e.deltaY
-    }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  })
 
   const iconPx = ICON_PX[state.iconSize] ?? ICON_PX.m
 
@@ -214,8 +183,9 @@ export default function Home() {
     locked: state.locked,
     onPlace: (source, cell) => {
       const rows = gridRef.current?.rows ?? 4
+      const pageCols = gridRef.current?.pageCols
       if (source.kind === 'desktop-item') {
-        store.placeItemAt(source.itemId, cell, rows)
+        store.placeItemAt(source.itemId, cell, rows, pageCols)
       } else {
         store.moveBookmarkToDesktop(source.bookmarkId, cell)
         showToast('已移出到桌面')
@@ -254,15 +224,6 @@ export default function Home() {
   const groups = useMemo(() => activePartition.items.flatMap((it) => (it.kind === 'group' ? [it.group] : [])), [activePartition.items])
   const totalBookmarks = useMemo(() => allBookmarks(activePartition).length, [activePartition])
 
-  const dockItems = useMemo(
-    () =>
-      activePartition.dock
-        .map((id) => store.findBookmark(id)?.bookmark)
-        .filter((b): b is Bookmark => !!b),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activePartition]
-  )
-
   // 切空间 / 退出编辑模式时清空勾选
   useEffect(() => {
     setSelected(new Set())
@@ -278,17 +239,30 @@ export default function Home() {
     return () => { document.body.style.cursor = '' }
   }, [drag])
 
-  // 键盘：←/→ 切换空间，/ 聚焦搜索
+  // 桌面空闲态快捷键：↑/↓ 切换空间，←/→ 切换分页，/ 聚焦搜索。
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      const busy = editMode || !!openGroup || !!prompt || !!picker || !!ctxMenu || bookmarkForm.open ||
+        !!confirm || !!movingGroup || !!movingBookmark || !!spaceAction ||
+        !!document.querySelector('[role="dialog"],[role="menu"]')
+      if (busy) return
+
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault()
         const idx = state.partitions.findIndex((p) => p.id === state.activePartitionId)
-        const next = e.key === 'ArrowRight' ? idx + 1 : idx - 1
+        const next = e.key === 'ArrowDown' ? idx + 1 : idx - 1
         if (next >= 0 && next < state.partitions.length) {
           store.setActivePartition(state.partitions[next].id)
         }
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const el = desktopScrollRef.current
+        if (!el) return
+        e.preventDefault()
+        const current = Math.round(el.scrollLeft / el.clientWidth)
+        const next = current + (e.key === 'ArrowRight' ? 1 : -1)
+        el.scrollTo({ left: Math.max(0, next) * el.clientWidth, behavior: 'smooth' })
       } else if (e.key === '/') {
         e.preventDefault()
         document.getElementById('global-search-input')?.focus()
@@ -297,7 +271,10 @@ export default function Home() {
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.partitions, state.activePartitionId])
+  }, [
+    state.partitions, state.activePartitionId, editMode, openGroup, prompt, picker,
+    ctxMenu, bookmarkForm.open, confirm, movingGroup, movingBookmark, spaceAction, store,
+  ])
 
   const toggleSelect = (bid: string) =>
     setSelected((prev) => {
@@ -461,14 +438,8 @@ export default function Home() {
           </p>
         </div>
 
-        {/* 桌面横向滚动区：行数固定、列向右延伸；滚轮纵向滚动会被转为横向 */}
-        <div
-          ref={desktopScrollRef}
-          className={`no-scrollbar relative mt-[2vh] w-full min-h-0 flex-1 overflow-x-auto overflow-y-hidden ${
-            dockItems.length ? '' : 'pb-4'
-          }`}
-          style={dockItems.length ? { paddingBottom: Math.round(iconPx * 1.35) + 48 } : undefined}
-        >
+        {/* 响应式分页桌面：每页容量固定，超出后整页翻动并显示页码圆点。 */}
+        <div className="relative mt-[2vh] min-h-0 w-full flex-1 overflow-hidden">
           {/* 切空间时重挂载播放入场过渡 */}
           <div key={activePartition.id} className="partition-enter h-full min-w-full">
             <DesktopGrid
@@ -482,10 +453,10 @@ export default function Home() {
               editMode={editMode}
               locked={state.locked}
               iconPx={iconPx}
-              dockIds={activePartition.dock}
               selected={selected}
               drag={drag}
               gridRef={gridRef}
+              scrollRef={desktopScrollRef}
               onPress={press}
               onToggleSelect={toggleSelect}
               onToggleSelectGroup={toggleSelect}
@@ -501,7 +472,6 @@ export default function Home() {
               onMoveBookmark={openMoveBookmark}
         onCopyBookmark={(id) => openSpaceAction(id, 'copy')}
               onDeleteBookmark={(item) => openSpaceAction(item.bookmark.id, 'delete')}
-              onToggleDock={toggleDockBookmark}
               onOpenGroup={(id, rect) => setOpenGroup({ id, rect })}
               onRenameGroup={(id) => setPrompt({ kind: 'rename-group', id })}
               onMoveGroup={(id) => {
@@ -539,11 +509,9 @@ export default function Home() {
         </div>
       </main>
 
-      <Dock onMove={openMoveBookmark} onEdit={editBookmark} onDelete={(id) => openSpaceAction(id, 'delete')} onCopy={(id) => openSpaceAction(id, 'copy')} items={dockItems} editMode={editMode} iconPx={iconPx} onRemove={toggleDockBookmark} />
-
       {/* 批量整理操作条 */}
       {editMode && selected.size > 0 && (
-        <div className="toast-in fixed bottom-24 left-1/2 z-30 flex items-center gap-1 rounded-full bg-black/60 px-4 py-2 backdrop-blur-xl border border-white/15">
+        <div className="toast-in fixed bottom-6 left-1/2 z-30 flex items-center gap-1 rounded-full bg-black/60 px-4 py-2 backdrop-blur-xl border border-white/15">
           <span className="px-1 text-sm text-white/85">已选 {selected.size} 项</span>
           <button
             className="rounded-full px-3 py-1.5 text-[13px] text-white hover:bg-white/15"
@@ -613,7 +581,6 @@ export default function Home() {
         group={openGroupData}
         anchor={openGroup?.rect ?? null}
         editMode={editMode}
-        dockIds={activePartition.dock}
         dragBookmarkId={dragPanelBookmarkId}
         dropHighlight={dropPanelHighlight}
         panelRef={panelElRef}
@@ -630,7 +597,6 @@ export default function Home() {
         onMoveBookmark={openMoveBookmark}
         onCopyBookmark={(id) => openSpaceAction(id, 'copy')}
         onDeleteBookmark={(id) => openSpaceAction(id, 'delete')}
-        onToggleDock={toggleDockBookmark}
         onMoveToDesktop={(bid) => {
           store.moveBookmarkToDesktop(bid)
           showToast('已移出到桌面')
