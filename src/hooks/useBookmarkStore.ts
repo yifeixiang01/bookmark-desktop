@@ -122,16 +122,13 @@ export function useBookmarkStore() {
   )
 
   // ---------- 文件夹 ----------
-  const addGroup = useCallback(
-    (name: string) => update((d) => {
-      activeOf(d)?.items.push({
-        id: uid(),
-        kind: 'group',
-        group: { id: uid(), name: name || '新文件夹', bookmarks: [] },
-      })
-    }),
-    [update]
-  )
+  const addGroup = useCallback((name: string) => {
+    const id = uid()
+    update((d) => {
+      activeOf(d)?.items.push({ id: uid(), kind: 'group', group: { id, name: name || '新建文件夹', bookmarks: [] } })
+    })
+    return id
+  }, [update])
 
   const renameGroup = useCallback(
     (groupId: string, name: string) => update((d) => {

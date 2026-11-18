@@ -51,6 +51,7 @@ export default function Home() {
     return () => { window.clearInterval(timer); window.removeEventListener('focus', finishApps) }
   }, [cloud.hydrated, finishApps])
 
+  const [editingGroup, setEditingGroup] = useState<{ id: string; value: string } | null>(null)
   const [movingGroup, setMovingGroup] = useState<string | null>(null)
   const [movingBookmark, setMovingBookmark] = useState<string | null>(null)
   const [spaceAction, setSpaceAction] = useState<{ mode: 'copy' | 'delete'; bookmark: Bookmark; sourceId: string } | null>(null)
@@ -71,6 +72,22 @@ export default function Home() {
     clearTimeout(toastTimer.current)
     toastTimer.current = setTimeout(() => setToast(''), 2600)
   }, [])
+
+  const createFolder = () => {
+    const id = store.addGroup('新建文件夹')
+    setEditingGroup({ id, value: '新建文件夹' })
+  }
+  const editFolderName = (id: string) => {
+    const item = activePartition.items.find((it) => it.kind === 'group' && it.group.id === id)
+    if (item?.kind !== 'group') return
+    setOpenGroup(null)
+    setEditingGroup({ id, value: item.group.name })
+  }
+  const confirmFolderName = () => {
+    if (!editingGroup) return
+    store.renameGroup(editingGroup.id, editingGroup.value.trim() || '新建文件夹')
+    setEditingGroup(null)
+  }
 
   const runningAppIds = useRef(new Set<string>())
   const dueWaterIds = useRef(new Set<string>())
@@ -443,7 +460,11 @@ export default function Home() {
         onCopyBookmark={(id) => openSpaceAction(id, 'copy')}
               onDeleteBookmark={(item) => openSpaceAction(item.bookmark.id, 'delete')}
               onOpenGroup={(id, rect) => setOpenGroup({ id, rect })}
-              onRenameGroup={(id) => setPrompt({ kind: 'rename-group', id })}
+              onRenameGroup={editFolderName}
+              editingGroup={editingGroup}
+              onGroupNameChange={(value) => setEditingGroup((current) => current ? { ...current, value } : null)}
+              onConfirmGroupName={confirmFolderName}
+              onCancelGroupName={() => setEditingGroup(null)}
               onMoveGroup={(id) => {
                 if (state.partitions.length < 2) { showToast('没有其他空间，请先创建'); return }
                 setMovingGroup(id)
@@ -464,7 +485,7 @@ export default function Home() {
                   action: () => store.deleteGroup(g.id),
                 })
               }}
-              onAddClick={() => setPrompt({ kind: 'add-group' })}
+              onAddClick={createFolder}
             />
           </div>
 
@@ -486,7 +507,7 @@ export default function Home() {
         iconSize={state.iconSize}
         onClose={() => setCtxMenu(null)}
         onAddBookmark={() => setBookmarkForm({ open: true, defaultGroupId: null })}
-        onAddGroup={() => setPrompt({ kind: 'add-group' })}
+        onAddGroup={createFolder}
         onToggleLocked={() => {
           store.toggleLocked()
           showToast(state.locked ? '已解锁布局' : '布局已锁定，拖拽已禁用')
@@ -513,7 +534,7 @@ export default function Home() {
           openGroupData && press(e, { kind: 'panel-bookmark', groupId: openGroupData.id, bookmarkId: bid })
         }
         onClose={() => setOpenGroup(null)}
-        onRename={(id) => setPrompt({ kind: 'rename-group', id })}
+        onRename={editFolderName}
         onAddBookmark={(gid) => setBookmarkForm({ open: true, defaultGroupId: gid })}
         onEditBookmark={(gid, bid) => {
           const found = store.findBookmark(bid)

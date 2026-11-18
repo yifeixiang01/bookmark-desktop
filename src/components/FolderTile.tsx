@@ -20,13 +20,14 @@ interface Props {
   onDissolve?: () => void
   selected?: boolean
   onToggleSelect?: () => void
+  nameEditor?: { value: string; onChange: (value: string) => void; onConfirm: () => void; onCancel: () => void }
 }
 
 /**
  * 文件夹图标（华为桌面式，图标可直接点击）：
  * 占 2x2 格（宽度=两个图标位），3x3 宫格；超过 8 个时第 9 格为堆叠预览，不足保留透明空位。
  */
-export function FolderTile({ group, editMode, iconPx, enterDelay, preview = false, onOpen, onRename, onDelete, onMove, onDissolve, selected, onToggleSelect }: Props) {
+export function FolderTile({ group, editMode, iconPx, enterDelay, preview = false, onOpen, onRename, onDelete, onMove, onDissolve, selected, onToggleSelect, nameEditor }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const tip = useHoverTip()
 
@@ -104,7 +105,7 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, preview = fals
       style={{ width: tileSize, animationDelay: `${enterDelay}ms` }}
       onClickCapture={suppressClick}
       {...tip.bind}
-      onClick={(e) => { if (editMode && onToggleSelect && !(e.target as HTMLElement).closest('button')) onToggleSelect(); else if (!editMode) openWithAnchor() }}
+      onClick={(e) => { if ((e.target as HTMLElement).closest('input')) return; if (editMode && onToggleSelect && !(e.target as HTMLElement).closest('button')) onToggleSelect(); else if (!editMode) openWithAnchor() }}
     >
       {!editMode && tip.show && (
         <TipBubble
@@ -115,13 +116,29 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, preview = fals
         />
       )}
       <div className={selected ? 'rounded-[28px] ring-2 ring-sky-400 ring-offset-2 ring-offset-transparent' : ''}>{tile}</div>
-      <span
+      {nameEditor ? <input
+        aria-label="文件夹名称"
+        autoFocus
+        value={nameEditor.value}
+        onFocus={(e) => e.target.select()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => nameEditor.onChange(e.target.value)}
+        onKeyDown={(e) => {
+          e.stopPropagation()
+          if (e.nativeEvent.isComposing) return
+          if (e.key === 'Enter') { e.preventDefault(); nameEditor.onConfirm() }
+          if (e.key === 'Escape') nameEditor.onCancel()
+        }}
+        onBlur={nameEditor.onConfirm}
+        className="w-full rounded-md border border-white/60 bg-slate-900/70 px-2 py-1 text-center text-xs text-white outline-none focus:ring-2 focus:ring-sky-300"
+      /> : <span
         className="max-w-full cursor-pointer truncate text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]"
         title={group.name}
         onClick={openWithAnchor}
       >
         {group.name}
-      </span>
+      </span>}
 
       {editMode && (
         <>

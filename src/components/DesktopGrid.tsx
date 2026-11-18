@@ -35,6 +35,10 @@ interface Props {
   noteHistory?: import('@/types/bookmark').NoteArchive[]
   onMoveGroup?: (groupId: string) => void
   onDissolveGroup?: (groupId: string) => void
+  editingGroup?: { id: string; value: string } | null
+  onGroupNameChange?: (value: string) => void
+  onConfirmGroupName?: () => void
+  onCancelGroupName?: () => void
   onAddClick: () => void
 }
 
@@ -244,6 +248,12 @@ export function DesktopGrid(props: Props) {
                   enterDelay={Math.min(index * 28, 380)}
                   onOpen={(rect) => props.onOpenGroup(item.group.id, rect)}
                   onRename={() => props.onRenameGroup(item.group.id)}
+                  nameEditor={props.editingGroup?.id === item.group.id ? {
+                    value: props.editingGroup.value,
+                    onChange: (value) => props.onGroupNameChange?.(value),
+                    onConfirm: () => props.onConfirmGroupName?.(),
+                    onCancel: () => props.onCancelGroupName?.(),
+                  } : undefined}
                   onDelete={() => props.onDeleteGroup(item.group)}
                   onMove={() => props.onMoveGroup?.(item.group.id)}
                   onDissolve={() => props.onDissolveGroup?.(item.group.id)}
