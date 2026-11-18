@@ -1,0 +1,20 @@
+These six photographs are marked CC0 on their Wikimedia Commons source pages.
+Local copies are included so deployed clients do not depend on an external image host.
+
+lake-reflection.jpg
+https://commons.wikimedia.org/wiki/File:Lake_Unsplash.jpg
+
+yosemite-sunset.jpg
+https://commons.wikimedia.org/wiki/File:Sunset_Half_Dome_Falls_(Unsplash).jpg
+
+terraced-fields.jpg
+https://commons.wikimedia.org/wiki/File:Terraces_in_Che_Cu_Nha_commune,_Mu_Cang_Chai_(Unsplash).jpg
+
+ocean-waves.jpg
+https://commons.wikimedia.org/wiki/File:Drone_view_of_ocean_waves_1_(Unsplash).jpg
+
+lofoten-mountains.jpg
+https://commons.wikimedia.org/wiki/File:Lofoten,_Norway_(Unsplash).jpg
+
+mountain-balloon.jpg
+https://commons.wikimedia.org/wiki/File:Hot_air_balloon_in_mountains_(Unsplash).jpg

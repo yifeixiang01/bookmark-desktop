@@ -1,0 +1,32 @@
+const { chromium } = require('C:/Users/yifeixiang/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert = require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({headless:true,channel:'msedge'});
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ const page=await context.newPage();
+ await page.route('**/api/trpc/**',async route=>{const names=new URL(route.request().url()).pathname.split('/').pop().split(','); await route.fulfill({contentType:'application/json',body:JSON.stringify(names.map(name=>({result:{data:{json:name==='auth.me'?{id:1,name:'林',email:'test@example.com'}:name==='state.snapshot'?{state:null,revision:0}:{revision:1}}}})))});});
+ await page.goto('http://127.0.0.1:4173/mobile');
+ await page.getByRole('button',{name:'空间管理与账号'}).waitFor();
+ await page.evaluate(async()=>{await navigator.serviceWorker.ready});
+ const manifest=await page.evaluate(async()=>await (await fetch('/manifest.webmanifest')).json());
+ assert.equal(manifest.start_url,'/mobile');assert.equal(manifest.display,'standalone');
+ for(const icon of manifest.icons){assert.ok((await page.request.get('http://127.0.0.1:4173'+icon.src)).ok());}
+ await page.getByRole('button',{name:'空间管理与账号'}).click();
+ await page.getByText('添加到主屏幕',{exact:true}).waitFor();
+ await page.evaluate(()=>{const event=new Event('beforeinstallprompt',{cancelable:true});event.prompt=async()=>{};event.userChoice=Promise.resolve({outcome:'dismissed'});window.dispatchEvent(event)});
+ await page.getByRole('button',{name:/安装到主屏幕/}).click();
+ await page.getByText('添加到主屏幕',{exact:true}).waitFor();
+ await page.reload();
+ assert.ok(await page.evaluate(()=>!!navigator.serviceWorker.controller));
+ const entries=await page.evaluate(async()=>{const keys=await caches.keys();const cache=await caches.open(keys.find(k=>k.startsWith('bookmark-pwa-')));return(await cache.keys()).map(r=>new URL(r.url).pathname)});
+ assert.deepEqual(entries,['/offline.html']);
+ await context.setOffline(true);
+ await page.goto('http://127.0.0.1:4173/mobile');
+ await page.getByRole('heading',{name:'连接后，继续你的收藏'}).waitFor();
+ await page.screenshot({path:'.codex-artifacts/pwa-offline.png'});
+ await context.setOffline(false);
+ await page.getByRole('button',{name:'重新连接'}).click();
+ await page.getByRole('button',{name:'空间管理与账号'}).waitFor();
+ console.log('PASS: production SW registration, standalone manifest/icons, install prompt fallback, offline navigation, cache excludes authenticated HTML/API, reconnect.');
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

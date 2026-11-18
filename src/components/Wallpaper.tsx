@@ -38,41 +38,41 @@ export const WALLPAPERS: WallpaperDef[] = [
     image: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=2400&q=85',
     fallback: '#182540',
   },
-  // CC0 photographs discovered through Wikimedia Commons; filenames identify their source pages.
+  // CC0 photographs from Wikimedia Commons, bundled locally for reliable loading.
   {
     id: 'lake-reflection',
     name: '湖光倒影',
-    image: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/Lake_Unsplash.jpg/3840px-Lake_Unsplash.jpg',
+    image: '/wallpapers/lake-reflection.jpg',
     fallback: '#425c68',
   },
   {
     id: 'yosemite-sunset',
     name: '山谷夕照',
-    image: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/b/be/Sunset_Half_Dome_Falls_%28Unsplash%29.jpg/3840px-Sunset_Half_Dome_Falls_%28Unsplash%29.jpg',
+    image: '/wallpapers/yosemite-sunset.jpg',
     fallback: '#685f58',
   },
   {
     id: 'terraced-fields',
     name: '层叠梯田',
-    image: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/de/Terraces_in_Che_Cu_Nha_commune%2C_Mu_Cang_Chai_%28Unsplash%29.jpg/3840px-Terraces_in_Che_Cu_Nha_commune%2C_Mu_Cang_Chai_%28Unsplash%29.jpg',
+    image: '/wallpapers/terraced-fields.jpg',
     fallback: '#536b38',
   },
   {
     id: 'ocean-waves',
     name: '碧海浪纹',
-    image: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Drone_view_of_ocean_waves_1_%28Unsplash%29.jpg/3840px-Drone_view_of_ocean_waves_1_%28Unsplash%29.jpg',
+    image: '/wallpapers/ocean-waves.jpg',
     fallback: '#286b73',
   },
   {
     id: 'lofoten-mountains',
     name: '挪威群山',
-    image: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/86/Lofoten%2C_Norway_%28Unsplash%29.jpg/3840px-Lofoten%2C_Norway_%28Unsplash%29.jpg',
+    image: '/wallpapers/lofoten-mountains.jpg',
     fallback: '#3b535b',
   },
   {
     id: 'mountain-balloon',
     name: '山间热气球',
-    image: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/Hot_air_balloon_in_mountains_%28Unsplash%29.jpg/3840px-Hot_air_balloon_in_mountains_%28Unsplash%29.jpg',
+    image: '/wallpapers/mountain-balloon.jpg',
     fallback: '#59687a',
   },
 ]
