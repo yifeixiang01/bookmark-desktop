@@ -19,6 +19,10 @@ const APP_ICONS: Record<string, { icon: LucideIcon; color: string; background: s
   pet: { icon: Cat, color: 'text-stone-700', background: 'bg-stone-100' },
 }
 
+const SETTINGS_SECTIONS = [
+  ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '壁纸背景'], ['data', '数据备份'], ['account', '账号'],
+] as const
+
 interface Props {
   currentPartitionName: string
   appCounts: Partial<Record<AppType, number>>
@@ -70,12 +74,13 @@ export function SettingsMenu({
             <DialogDescription>管理空间、应用、壁纸背景、书签备份和账号。</DialogDescription>
           </DialogHeader>
           <div className="flex min-h-0 flex-1">
-            <nav aria-label="设置分类" className="w-24 shrink-0 space-y-1 overflow-y-auto border-r bg-slate-50/80 p-2 sm:w-40 sm:p-3">
-              {[
-                ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '壁纸背景'], ['data', '数据备份'], ['account', '账号'],
-              ].map(([id, label]) => (
-                <button key={id} type="button" aria-current={section === id ? 'page' : undefined} onClick={() => setSection(id)} className={`interactive-press w-full rounded-xl px-2 py-3 text-left text-xs transition-colors sm:px-3 sm:text-sm ${section === id ? 'bg-slate-800 font-medium text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70'}`}>{label}</button>
+            <nav aria-label="设置分类" className="w-24 shrink-0 overflow-y-auto border-r bg-slate-50/80 p-2 sm:w-40 sm:p-3">
+              <div className="relative isolate flex flex-col gap-1">
+                <div aria-hidden="true" className="settings-nav-indicator pointer-events-none absolute inset-x-0 top-0 h-11 rounded-xl bg-slate-800 shadow-sm" style={{ transform: `translateY(${SETTINGS_SECTIONS.findIndex(([id]) => id === section) * 48}px)` }} />
+              {SETTINGS_SECTIONS.map(([id, label]) => (
+                <button key={id} type="button" aria-current={section === id ? 'page' : undefined} onClick={() => setSection(id)} className={`settings-nav-button relative z-10 flex h-11 w-full shrink-0 items-center rounded-xl px-2 text-left text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 sm:px-3 sm:text-sm ${section === id ? 'font-medium text-white' : 'text-slate-600 hover:bg-slate-200/50'}`}><span>{label}</span></button>
               ))}
+              </div>
             </nav>
             <div className="settings-panels min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
           <section hidden={section !== 'apps'} className="space-y-4">
