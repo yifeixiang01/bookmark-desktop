@@ -18,6 +18,7 @@ export default function App() {
   const initialized = useRef(false)
   const latest = useRef({ page, description, selected })
   latest.current = { page, description, selected }
+  const captureMode = new URLSearchParams(location.search).has('capture')
 
   async function api(path: string, init?: RequestInit) {
     const { session } = await chrome.storage.local.get<{ session?: { token: string; expiresAt: string } }>('session')
@@ -44,11 +45,23 @@ export default function App() {
     } catch (e) { setError(e instanceof Error ? e.message : '连接失败，请重试') }
     finally { setLoading(false) }
   }
+  async function refreshAccount() {
+    setLoading(true); setError('')
+    try {
+      const data: { user: Account; spaces: Space[] } = await api('/spaces')
+      setAccount(data.user); setSpaces(data.spaces); setNeedsLogin(false)
+    } catch (e) { setError(e instanceof Error ? e.message : '连接失败，请重试') }
+    finally { setLoading(false) }
+  }
   useEffect(() => {
     let disposed = false
     async function start() {
       try {
         const capture = new URLSearchParams(location.search).get('capture')
+        if (!capture) {
+          await refreshAccount()
+          return
+        }
         let current: Page
         if (capture) {
           const key = `page:${capture}`
@@ -84,7 +97,8 @@ export default function App() {
     try {
       const result = await chrome.runtime.sendMessage({ type: 'login' })
       if (result.error) throw new Error(result.error)
-      await refresh(page)
+      if (captureMode) await refresh(page)
+      else await refreshAccount()
     } catch (e) { setError(e instanceof Error ? e.message : '授权未完成，请重新登录') }
     finally { setBusy(false) }
   }
@@ -107,6 +121,16 @@ export default function App() {
     finally { setBusy(false) }
   }
   const supported = isWebUrl(page.url)
+  if (!captureMode) return <main className="account-panel">
+    <header><h1>Dandan</h1><a href={SITE} target="_blank" rel="noreferrer">打开书签桌面 ↗</a></header>
+    {loading ? <div className="empty">正在加载账号信息…</div> : needsLogin ? <section className="login"><p>登录 Dandan 后，收藏会同步到你的账号。</p><button className="primary" disabled={busy} onClick={login}>{busy ? '请在打开的网站完成授权…' : '登录并授权'}</button><a href={`${SITE}/login`} target="_blank" rel="noreferrer">没有账号？前往官网注册 ↗</a></section> : account ? <section className="account-card">
+      <div className="avatar">{(account.name || account.email || 'D').slice(0, 1).toUpperCase()}</div>
+      <strong>{account.name || 'Dandan 用户'}</strong><span>{account.email || '已登录账号'}</span>
+      <div className="account-stats"><div><b>{spaces.length}</b><small>个空间</small></div><div><b>已连接</b><small>同步状态</small></div></div>
+      <button className="secondary" disabled={busy} onClick={logout}>退出登录</button>
+    </section> : null}
+    {error && <p className="error" role="alert">{error}</p>}
+  </main>
   return <main>
     <header><h1>保存书签</h1><a href={SITE} target="_blank" rel="noreferrer" title="打开书签桌面">Dandan ↗</a></header>
     <div className="account"><span>{account ? account.email || account.name : '登录后同步到你的账号'}</span>{account && <button className="text-button" disabled={busy} onClick={logout}>退出</button>}</div>
