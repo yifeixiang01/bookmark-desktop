@@ -620,7 +620,7 @@ export default function Home() {
         />
       )}
 
-      {/* 拖拽幻影：以指针为中心跟随；松手后飞向目标槽位（落点吸附），到位才提交 */}
+      {/* 拖拽幻影：保留原始抓取位置跟随；松手后飞向目标槽位（落点吸附），到位才提交 */}
       {drag &&
         (() => {
           const src = drag.source
@@ -661,8 +661,8 @@ export default function Home() {
             <div
               className="pointer-events-none fixed z-[70] flex flex-col items-center gap-1.5"
               style={{
-                left: settle ? settle.toX : drag.x,
-                top: settle ? settle.toY : drag.y,
+                left: settle ? settle.toX : drag.x + drag.anchor.x,
+                top: settle ? settle.toY : drag.y + drag.anchor.y,
                 transform: `translate(-50%, -${visualHeight / 2}px) scale(${gScale * (settle ? settle.scale : 1)})`,
                 transformOrigin: `50% ${visualHeight / 2}px`,
                 opacity: settle?.fade ? 0 : 1,

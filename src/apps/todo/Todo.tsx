@@ -11,7 +11,7 @@ export function Todo({ app, disabled, onAction }: ControlProps<TodoApp, TodoActi
   return <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
     <div className="flex items-center justify-between text-xs text-stone-500"><span>一步一步，完成今天</span><span>{completed}/{app.tasks.length}</span></div>
     <div className="h-1 shrink-0 overflow-hidden rounded-full bg-emerald-100"><div className="h-full bg-[#7c9c82] transition-[width] duration-500" style={{ width: `${app.tasks.length ? completed / app.tasks.length * 100 : 0}%` }} /></div>
-    <div data-app-scroll className="min-h-0 flex-1 space-y-1 overflow-y-auto" style={{ touchAction: 'pan-y' }}>
+    <div data-app-scroll className="app-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto" style={{ touchAction: 'pan-y' }}>
       {!app.tasks.length && <p className="py-8 text-center text-xs leading-6 text-stone-400">今天想完成什么？<br />先从一件小事开始。</p>}
       {app.tasks.map((task) => <div key={task.id} data-done={task.done} className="todo-entry group flex items-start gap-2 rounded-xl border border-transparent px-2 py-2 hover:border-emerald-100 hover:bg-white/60">
         <input aria-label={`完成：${task.text}`} type="checkbox" checked={task.done} disabled={disabled} onChange={() => onAction({ type: 'todo-toggle', id: task.id })} className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-600" />

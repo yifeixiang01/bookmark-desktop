@@ -1,1 +1,3 @@
 .note-paper { background-image: repeating-linear-gradient(transparent, transparent 27px, #887b5f12 27px, #887b5f12 28px); background-attachment: local; }
+.app-widget .note-paper:focus-visible { outline: none; }
+.note-paper { --app-scroll-thumb: #99876b66; --app-scroll-thumb-hover: #99876ba6; }

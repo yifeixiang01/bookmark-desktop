@@ -38,6 +38,8 @@ export interface SettleInfo {
 
 export interface DragInfo {
   source: DragSource
+  /** 抓取点到卡片可视中心的屏幕偏移，按下时固定。 */
+  anchor: { x: number; y: number }
   /** 指针视口坐标（幽灵跟随用） */
   x: number
   y: number
@@ -95,7 +97,7 @@ function desktopItemOf(source: DragSource, items: DesktopItem[]): DesktopItem | 
 /**
  * 桌面拖拽管理器：
  * - 鼠标按下移动 6px / 触屏长按 420ms 激活拖拽
- * - 幽灵图标以指针为中心跟随（不做节点锚定，杜绝漂移）
+ * - 卡片保留按下位置相对可视中心的偏移，移动时抓取点不变
  * - 命中检测基于网格几何；悬停 550ms 锁定合并/加入文件夹
  * - 松手后幽灵先做落点吸附动画（飞到目标槽位），到位瞬间才提交数据
  */
@@ -105,6 +107,7 @@ export function useDesktopDrag(opts: Opts) {
     source: DragSource
     startX: number
     startY: number
+    anchor: { x: number; y: number }
     isTouch: boolean
     holdTimer?: ReturnType<typeof setTimeout>
   } | null>(null)
@@ -164,21 +167,36 @@ export function useDesktopDrag(opts: Opts) {
       if (dragRef.current) return // 吸附动画进行中，忽略新按压
       if (e.pointerType === 'mouse' && e.button !== 0) return
       clearTimeout(pendingRef.current?.holdTimer)
+      let anchor = { x: 0, y: 0 }
+      const g = optsRef.current.gridRef.current
+      const item = g ? desktopItemOf(source, g.items) : null
+      const pos = item ? g?.placements.get(item.id) : null
+      if (g && item && item.kind !== 'bookmark' && pos) {
+        const rect = g.el.getBoundingClientRect()
+        const span = spanOf(item)
+        const visual = dragVisualOf(item, g.iconPx)
+        anchor = {
+          x: rect.left + (g.offsetX + pos.x * g.colW + span.w * g.colW / 2) * g.scale - e.clientX,
+          y: rect.top + (pos.y * g.rowH + visual.h / 2) * g.scale - e.clientY,
+        }
+      }
       const pending: {
         source: DragSource
         startX: number
         startY: number
+        anchor: { x: number; y: number }
         isTouch: boolean
         holdTimer?: ReturnType<typeof setTimeout>
       } = {
         source,
         startX: e.clientX,
         startY: e.clientY,
+        anchor,
         isTouch: e.pointerType !== 'mouse',
       }
       if (pending.isTouch) {
         pending.holdTimer = setTimeout(() => {
-          if (pendingRef.current === pending) activate(pending.source, pending.startX, pending.startY)
+          if (pendingRef.current === pending) activate(pending.source, pending.startX, pending.startY, pending.anchor)
         }, TOUCH_HOLD) as unknown as ReturnType<typeof setTimeout>
       }
       pendingRef.current = pending
@@ -187,9 +205,10 @@ export function useDesktopDrag(opts: Opts) {
     []
   )
 
-  function activate(source: DragSource, x: number, y: number) {
+  function activate(source: DragSource, x: number, y: number, anchor: { x: number; y: number }) {
     setBoth({
       source,
+      anchor,
       x,
       y,
       overCell: null,
@@ -214,8 +233,12 @@ export function useDesktopDrag(opts: Opts) {
     const rect = g.el.getBoundingClientRect()
     const span = sourceSpan(source, g.items)
     // rect 是缩放后的屏幕尺寸，先换算回网格逻辑坐标
-    const relX = (x - rect.left - g.offsetX * g.scale) / g.scale
-    const relY = (y - rect.top) / g.scale
+    const item = desktopItemOf(source, g.items)
+    const anchored = item && item.kind !== 'bookmark'
+    const anchor = dragRef.current?.anchor ?? { x: 0, y: 0 }
+    const visual = dragVisualOf(item, g.iconPx)
+    const relX = (x + (anchored ? anchor.x : 0) - rect.left - g.offsetX * g.scale) / g.scale - (anchored ? (span.w - 1) * g.colW / 2 : 0)
+    const relY = (y + (anchored ? anchor.y : 0) - rect.top) / g.scale - (anchored ? visual.h / 2 - g.rowH / 2 : 0)
     if (relX < -g.colW || relX > g.cols * g.colW + g.colW || relY < -g.rowH * 2) {
       return { overCell: null, overItemId: null, overPanel }
     }
@@ -250,7 +273,7 @@ export function useDesktopDrag(opts: Opts) {
             pendingRef.current = null // 触屏移动视为滚动，放弃本次拖拽
           }
         } else if (dist > MOUSE_THRESHOLD) {
-          activate(pending.source, e.clientX, e.clientY)
+          activate(pending.source, e.clientX, e.clientY, pending.anchor)
         }
         return
       }
