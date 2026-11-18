@@ -78,6 +78,22 @@ app.get('/spaces', async c => {
   const url = c.req.query('url');
   return c.json({ user: { id: user.userId, name: user.name, email: user.email }, spaces: state.partitions.map(p => ({ id: p.id, name: p.name, saved: !!url && p.items.some(it => (it.kind === 'bookmark' ? [it.bookmark] : it.kind === 'group' ? it.group.bookmarks : []).some(b => { try { return canonicalUrl(b.url) === canonicalUrl(url); } catch { return false; } })) })) });
 });
+app.get('/meta', async c => {
+  const user = await session(c.req.raw);
+  if (!user) return c.json({ error: '登录已失效，请重新授权' }, 401);
+  const raw = c.req.query('url');
+  try {
+    const target = new URL(raw || '');
+    if (!['http:', 'https:'].includes(target.protocol)) throw new Error();
+    const response = await fetch(target, { signal: AbortSignal.timeout(8000), headers: { accept: 'text/html,application/xhtml+xml', 'user-agent': 'Dandan/0.1' } });
+    const html = (await response.text()).slice(0, 512 * 1024);
+    const value = (re: RegExp) => re.exec(html)?.[1]?.replace(/\s+/g, ' ').trim() || '';
+    const title = value(/<meta[^>]+(?:property|name)=["'](?:og:title|twitter:title)["'][^>]+content=["']([^"']*)["'][^>]*>/i) || value(/<title[^>]*>([^<]*)<\/title>/i);
+    const description = value(/<meta[^>]+(?:property|name)=["'](?:og:description|twitter:description|description)["'][^>]+content=["']([^"']*)["'][^>]*>/i);
+    const iconPath = value(/<link[^>]+rel=["'][^"']*(?:icon|apple-touch-icon)[^"']*["'][^>]+href=["']([^"']*)["'][^>]*>/i);
+    return c.json({ ok: true, title: title.slice(0, 300), description: description.slice(0, 2000), icon: iconPath ? new URL(iconPath, response.url || target).href : new URL('/favicon.ico', response.url || target).href });
+  } catch { return c.json({ ok: false, title: '', description: '', icon: '' }); }
+});
 app.post('/bookmarks', async c => {
   const user = await session(c.req.raw);
   if (!user) return c.json({ error: '登录已失效，请重新授权' }, 401);
