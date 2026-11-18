@@ -4,20 +4,11 @@ import { SortablePartitionRow } from './SortablePartitionRow'
 import type { AppType, Partition } from '@/types/bookmark'
 import { useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
-import { Settings, Plus, Trash2, Upload, Download, FileUp, Pencil, Check, LogOut, Cloud, CloudUpload, Timer, NotebookPen, ListTodo, Droplets, CircleDot, Cat } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { Settings, Plus, Trash2, Upload, Download, FileUp, Pencil, Check, LogOut, Cloud, CloudUpload } from 'lucide-react'
 import { WALLPAPERS } from './Wallpaper'
 import { APP_CATALOG } from '@/apps'
 import { AppPreview } from '@/apps/AppPreview'
-
-const APP_ICONS: Record<string, { icon: LucideIcon; color: string; background: string }> = {
-  pomodoro: { icon: Timer, color: 'text-rose-700', background: 'bg-rose-50' },
-  note: { icon: NotebookPen, color: 'text-blue-700', background: 'bg-blue-50' },
-  todo: { icon: ListTodo, color: 'text-emerald-700', background: 'bg-emerald-50' },
-  water: { icon: Droplets, color: 'text-cyan-700', background: 'bg-cyan-50' },
-  woodfish: { icon: CircleDot, color: 'text-amber-800', background: 'bg-amber-50' },
-  pet: { icon: Cat, color: 'text-stone-700', background: 'bg-stone-100' },
-}
+import { AppIcon } from '@/apps/AppIcon'
 
 const SETTINGS_SECTIONS = [
   ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '壁纸背景'], ['data', '数据备份'], ['account', '账号'],
@@ -84,17 +75,14 @@ export function SettingsMenu({
             </nav>
             <div className="settings-panels min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
           <section hidden={section !== 'apps'} className="space-y-4">
-            <div><h3 className="text-base font-semibold">应用中心</h3><p className="mt-1 text-xs leading-5 text-slate-500">把小应用放到「{currentPartitionName}」，在桌面直接使用。每张卡片默认占 3 × 3 个图标位。</p></div>
+            <div><h3 className="text-base font-semibold">应用中心</h3><p className="mt-1 text-xs leading-5 text-slate-500">挑选适合你的工具，添加到「{currentPartitionName}」空间，让桌面更顺手。</p></div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {APP_CATALOG.map((app) => <article key={app.type} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4">
-                {(() => {
-                  const { icon: Icon, color, background } = APP_ICONS[app.type] ?? APP_ICONS.note
-                  return <span className={`mb-3 flex h-11 w-11 items-center justify-center rounded-xl ${background} ${color}`} aria-hidden="true"><Icon size={21} strokeWidth={1.8} /></span>
-                })()}
-                <h4 className="text-sm font-semibold text-slate-800">{app.name}</h4>
+              {APP_CATALOG.map((app) => <article key={app.type} className="app-catalog-entry group relative flex flex-col overflow-hidden rounded-[24px] border border-stone-200/70 bg-gradient-to-br from-white to-stone-50/80 p-5 shadow-sm">
+                <div className="mb-4 flex h-12 items-center transition-transform duration-300 group-hover:translate-x-1"><AppIcon type={app.type} /></div>
+                <h4 className="text-sm font-semibold tracking-wide text-slate-800">{app.name}</h4>
                 <p className="mb-4 mt-1 flex-1 text-xs leading-5 text-slate-500">{app.description}</p>
                 {app.available ? <>
-                  <div className="flex flex-wrap gap-2"><button type="button" aria-label={`预览${app.name}`} className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50" onClick={() => setPreviewType(app.type)}>预览</button><button type="button" aria-label={`添加${app.name}到当前桌面`} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-slate-800 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700" onClick={() => onAddApp(app.type)}><Plus size={14} />添加到桌面</button></div>
+                  <div className="flex flex-wrap gap-2"><button type="button" aria-label={`预览${app.name}`} className="app-action rounded-full border border-stone-200 bg-white px-4 py-2 text-xs text-stone-500 hover:border-stone-400" onClick={() => setPreviewType(app.type)}>预览</button><button type="button" aria-label={`添加${app.name}到当前桌面`} className="app-action flex flex-1 items-center justify-center gap-1 rounded-full bg-slate-800 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700" onClick={() => onAddApp(app.type)}><Plus size={14} />添加到桌面</button></div>
                   <p role="status" className="mt-2 text-center text-[11px] text-slate-400">{appCounts[app.type] ? `当前桌面已添加 ${appCounts[app.type]} 张` : '可添加多个，独立保存'}</p>
                 </> : <button type="button" disabled className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-400">即将上线</button>}
               </article>)}

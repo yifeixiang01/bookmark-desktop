@@ -12,7 +12,7 @@ import { Card as PomodoroCard } from './pomodoro/Card'
 
 const definitions = { note: noteDefinition, todo: todoDefinition, water: waterDefinition, woodfish: woodfishDefinition, pomodoro: pomodoroDefinition }
 export const APP_CARDS = { note: NoteCard, todo: TodoCard, water: WaterCard, woodfish: WoodfishCard, pomodoro: PomodoroCard }
-export const APP_CATALOG = [definitions.pomodoro, definitions.note, definitions.todo, definitions.water, definitions.woodfish, { type: 'pet', name: '桌宠', description: '让可爱的小伙伴陪你度过每一天。', emoji: '🐱', available: false }] as const
+export const APP_CATALOG = [definitions.pomodoro, definitions.note, definitions.todo, definitions.water, definitions.woodfish, { type: 'pet', name: '桌宠', description: '让可爱的小伙伴陪你度过每一天。', available: false }] as const
 export const appName = (type: AppType) => definitions[type].name
 export const createApp = (type: AppType, now = Date.now()): DesktopApp => definitions[type].create(now)
 export const createAppPreview = (type: AppType): DesktopApp => definitions[type].preview()

@@ -5,7 +5,7 @@ import { createWoodfish, actOnWoodfish } from './model'
 function accepts(action: AppAction): action is WoodfishAction { return typeof action !== 'string' && action.type.startsWith('woodfish-') }
 
 export const woodfishDefinition = {
- type: 'woodfish' as const, name: '敲木鱼', emoji: '🪵', description: '敲一下木鱼，给心情留一点平静。', available: true as const,
+ type: 'woodfish' as const, name: '敲木鱼', description: '敲一下木鱼，给心情留一点平静。', available: true as const,
  create: (): WoodfishApp => createWoodfish(),
  preview: (): WoodfishApp => { return { ...createWoodfish(), count: 108 } },
  settle: (app: DesktopApp): DesktopApp => app,

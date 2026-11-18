@@ -1,0 +1,2 @@
+.merit-feedback { animation: merit-rise 650ms ease-out; }
+@keyframes merit-rise { from { transform: translate(-50%, 7px); } to { transform: translate(-50%, -9px); } }

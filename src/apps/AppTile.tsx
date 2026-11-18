@@ -1,3 +1,4 @@
+import './styles.css'
 import type { AppCardProps } from './types'
 import { APP_CARDS } from './registry'
 
