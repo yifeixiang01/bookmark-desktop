@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Loader2, Sparkles } from 'lucide-react'
+import { Check, FolderOpen, Globe2, Loader2, Sparkles } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -155,13 +155,18 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90dvh] gap-0 overflow-y-auto rounded-2xl bg-white/95 p-0 backdrop-blur-xl">
-        <DialogHeader className="border-b border-slate-100 px-6 py-5 text-left">
-          <DialogTitle>{editing ? '修改书签' : '添加书签'}</DialogTitle>
-          <DialogDescription>输入网址自动获取网站信息，也可以手动填写。</DialogDescription>
+      <DialogContent className="bookmark-dialog max-w-xl max-h-[92dvh] gap-0 overflow-hidden rounded-3xl bg-white/95 p-0 backdrop-blur-xl">
+        <DialogHeader className="bookmark-dialog-header px-6 py-5 text-left sm:px-7">
+          <div className="flex items-start gap-3">
+            <span className="bookmark-dialog-mark"><Globe2 size={18} /></span>
+            <div className="min-w-0">
+              <DialogTitle>{editing ? '修改书签' : '添加书签'}</DialogTitle>
+              <DialogDescription className="mt-1">输入网址后会自动识别网站名称和图标。</DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
-        <div className="flex flex-col gap-5 p-6 [&_label]:mb-2 [&_label]:block [&_input]:rounded-xl [&_input]:bg-white">
-          <div className="flex items-start gap-4 rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+        <div className="bookmark-dialog-body flex flex-col gap-5 overflow-y-auto p-5 sm:p-7 [&_label]:mb-2 [&_label]:block [&_input]:rounded-xl [&_input]:bg-white">
+          <div className="bookmark-site-card flex items-start gap-4 rounded-2xl border p-4 sm:p-5">
             <div className="relative shrink-0 pt-7">
               <FaviconImg url={normalizedUrl || 'https://example.com'} name={name || '?'} customIcon={icon || undefined} size={52} />
               {fetchState === 'loading' && (
@@ -172,7 +177,7 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
             </div>
             <div className="min-w-0 flex-1 flex flex-col gap-3">
               <div>
-                <Label htmlFor="bm-url">网址</Label>
+                <Label htmlFor="bm-url">网址地址</Label>
                 <Input
                   id="bm-url"
                   value={url}
@@ -200,8 +205,8 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
               </div>
             </div>
           </div>
-          <div>
-            <Label htmlFor="bm-desc">网站描述（可选）</Label>
+          <div className="bookmark-form-section">
+            <Label htmlFor="bm-desc">网站描述 <span>可选</span></Label>
             <Textarea
               id="bm-desc"
               value={description}
@@ -212,8 +217,8 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
               className="resize-none rounded-xl bg-white"
             />
           </div>
-          <div>
-            <Label htmlFor="bm-icon">自定义图标 URL（可选）</Label>
+          <div className="bookmark-form-section">
+            <Label htmlFor="bm-icon">自定义图标 URL <span>可选</span></Label>
             <Input
               id="bm-icon"
               value={icon}
@@ -222,55 +227,58 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
             />
             <p className="mt-2 text-xs text-slate-400">留空将自动获取网站图标。</p>
           </div>
-          <div>
+          <div className="bookmark-form-section">
             <Label>保存位置</Label>
-            <div className="flex flex-wrap gap-1.5 pt-1.5">
+            <div className="bookmark-location-grid pt-1.5">
               <button
+                type="button"
                 onClick={() => setGroupId(DESKTOP)}
-                className={`rounded-lg px-3 py-2 text-xs transition-colors ${
+                className={`bookmark-location-option ${
                   groupId === DESKTOP
                     ? 'bg-slate-800 text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                桌面（独立图标）
+                <><span className="bookmark-location-icon"><Globe2 size={14} /></span><span>桌面<span>独立图标</span></span>{groupId === DESKTOP && <Check size={14} className="ml-auto" />}</>
               </button>
               {groups.map((g) => (
                 <button
                   key={g.id}
+                  type="button"
                   onClick={() => setGroupId(g.id)}
-                  className={`rounded-lg px-3 py-2 text-xs transition-colors ${
+                  className={`bookmark-location-option ${
                     groupId === g.id
                       ? 'bg-slate-800 text-white'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
-                  {g.name}
+                  <><span className="bookmark-location-icon"><FolderOpen size={14} /></span><span className="truncate">{g.name}</span>{groupId === g.id && <Check size={14} className="ml-auto" />}</>
                 </button>
               ))}
               <button
+                type="button"
                 onClick={() => setGroupId(NEW_GROUP)}
-                className={`rounded-lg px-3 py-2 text-xs transition-colors ${
+                className={`bookmark-location-option ${
                   groupId === NEW_GROUP
                     ? 'bg-slate-800 text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                + 新文件夹
+                <><span className="bookmark-location-icon"><FolderOpen size={14} /></span><span>新文件夹</span>{groupId === NEW_GROUP && <Check size={14} className="ml-auto" />}</>
               </button>
             </div>
             {groupId === NEW_GROUP && (
               <Input
-                className="mt-2"
+                className="mt-3"
                 value={newGroupName}
                 onChange={(e) => setNewGroupName(e.target.value)}
                 placeholder="新文件夹名称，例如：开发工具"
               />
             )}
           </div>
-          <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
-          <Button variant="outline" className="rounded-xl" disabled={saving} onClick={onClose}>取消</Button>
-          <Button className="min-w-28 rounded-xl" disabled={!canSave || saving} onClick={() => void handleSave()}>
+          <div className="bookmark-dialog-actions -mx-5 -mb-5 mt-1 flex justify-end gap-2 border-t px-5 py-4 sm:-mx-7 sm:-mb-7 sm:px-7">
+          <Button variant="outline" className="rounded-xl border-slate-200" disabled={saving} onClick={onClose}>取消</Button>
+          <Button className="min-w-28 rounded-xl bg-slate-900 shadow-lg shadow-slate-900/15 hover:bg-slate-700" disabled={!canSave || saving} onClick={() => void handleSave()}>
             {saving ? (
               <span className="inline-flex items-center gap-2">
                 <Loader2 size={15} className="animate-spin" />
