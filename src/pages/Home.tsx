@@ -6,7 +6,7 @@ import { dragVisualOf } from '@/lib/gridLayout'
 import { BookmarkSpaceDialog } from '@/components/BookmarkSpaceDialog'
 import { containingPartitions } from '@/lib/bookmarkActions'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Check, Layers } from 'lucide-react'
+import { Layers } from 'lucide-react'
 import { useBookmarkStore } from '@/hooks/useBookmarkStore'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
@@ -36,8 +36,6 @@ type NamePrompt =
   | { kind: 'add-group' }
   | null
 
-type Picker = { kind: 'folder' } | { kind: 'partition' } | null
-
 export default function Home() {
   const { user, isLoading: authLoading, logout } = useAuth({ redirectOnUnauthenticated: true })
   const store = useBookmarkStore()
@@ -56,12 +54,9 @@ export default function Home() {
   const [movingGroup, setMovingGroup] = useState<string | null>(null)
   const [movingBookmark, setMovingBookmark] = useState<string | null>(null)
   const [spaceAction, setSpaceAction] = useState<{ mode: 'copy' | 'delete'; bookmark: Bookmark; sourceId: string } | null>(null)
-  const [editMode, setEditMode] = useState(false)
   const [openGroup, setOpenGroup] = useState<{ id: string; rect: DOMRect } | null>(null)
   const [prompt, setPrompt] = useState<NamePrompt>(null)
-  const [picker, setPicker] = useState<Picker>(null)
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null)
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [bookmarkForm, setBookmarkForm] = useState<{
     open: boolean
     defaultGroupId?: string | null
@@ -224,15 +219,10 @@ export default function Home() {
   const groups = useMemo(() => activePartition.items.flatMap((it) => (it.kind === 'group' ? [it.group] : [])), [activePartition.items])
   const totalBookmarks = useMemo(() => allBookmarks(activePartition).length, [activePartition])
 
-  // 切空间 / 退出编辑模式时清空勾选
+  // 切空间时关闭文件夹面板
   useEffect(() => {
-    setSelected(new Set())
     setOpenGroup(null)
   }, [state.activePartitionId])
-  useEffect(() => {
-    if (!editMode) setSelected(new Set())
-  }, [editMode])
-
   // 拖拽时全局抓手光标
   useEffect(() => {
     document.body.style.cursor = drag ? 'grabbing' : ''
@@ -244,7 +234,7 @@ export default function Home() {
     const h = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
-      const busy = editMode || !!openGroup || !!prompt || !!picker || !!ctxMenu || bookmarkForm.open ||
+      const busy = !!openGroup || !!prompt || !!ctxMenu || bookmarkForm.open ||
         !!confirm || !!movingGroup || !!movingBookmark || !!spaceAction ||
         !!document.querySelector('[role="dialog"],[role="menu"]')
       if (busy) return
@@ -272,17 +262,9 @@ export default function Home() {
     return () => window.removeEventListener('keydown', h)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    state.partitions, state.activePartitionId, editMode, openGroup, prompt, picker,
+    state.partitions, state.activePartitionId, openGroup, prompt,
     ctxMenu, bookmarkForm.open, confirm, movingGroup, movingBookmark, spaceAction, store,
   ])
-
-  const toggleSelect = (bid: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev)
-      if (next.has(bid)) next.delete(bid)
-      else next.add(bid)
-      return next
-    })
 
   // ---------- 命名弹窗分发 ----------
   const promptConfig = (() => {
@@ -303,8 +285,6 @@ export default function Home() {
     }
   })()
 
-  const selectedIds = [...selected]
-
   // 拖拽中的桌面项目 id（用于面板的放入高亮判断；ternary 形式以获得 TS 类型收窄）
   const dragDesktopItemId = drag && drag.source.kind === 'desktop-item' ? drag.source.itemId : null
   const dragPanelBookmarkId = drag && drag.source.kind === 'panel-bookmark' ? drag.source.bookmarkId : null
@@ -319,7 +299,7 @@ export default function Home() {
     return (
       <div className="min-h-screen select-none font-sans">
         <Wallpaper id={state.wallpaper} />
-      {cloud.error && <div role="alert" className="fixed bottom-4 left-1/2 z-50 w-[min(90vw,650px)] -translate-x-1/2 rounded-xl bg-amber-100 p-4 text-sm text-amber-950 shadow-xl">
+      {cloud.error && <div role="alert" className="fixed top-[calc(env(safe-area-inset-top)+0.75rem)] left-1/2 z-50 w-[min(90vw,650px)] -translate-x-1/2 rounded-xl bg-amber-100 p-4 text-sm text-amber-950 shadow-xl">
         <p>{cloud.error}</p><button className="mt-2 underline" onClick={() => exportJSON(state)}>导出本地备份</button>
       </div>}
         <div className="relative z-10 flex min-h-screen flex-col items-center justify-center gap-4">
@@ -347,23 +327,12 @@ export default function Home() {
   return (
     <div className="h-screen select-none overflow-hidden font-sans">
       <Wallpaper id={state.wallpaper} />
-      {!editMode && state.locked && (
+      {state.locked && (
         <span role="status" className="fixed right-[104px] top-4 z-20 rounded-full border border-white/15 bg-black/25 px-3 py-2 text-[13px] text-white/90 backdrop-blur-md">
           布局已锁定
         </span>
       )}
 
-      {/* 编辑模式下隐藏设置入口，换成显眼的「完成」按钮 */}
-      {editMode && (
-        <button
-          onClick={() => setEditMode(false)}
-          className="toast-in fixed right-4 top-4 z-30 flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-lg shadow-black/25 transition hover:bg-white/90 active:scale-95"
-        >
-          <Check size={16} strokeWidth={2.5} />
-          完成
-        </button>
-      )}
-      {!editMode && (
       <SettingsMenu
         currentPartitionName={activePartition.name}
         appCounts={activePartition.items.reduce<Partial<Record<AppType, number>>>((counts, it) => { if (it.kind === 'app') counts[it.app.type] = (counts[it.app.type] ?? 0) + 1; return counts }, {})}
@@ -411,7 +380,6 @@ export default function Home() {
           }
         }}
       />
-      )}
 
       <PartitionSidebar
         partitions={state.partitions}
@@ -438,7 +406,6 @@ export default function Home() {
           <SearchBar partitions={state.partitions} engine={state.searchEngine} onEngineChange={store.setSearchEngine} />
           <p className="mt-3 text-sm text-white/70 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
             {activePartition.name} · {totalBookmarks} 个网站
-            {editMode && <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-xs">编辑模式 · 点图标可勾选</span>}
           </p>
         </div>
 
@@ -454,16 +421,15 @@ export default function Home() {
                 if (item?.kind === 'app') setConfirm({ title: `移除${appName(item.app.type)}？`, description: item.app.type === 'note' ? '仅移除这张卡片及未归档的内容。当前空间的便签历史会保留，重新添加便签后仍可查看。' : '这张卡片的内容和记录会一起移除。其他卡片不受影响。', action: () => store.removeApp(id) })
               }}
               items={activePartition.items}
-              editMode={editMode}
+              editMode={false}
               locked={state.locked}
               iconPx={iconPx}
-              selected={selected}
+              selected={new Set()}
               drag={drag}
               gridRef={gridRef}
               scrollRef={desktopScrollRef}
               onPress={press}
-              onToggleSelect={toggleSelect}
-              onToggleSelectGroup={toggleSelect}
+              onToggleSelect={() => {}}
               onEditBookmark={(bid) => {
                 const found = store.findBookmark(bid)
                 if (found) {
@@ -513,59 +479,14 @@ export default function Home() {
         </div>
       </main>
 
-      {/* 批量整理操作条 */}
-      {editMode && selected.size > 0 && (
-        <div className="toast-in fixed bottom-6 left-1/2 z-30 flex items-center gap-1 rounded-full bg-black/60 px-4 py-2 backdrop-blur-xl border border-white/15">
-          <span className="px-1 text-sm text-white/85">已选 {selected.size} 项</span>
-          <button
-            className="rounded-full px-3 py-1.5 text-[13px] text-white hover:bg-white/15"
-            onClick={() => setPicker({ kind: 'folder' })}
-          >
-            移入文件夹
-          </button>
-          {state.partitions.length > 1 && (
-            <button
-              className="rounded-full px-3 py-1.5 text-[13px] text-white hover:bg-white/15"
-              onClick={() => setPicker({ kind: 'partition' })}
-            >
-              移到空间
-            </button>
-          )}
-          <button
-            className="rounded-full px-3 py-1.5 text-[13px] text-red-300 hover:bg-white/15"
-            onClick={() => {
-              setConfirm({
-                title: `删除选中的 ${selected.size} 个书签？`,
-                description: '这些书签将从桌面和所有文件夹中移除。',
-                action: () => {
-                  store.batchDelete(selectedIds)
-                  setSelected(new Set())
-                  showToast('已删除')
-                },
-              })
-            }}
-          >
-            删除
-          </button>
-          <button
-            className="rounded-full px-3 py-1.5 text-[13px] text-white/60 hover:bg-white/15"
-            onClick={() => setSelected(new Set())}
-          >
-            取消
-          </button>
-        </div>
-      )}
-
       {/* 桌面右键菜单 */}
       <DesktopContextMenu
         pos={ctxMenu}
-        editMode={editMode}
         locked={state.locked}
         iconSize={state.iconSize}
         onClose={() => setCtxMenu(null)}
         onAddBookmark={() => setBookmarkForm({ open: true, defaultGroupId: null })}
         onAddGroup={() => setPrompt({ kind: 'add-group' })}
-        onToggleEdit={() => setEditMode((v) => !v)}
         onToggleLocked={() => {
           store.toggleLocked()
           showToast(state.locked ? '已解锁布局' : '布局已锁定，拖拽已禁用')
@@ -584,7 +505,7 @@ export default function Home() {
       <FolderPanel
         group={openGroupData}
         anchor={openGroup?.rect ?? null}
-        editMode={editMode}
+        editMode={false}
         dragBookmarkId={dragPanelBookmarkId}
         dropHighlight={dropPanelHighlight}
         panelRef={panelElRef}
@@ -666,39 +587,6 @@ export default function Home() {
           }}
         />
       )}
-
-      {/* 批量移动：目标选择 */}
-      <OptionPickerDialog
-        open={picker?.kind === 'folder'}
-        title={`把 ${selected.size} 个书签移入文件夹`}
-        options={groups.map((g) => ({ id: g.id, label: g.name, hint: `${g.bookmarks.length} 个` }))}
-        allowNew={{ placeholder: '新文件夹名称', button: '新建并移入' }}
-        onPick={(gid) => {
-          store.batchMoveToFolder(selectedIds, gid)
-          setSelected(new Set())
-          showToast('已移入文件夹')
-        }}
-        onPickNew={(name) => {
-          store.batchMoveToNewFolder(selectedIds, name)
-          setSelected(new Set())
-          showToast(`已移入新文件夹「${name}」`)
-        }}
-        onClose={() => setPicker(null)}
-      />
-      <OptionPickerDialog
-        open={picker?.kind === 'partition'}
-        title={`把 ${selected.size} 个书签移到空间`}
-        options={state.partitions
-          .filter((p) => p.id !== activePartition.id)
-          .map((p) => ({ id: p.id, label: p.name }))}
-        onPick={(pid) => {
-          store.batchMoveToPartition(selectedIds, pid)
-          setSelected(new Set())
-          const p = state.partitions.find((x) => x.id === pid)
-          showToast(`已移到「${p?.name ?? '空间'}」`)
-        }}
-        onClose={() => setPicker(null)}
-      />
 
       {promptConfig && (
         <NamePromptDialog
@@ -786,7 +674,7 @@ export default function Home() {
 
       {/* 轻提示 */}
       {toast && (
-        <div className="toast-in fixed bottom-40 left-1/2 z-50 rounded-full bg-black/70 px-5 py-2 text-sm text-white backdrop-blur-md">
+        <div role="status" aria-live="polite" className="toast-in pointer-events-none fixed top-[calc(env(safe-area-inset-top)+0.75rem)] left-1/2 z-[100] w-max max-w-[calc(100vw-2rem)] rounded-2xl bg-black/70 px-5 py-2 text-center text-sm text-white backdrop-blur-md">
           {toast}
         </div>
       )}

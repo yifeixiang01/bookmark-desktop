@@ -4,10 +4,20 @@ import { SortablePartitionRow } from './SortablePartitionRow'
 import type { AppType, Partition } from '@/types/bookmark'
 import { useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
-import { Settings, Plus, Trash2, Upload, Download, FileUp, Pencil, Check, LogOut, Cloud, CloudUpload } from 'lucide-react'
+import { Settings, Plus, Trash2, Upload, Download, FileUp, Pencil, Check, LogOut, Cloud, CloudUpload, Timer, NotebookPen, ListTodo, Droplets, CircleDot, Cat } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { WALLPAPERS } from './Wallpaper'
 import { APP_CATALOG } from '@/apps'
 import { AppPreview } from '@/apps/AppPreview'
+
+const APP_ICONS: Record<string, { icon: LucideIcon; color: string; background: string }> = {
+  pomodoro: { icon: Timer, color: 'text-rose-700', background: 'bg-rose-50' },
+  note: { icon: NotebookPen, color: 'text-blue-700', background: 'bg-blue-50' },
+  todo: { icon: ListTodo, color: 'text-emerald-700', background: 'bg-emerald-50' },
+  water: { icon: Droplets, color: 'text-cyan-700', background: 'bg-cyan-50' },
+  woodfish: { icon: CircleDot, color: 'text-amber-800', background: 'bg-amber-50' },
+  pet: { icon: Cat, color: 'text-stone-700', background: 'bg-stone-100' },
+}
 
 interface Props {
   currentPartitionName: string
@@ -57,22 +67,25 @@ export function SettingsMenu({
         <DialogContent className="flex h-[min(640px,85dvh)] max-w-3xl flex-col gap-0 overflow-hidden bg-white/95 p-0 backdrop-blur-xl sm:max-w-3xl">
           <DialogHeader className="border-b px-6 py-5 text-left">
             <DialogTitle>设置</DialogTitle>
-            <DialogDescription>管理空间、应用、背景、书签备份和账号。</DialogDescription>
+            <DialogDescription>管理空间、应用、壁纸背景、书签备份和账号。</DialogDescription>
           </DialogHeader>
           <div className="flex min-h-0 flex-1">
             <nav aria-label="设置分类" className="w-24 shrink-0 space-y-1 overflow-y-auto border-r bg-slate-50/80 p-2 sm:w-40 sm:p-3">
               {[
-                ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '背景'], ['data', '数据备份'], ['account', '账号'],
+                ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '壁纸背景'], ['data', '数据备份'], ['account', '账号'],
               ].map(([id, label]) => (
-                <button key={id} type="button" aria-current={section === id ? 'page' : undefined} onClick={() => setSection(id)} className={`w-full rounded-xl px-2 py-3 text-left text-xs transition-colors sm:px-3 sm:text-sm ${section === id ? 'bg-slate-800 font-medium text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70'}`}>{label}</button>
+                <button key={id} type="button" aria-current={section === id ? 'page' : undefined} onClick={() => setSection(id)} className={`interactive-press w-full rounded-xl px-2 py-3 text-left text-xs transition-colors sm:px-3 sm:text-sm ${section === id ? 'bg-slate-800 font-medium text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70'}`}>{label}</button>
               ))}
             </nav>
-            <div className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="settings-panels min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
           <section hidden={section !== 'apps'} className="space-y-4">
             <div><h3 className="text-base font-semibold">应用中心</h3><p className="mt-1 text-xs leading-5 text-slate-500">把小应用放到「{currentPartitionName}」，在桌面直接使用。每张卡片默认占 3 × 3 个图标位。</p></div>
             <div className="grid gap-3 sm:grid-cols-2">
               {APP_CATALOG.map((app) => <article key={app.type} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4">
-                <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-2xl" aria-hidden="true">{app.emoji}</span>
+                {(() => {
+                  const { icon: Icon, color, background } = APP_ICONS[app.type] ?? APP_ICONS.note
+                  return <span className={`mb-3 flex h-11 w-11 items-center justify-center rounded-xl ${background} ${color}`} aria-hidden="true"><Icon size={21} strokeWidth={1.8} /></span>
+                })()}
                 <h4 className="text-sm font-semibold text-slate-800">{app.name}</h4>
                 <p className="mb-4 mt-1 flex-1 text-xs leading-5 text-slate-500">{app.description}</p>
                 {app.available ? <>
@@ -136,24 +149,24 @@ export function SettingsMenu({
             <p className="text-xs text-slate-500">删除空间会移除其中的书签、文件夹和应用卡片，其他空间不受影响。</p>
           </section>
           <section hidden={section !== 'wallpaper'} className="space-y-3">
-          <h3 className="text-base font-semibold">背景</h3>
+          <h3 className="text-base font-semibold">壁纸背景</h3>
           <p className="pb-2 text-xs font-medium text-slate-500">内置壁纸</p>
           <div className="grid grid-cols-3 gap-2">
             {WALLPAPERS.map((w) => (
               <button
                 key={w.id}
+                type="button"
+                aria-label={`使用壁纸背景：${w.name}`}
+                aria-pressed={wallpaper === w.id}
                 onClick={() => onWallpaper(w.id)}
-                className={`relative h-14 overflow-hidden rounded-lg border-2 transition-colors ${
+                className={`relative aspect-video w-full overflow-hidden rounded-lg border-2 transition-[border-color,transform,box-shadow] hover:-translate-y-0.5 hover:shadow-sm ${
                   wallpaper === w.id ? 'border-slate-800' : 'border-transparent hover:border-slate-300'
                 }`}
-                style={{ background: w.sky }}
+                style={{
+                  background: `linear-gradient(180deg,rgba(10,24,32,0.18),rgba(10,24,32,0.05) 48%,rgba(7,18,24,0.38)), url("${w.image}") center / cover, ${w.fallback}`,
+                }}
                 title={w.name}
               >
-                {w.mountains && (
-                  <svg className="absolute bottom-0 left-0 w-full" style={{ height: '50%' }} viewBox="0 0 100 30" preserveAspectRatio="none">
-                    <path fill={w.mountains[1]} d="M0,20 L20,8 L40,18 L60,6 L80,16 L100,10 L100,30 L0,30 Z" />
-                  </svg>
-                )}
                 {wallpaper === w.id && (
                   <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-slate-800 text-white">
                     <Check size={10} />

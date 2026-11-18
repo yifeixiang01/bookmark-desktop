@@ -29,7 +29,7 @@ export function BookmarkSpaceDialog({ bookmark, partitions, sourceId, mode, onCl
             {partitions.map((p) => {
               const exists = allBookmarks(p).some((b) => sameBookmark(b, bookmark))
               const disabled = p.id === sourceId || exists
-              return <label key={p.id} className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${disabled ? 'opacity-50' : 'cursor-pointer hover:bg-slate-50'}`}>
+              return <label key={p.id} className={`space-choice flex items-center gap-3 rounded-lg border p-3 text-sm ${disabled ? 'opacity-50' : 'cursor-pointer hover:bg-slate-50'}`}>
                 <input type="checkbox" disabled={disabled} checked={selected.includes(p.id)} onChange={(e) => setSelected((ids) => e.target.checked ? [...ids, p.id] : ids.filter((id) => id !== p.id))} />
                 <span className="min-w-0 flex-1 break-words">{p.name}</span>
                 {disabled && <span className="shrink-0 text-xs text-slate-500">{p.id === sourceId ? '当前空间' : '已存在'}</span>}

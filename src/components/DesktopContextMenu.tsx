@@ -1,16 +1,14 @@
 import { useEffect, useRef } from 'react'
-import { Check, Lock, LockOpen, Pencil, Plus, Sparkles } from 'lucide-react'
+import { Check, Lock, LockOpen, Plus, Sparkles } from 'lucide-react'
 import type { IconSize } from '@/types/bookmark'
 
 interface Props {
   pos: { x: number; y: number } | null
-  editMode: boolean
   locked: boolean
   iconSize: IconSize
   onClose: () => void
   onAddBookmark: () => void
   onAddGroup: () => void
-  onToggleEdit: () => void
   onToggleLocked: () => void
   onIconSize: (s: IconSize) => void
   onSortByColor: () => void
@@ -63,10 +61,6 @@ export function DesktopContextMenu(props: Props) {
           <Plus size={14} className="text-slate-400" /> 新建文件夹
         </button>
         {sep}
-        <button className={item} onClick={act(props.onToggleEdit)}>
-          <Pencil size={14} className="text-slate-400" />
-          {props.editMode ? '完成编辑' : '编辑模式'}
-        </button>
         <button className={item} onClick={act(props.onToggleLocked)}>
           {props.locked ? <Lock size={14} className="text-slate-400" /> : <LockOpen size={14} className="text-slate-400" />}
           锁定布局

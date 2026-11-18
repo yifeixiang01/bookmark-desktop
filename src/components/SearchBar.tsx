@@ -93,13 +93,13 @@ export function SearchBar({ engine, onEngineChange, partitions }: Props) {
       </button>
     </div>
     {showResults && (
-      <div className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+      <div className="result-list-in absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
         <p className="border-b px-4 py-2 text-xs text-slate-400" aria-live="polite">所有空间 · {results.length} 个匹配书签</p>
         <ul id="bookmark-search-results" role="listbox" className="max-h-72 overflow-y-auto p-1.5">
           {results.map(({ spaceId, spaceName, bookmark }, index) => {
             let domain = bookmark.url
             try { domain = new URL(bookmark.url).hostname } catch { /* 保留原始链接 */ }
-            return <li key={`${spaceId}-${bookmark.id}-${index}`} role="option" id={`bookmark-search-${index}`} aria-selected={active === index}>
+            return <li className="result-list-item" key={`${spaceId}-${bookmark.id}-${index}`} role="option" id={`bookmark-search-${index}`} aria-selected={active === index}>
               <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={() => setFocused(false)} className={`block truncate rounded-lg px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100 ${active === index ? 'bg-slate-100' : ''}`} title={`${spaceName} · ${bookmark.name}（${domain}）`}>
                 <span className="text-slate-400">{spaceName}</span> · {bookmark.name}<span className="text-slate-400">（{domain}）</span>
               </a>

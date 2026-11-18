@@ -277,18 +277,20 @@ export function DesktopGrid(props: Props) {
         </div>
       </div>
       </div>
-      <div className="flex h-[26px] shrink-0 items-center justify-center gap-2" aria-label={`第 ${activePage + 1} 页，共 ${pageCount} 页`}>
-        {Array.from({ length: pageCount }).map((_, page) => (
-          <button
-            key={page}
-            type="button"
-            aria-label={`转到第 ${page + 1} 页`}
-            aria-current={page === activePage ? 'page' : undefined}
-            onClick={() => goToPage(page)}
-            className={`h-2 rounded-full transition-all ${page === activePage ? 'w-5 bg-white' : 'w-2 bg-white/45 hover:bg-white/70'}`}
-          />
-        ))}
-      </div>
+      {pageCount > 1 && (
+        <div className="flex h-[26px] shrink-0 items-center justify-center gap-2" aria-label={`第 ${activePage + 1} 页，共 ${pageCount} 页`}>
+          {Array.from({ length: pageCount }).map((_, page) => (
+            <button
+              key={page}
+              type="button"
+              aria-label={`转到第 ${page + 1} 页`}
+              aria-current={page === activePage ? 'page' : undefined}
+              onClick={() => goToPage(page)}
+              className={`h-2 rounded-full transition-all ${page === activePage ? 'w-5 bg-white' : 'w-2 bg-white/45 hover:bg-white/70'}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
