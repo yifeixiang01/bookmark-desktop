@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { Trash2 } from 'lucide-react'
+import { useEffect, useId } from 'react'
+import { Trash2, X } from 'lucide-react'
 
 export interface ConfirmConfig {
   title: string
@@ -16,7 +16,7 @@ interface Props extends ConfirmConfig {
 }
 
 /**
- * 删除确认弹窗（桌面风格：深色磨砂玻璃 + 弹跳入场）。
+ * 浅色卡片确认弹窗，与桌面设置和编辑表单保持一致。
  * 替代原生 window.confirm；Esc / 点背板取消。
  */
 export function ConfirmDialog({
@@ -28,6 +28,8 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: Props) {
+  const titleId = useId()
+  const descriptionId = useId()
   useEffect(() => {
     if (!open) return
     const h = (e: KeyboardEvent) => {
@@ -41,36 +43,42 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="confirm-fade absolute inset-0 bg-black/45 backdrop-blur-sm" />
+      <div className="confirm-fade absolute inset-0 bg-slate-950/30 backdrop-blur-sm" />
       <div
         role="alertdialog"
-        aria-label={title}
-        className="confirm-pop relative w-[320px] rounded-3xl border border-white/20 bg-slate-900/70 p-6 pt-7 shadow-2xl shadow-black/40 backdrop-blur-2xl"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
+        className="confirm-pop relative max-h-[calc(100dvh-2rem)] w-full max-w-[420px] overflow-y-auto rounded-[28px] border border-white/80 bg-[#fcfcfa] shadow-[0_24px_80px_-20px_rgba(15,23,42,0.35)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-col items-center text-center">
-          <div className="mb-4">
+        <button type="button" aria-label="关闭确认弹窗" onClick={onCancel}
+          className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 motion-reduce:transition-none">
+          <X size={17} />
+        </button>
+        <div className="px-7 pb-7 pt-8 sm:px-8">
+          <div className="mb-5 w-fit">
             {icon ?? (
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-red-500/20 text-red-300">
-                <Trash2 size={26} />
+              <div className="grid h-14 w-14 place-items-center rounded-[18px] border border-rose-100 bg-rose-50 text-rose-500 shadow-[inset_0_1px_0_white]">
+                <Trash2 size={25} strokeWidth={1.7} />
               </div>
             )}
           </div>
-          <h3 className="max-w-full truncate text-base font-medium text-white">{title}</h3>
+          <h3 id={titleId} className="break-words text-xl font-semibold tracking-tight text-slate-900">{title}</h3>
           {description && (
-            <p className="mt-1.5 max-w-full text-sm leading-relaxed text-white/60">{description}</p>
+            <p id={descriptionId} className="mt-3 break-words text-sm leading-7 text-slate-500">{description}</p>
           )}
         </div>
-        <div className="mt-6 flex gap-2.5">
+        <div className="flex gap-3 border-t border-slate-200/70 bg-slate-50/80 px-7 py-5 sm:px-8">
           <button
             onClick={onCancel}
-            className="flex-1 rounded-full bg-white/12 py-2.5 text-sm text-white transition hover:bg-white/20 active:scale-95"
+            className="min-h-11 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 motion-reduce:transition-none"
           >
             取消
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 rounded-full bg-red-500 py-2.5 text-sm font-medium text-white shadow-lg shadow-red-500/25 transition hover:bg-red-400 active:scale-95"
+            className="min-h-11 flex-1 rounded-xl border border-rose-600/10 bg-rose-500 px-4 py-2.5 text-sm font-medium text-white shadow-[0_3px_8px_rgba(244,63,94,0.16)] transition hover:bg-rose-600 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500 motion-reduce:transition-none"
           >
             {confirmText}
           </button>
