@@ -1,0 +1,16 @@
+.water-widget { background: radial-gradient(ellipse at 50% 45%, #e4f5f4 0%, #edf6f5 34%, transparent 73%); }
+.water-select { max-width: 76px; }
+.water-glass-wrap::before { position: absolute; inset: 12px 15px 2px; border-radius: 50%; background: radial-gradient(ellipse, #b9e2de70, #d6efec30 62%, transparent 72%); content: ''; }
+.water-liquid { background: linear-gradient(180deg, #a9dfd4 0%, #71c2bc 65%, #5eaaa9 100%); }
+.water-wave { animation: water-wave 3s ease-in-out infinite alternate; }
+.water-wave-delayed { animation-delay: -1.5s; opacity: .55; }
+.water-glass-wrap.is-drinking .water-glass { animation: water-cheer 520ms cubic-bezier(.2,.8,.25,1); }
+.water-splash { animation: water-splash 720ms cubic-bezier(.2,.8,.25,1) both; }
+.water-pulse { animation: water-pulse 2.2s ease-in-out infinite; }
+.water-drink-button:active { transform: scale(.97); }
+.water-progress > div { box-shadow: 0 0 8px #63b3ae66; }
+@keyframes water-wave { from { transform: translateX(-6%) rotate(-3deg); } to { transform: translateX(6%) rotate(3deg); } }
+@keyframes water-cheer { 0%, 100% { transform: translateY(0) scale(1); } 35% { transform: translateY(-5px) scale(1.04); } 65% { transform: translateY(1px) scale(.98); } }
+@keyframes water-splash { 0% { opacity: 0; transform: translate(-50%,-30%) scale(.4); } 28% { opacity: 1; transform: translate(-50%,-60%) scale(1.15); } 100% { opacity: 0; transform: translate(-50%,-100%) scale(.8); } }
+@keyframes water-pulse { 0%, 100% { box-shadow: 0 0 0 0 #62a99b00; } 50% { box-shadow: 0 0 0 4px #62a99b20; } }
+@media (prefers-reduced-motion: reduce) { .water-wave, .water-pulse, .water-glass-wrap.is-drinking .water-glass, .water-splash { animation: none !important; } }

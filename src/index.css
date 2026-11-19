@@ -155,6 +155,11 @@
 .spring-hover { transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.18s ease; }
 
 /* 隐藏滚动条（保留滚动能力）：桌面横向滚动 / 文件夹面板共用 */
+/* Text fields use their caret and subtle surface feedback instead of an outer focus ring. */
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=button]):not([type=submit]):not([type=reset]),
+textarea {
+  outline: none;
+}
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
@@ -247,13 +252,10 @@
 }
 
 .login-field:focus-within {
-  border-color: rgb(16 128 105);
   background: white;
-  box-shadow: 0 0 0 3px rgba(16, 128, 105, 0.1);
-  transform: translateY(-1px);
 }
 
-.login-field.is-valid:not(:focus-within) { border-color: rgba(16, 128, 105, 0.36); }
+.login-field.is-valid { border-color: rgba(16, 128, 105, 0.36); }
 .login-field.is-invalid { border-color: rgba(220, 38, 38, 0.45); }
 
 .login-field-icon {
@@ -450,7 +452,7 @@
 .bookmark-dialog-mark { display: grid; width: 2.25rem; height: 2.25rem; flex: 0 0 auto; place-items: center; border: 1px solid #bae6fd; border-radius: 0.75rem; background: #e0f2fe; color: #0369a1; box-shadow: 0 6px 16px rgba(14, 165, 233, 0.12); }
 .bookmark-dialog-body input, .bookmark-dialog-body textarea { border-color: #dbe3ec; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03); transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease; }
 .bookmark-dialog-body input:hover, .bookmark-dialog-body textarea:hover { border-color: #b9c7d8; }
-.bookmark-dialog-body input:focus, .bookmark-dialog-body textarea:focus { border-color: #38bdf8; background: #fff; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.13); }
+.bookmark-dialog-body input:focus, .bookmark-dialog-body textarea:focus { background: #fff; }
 .bookmark-site-card { border-color: #dbe7f0; background: linear-gradient(135deg, #f8fbfd, #f1f6fa); box-shadow: inset 0 1px rgba(255,255,255,0.8); }
 .bookmark-form-section > label { display: flex !important; align-items: center; gap: 0.45rem; color: #334155; font-size: 0.8rem; font-weight: 600; }
 .bookmark-form-section > label span { color: #94a3b8; font-size: 0.68rem; font-weight: 400; }

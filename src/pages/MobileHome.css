@@ -12,13 +12,13 @@
 }
 .mobile-home button, .mobile-sheet button { transition: background-color 180ms, color 180ms, box-shadow 180ms, transform 220ms cubic-bezier(.2,.8,.2,1); }
 .mobile-home button:active:not(:disabled), .mobile-sheet button:active:not(:disabled) { transform: scale(.95); }
-.mobile-home :focus-visible, .mobile-sheet :focus-visible { outline: 2px solid #4c8c77; outline-offset: 4px; }
+.mobile-home :focus-visible:is(:not(input, textarea), input[type=checkbox], input[type=radio]), .mobile-sheet :focus-visible:is(:not(input, textarea), input[type=checkbox], input[type=radio]) { outline: 2px solid #4c8c77; outline-offset: 4px; }
 .mobile-header { position: sticky; top: 0; z-index: 30; padding: calc(6px + env(safe-area-inset-top)) 16px 10px; border-bottom: 1px solid #244b3610; background: #f5f7f2f2; backdrop-filter: blur(16px); }
 .mobile-header-inner { display: flex; align-items: center; justify-content: space-between; max-width: 640px; margin: auto; }
 .mobile-brand-mark { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 14px; background: #234f43; color: #eff5e8; box-shadow: 0 4px 10px #234f4315; }
 .mobile-content { max-width: 688px; margin: auto; padding: 0 16px; }
 .mobile-search { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 15px; border: 1px solid #e0e7dc; border-radius: 13px; background: #ffffffd9; color: #8c9c8e; box-shadow: 0 4px 18px #294b3510; transition: border-color 180ms, box-shadow 180ms; }
-.mobile-search:focus-within { border-color: #6a9a7f; box-shadow: 0 0 0 3px #54836612; }
+.mobile-search:focus-within { background: #fff; }
 .mobile-search input { min-width: 0; flex: 1; background: transparent; color: #24463c; font-size: 16px; outline: none; }
 .mobile-search input::placeholder { color: #9aa79b; font-size: 13px; }
 .mobile-search input::-webkit-search-cancel-button { display: none; }
@@ -101,7 +101,7 @@
 .mobile-form-dialog .bookmark-dialog-body { min-height: 0; }
 .mobile-form-dialog .bookmark-dialog-body > * { flex-shrink: 0; }
 .mobile-form-dialog .bookmark-site-card { border-color: #dfe7d6; background: #f0f4eb; }
-.mobile-form-dialog .bookmark-dialog-body input:focus, .mobile-form-dialog .bookmark-dialog-body textarea:focus { border-color: #7fa580; box-shadow: 0 0 0 3px #54836615; }
+
 .mobile-form-dialog .bookmark-location-option.bg-slate-800 { border-color: #285e50; background: #285e50; box-shadow: 0 4px 12px #285e5015; }
 .mobile-form-dialog .bookmark-dialog-actions { position: sticky; bottom: -20px; z-index: 1; flex-shrink: 0; background: #fafbf7; }
 .mobile-form-dialog .bookmark-dialog-actions button { min-height: 44px; }

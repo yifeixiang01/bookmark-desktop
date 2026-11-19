@@ -5,7 +5,7 @@
 .app-widget:hover { box-shadow: 0 16px 40px -14px #0005; }
 .app-widget button, .app-action { transition: background-color 180ms ease, color 180ms ease, opacity 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
 .app-widget button:not(:disabled):active, .app-action:not(:disabled):active { transform: scale(.95); }
-.app-widget :is(button, input, textarea, select):focus-visible, .app-action:focus-visible { outline: 2px solid #77968a; outline-offset: 3px; }
+.app-widget :is(button, input[type=checkbox], input[type=radio], select):focus-visible, .app-action:focus-visible { outline: 2px solid #77968a; outline-offset: 3px; }
 .app-value { animation: app-value 280ms ease-out; }
 .app-scrollbar { scrollbar-gutter: stable; }
 .app-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }

@@ -157,7 +157,7 @@ export function SettingsMenu({
             <input
               name="wp"
               placeholder="https://…/bg.jpg"
-              className="h-8 min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs outline-none focus:border-slate-400"
+              className="h-8 min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs outline-none"
             />
             <button type="submit" className="h-8 rounded-md bg-slate-800 px-2.5 text-xs text-white hover:bg-slate-700">
               应用
