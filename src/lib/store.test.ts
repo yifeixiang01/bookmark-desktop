@@ -5,6 +5,18 @@ import { FONT_OPTIONS } from './fonts'
 
 afterEach(() => vi.unstubAllGlobals())
 
+it('读取旧数据时移除已下线应用，保留书签和其他应用', () => {
+  const state = parseStateJSON(JSON.stringify(createInitialState()))!
+  const originalItems = state.partitions[0].items
+  const json = JSON.stringify({ ...state, partitions: [{ ...state.partitions[0], items: [
+    ...originalItems,
+    { id: 'retired-app', kind: 'app', app: { type: 'fishpond', weather: 'sunny' } },
+  ] }] })
+  expect(parseStateJSON(json)?.partitions[0].items).toEqual(originalItems)
+  vi.stubGlobal('localStorage', { getItem: () => json })
+  expect(loadState().partitions[0].items).toEqual(originalItems)
+})
+
 describe('字体偏好兼容与备份', () => {
   it('字号兼容旧数据，限制越界值，并保留有效字号', () => {
     for (const [value, expected] of [[undefined, 100], [null, 100], ['120', 100], [0, 90], [999, 130], [113, 115], [90, 90], [100, 100], [130, 130]] as const) {

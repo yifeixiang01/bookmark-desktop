@@ -9,7 +9,6 @@ const APP_CARDS: Record<AppType, React.LazyExoticComponent<ComponentType<AppCard
   water: lazy(() => import('./water/Card').then((module) => ({ default: module.Card }))),
   woodfish: lazy(() => import('./woodfish/Card').then((module) => ({ default: module.Card }))),
   pomodoro: lazy(() => import('./pomodoro/Card').then((module) => ({ default: module.Card }))),
-  fishpond: lazy(() => import('./fishpond/Card').then((module) => ({ default: module.Card }))),
 }
 
 export function AppTile(props: AppCardProps) {

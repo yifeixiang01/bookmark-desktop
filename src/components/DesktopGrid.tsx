@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Plus } from 'lucide-react'
 import type { DesktopItem, GridPos } from '@/types/bookmark'
 import { dragVisualOf, findFreeRect, layoutItems, previewInsert, spanOf } from '@/lib/gridLayout'
@@ -67,12 +67,10 @@ function useContainerSize() {
  */
 export function DesktopGrid(props: Props) {
   const { editMode, locked, iconPx, selected, drag, gridRef, scrollRef } = props
-  const ponds = props.items.filter((item) => item.kind === 'app' && item.app.type === 'fishpond')
-  const items = props.items.filter((item) => !(item.kind === 'app' && item.app.type === 'fishpond'))
+  const items = props.items
   const { ref, w, h } = useContainerSize()
   const gridElRef = useRef<HTMLDivElement>(null)
   const [pageIndex, setActivePage] = useState(0)
-  const previousPondCount = useRef(ponds.length)
 
   const colW = iconPx + 40
   const EDGE_PAD = 8
@@ -89,20 +87,11 @@ export function DesktopGrid(props: Props) {
   const visibleCols = Math.max(2, Math.floor(availW / (colW * scale)))
   const { placements, cols: usedCols } = layoutItems(items, rows, visibleCols)
   const requiredCols = Math.max(usedCols + (editMode ? 1 : 0), visibleCols)
-  const bookmarkPages = items.length || editMode || !ponds.length ? Math.max(1, Math.ceil(requiredCols / visibleCols)) : 0
-  const pageCount = bookmarkPages + ponds.length
+  const pageCount = Math.max(1, Math.ceil(requiredCols / visibleCols))
   const activePage = Math.min(pageIndex, pageCount - 1)
-  const cols = bookmarkPages * visibleCols
+  const cols = pageCount * visibleCols
   const pageWidth = visibleCols * colW * scale
   const pageHeight = rows * rowH * scale
-
-  useEffect(() => {
-    const added = ponds.length > previousPondCount.current
-    previousPondCount.current = ponds.length
-    if (!added) return
-    const frame = requestAnimationFrame(() => setActivePage(pageCount - 1))
-    return () => cancelAnimationFrame(frame)
-  }, [ponds.length, pageCount])
 
   useLayoutEffect(() => {
     const page = Math.min(activePage, pageCount - 1)
@@ -299,9 +288,6 @@ export function DesktopGrid(props: Props) {
           </div>
         </div>}
         </div>
-        {ponds.map((item, index) => item.kind === 'app' && <div key={item.id} className="absolute top-0 z-10" style={{ left: (bookmarkPages + index) * pageWidth }}>
-          <AppTile app={item.app} width={pageWidth - 8} height={pageHeight - 8} editMode={editMode} onAction={(action) => props.onAppAction?.(item.id, action)} onRemove={() => props.onDeleteApp?.(item.id)} />
-        </div>)}
       </div>
       </div>
       {pageCount > 1 && (

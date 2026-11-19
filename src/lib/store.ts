@@ -1,4 +1,5 @@
 import type { AppState, Bookmark, DesktopItem, Group, Partition } from '@/types/bookmark'
+import { isAppType } from '@/apps/registry'
 import { migrateNoteHistory } from '@/apps/note/state'
 import { createInitialState } from './initialState'
 import { normalizeFont, normalizeFontScale } from './fonts'
@@ -27,6 +28,8 @@ function migrate(parsed: AppState): AppState {
       )
       delete p.groups
     }
+    // 丢弃已下线应用的旧记录，兼容本地缓存、云端数据和备份。
+    p.items = p.items.filter((item) => item.kind !== 'app' || isAppType(item.app.type))
     for (const it of p.items) {
       // 旧数据可能带 size 字段（已废弃的小/大文件夹开关），迁移时剔除
       if (it.kind === 'group') delete (it.group as unknown as Record<string, unknown>).size
