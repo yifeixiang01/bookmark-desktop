@@ -1,9 +1,28 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { allBookmarks, createInitialState, loadState, parseStateJSON } from './store'
+import { layoutItems, rectsOverlap, spanOf } from './gridLayout'
 
 afterEach(() => vi.unstubAllGlobals())
 
 describe('首次使用的示例桌面', () => {
+  it('在宽屏保持预设布局，在窄屏分页时卡片不重叠且不跨页', () => {
+    const items = createInitialState().partitions[0].items
+    const desktop = layoutItems(items, 6, 7)
+    expect(desktop.cols).toBe(7)
+    for (const item of items) expect(desktop.placements.get(item.id)).toEqual(item.pos)
+    for (const pageCols of [3, 4, 5, 6, 7, 10]) {
+      const { placements } = layoutItems(items, 6, pageCols)
+      for (const [index, item] of items.entries()) {
+        const position = placements.get(item.id)!
+        expect(position.x % pageCols + spanOf(item).w).toBeLessThanOrEqual(pageCols)
+        expect(position.y + spanOf(item).h).toBeLessThanOrEqual(6)
+        for (const other of items.slice(index + 1)) {
+          const otherPosition = placements.get(other.id)!
+          expect(rectsOverlap(position.x, position.y, spanOf(item), otherPosition.x, otherPosition.y, spanOf(other))).toBe(false)
+        }
+      }
+    }
+  })
   it('创建主页及可用的书签、文件夹和未启动的应用', () => {
     const state = createInitialState()
     const home = state.partitions[0]

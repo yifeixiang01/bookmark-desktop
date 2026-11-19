@@ -35,14 +35,17 @@ export function createInitialState(): AppState {
     id: uid(),
     name: '主页',
     items: [
-      bookmarkItem(baidu),
-      bookmarkItem(zhihu),
-      bookmarkItem(bilibili),
-      groupItem(dev),
-      groupItem(shopping),
+      // Seven-column composition: tools on the left, collections on the lower right.
+      // The layout engine repacks cards that would cross a page on smaller screens.
+      { ...bookmarkItem(baidu), pos: { x: 3, y: 5 } },
+      { ...bookmarkItem(zhihu), pos: { x: 4, y: 5 } },
+      { ...bookmarkItem(bilibili), pos: { x: 5, y: 5 } },
+      { ...groupItem(dev), pos: { x: 3, y: 3 } },
+      { ...groupItem(shopping), pos: { x: 5, y: 3 } },
       {
         id: uid(),
         kind: 'app',
+        pos: { x: 0, y: 0 },
         app: {
           ...createNote(),
           text: '欢迎来到你的书签桌面\n\n• 点击图标打开网站，点击文件夹名称展开收藏。\n• 拖动图标整理位置，叠放两个书签即可创建文件夹。\n• 右键桌面添加书签，右键图标可修改或删除。\n• 在「设置」中更换壁纸、创建空间，或添加更多应用。\n\n这是一张示例便签，可以直接修改，也可以移除。',
@@ -52,6 +55,7 @@ export function createInitialState(): AppState {
       {
         id: uid(),
         kind: 'app',
+        pos: { x: 3, y: 0 },
         app: {
           ...createTodo(),
           tasks: [
@@ -61,7 +65,7 @@ export function createInitialState(): AppState {
           ],
         },
       },
-      { id: uid(), kind: 'app', app: createPomodoro() },
+      { id: uid(), kind: 'app', pos: { x: 0, y: 3 }, app: createPomodoro() },
     ],
   }
   return {
