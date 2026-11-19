@@ -8,6 +8,7 @@ import { copyBookmark, moveGroup, removeBookmarkCopies, syncBookmark } from '@/l
 import { applyNoteAction, migrateNoteHistory } from '@/apps/note/state'
 import { actOnApp, createApp, settleApp, type AppAction } from '@/apps'
 import { moveMobileItem } from '@/lib/mobileLayout'
+import { normalizeFont, normalizeFontScale, type FontPreference } from '@/lib/fonts'
 
 function activeOf(d: AppState): Partition | undefined {
   return d.partitions.find((x) => x.id === d.activePartitionId)
@@ -491,6 +492,16 @@ export function useBookmarkStore() {
     [update]
   )
 
+  const setFont = useCallback(
+    (font: FontPreference) => update((d) => { d.font = normalizeFont(font) }),
+    [update]
+  )
+
+  const setFontScale = useCallback(
+    (scale: number) => update((d) => { d.fontScale = normalizeFontScale(scale) }),
+    [update]
+  )
+
   const setSearchEngine = useCallback(
     (e: string) => update((d) => { d.searchEngine = e }),
     [update]
@@ -522,7 +533,7 @@ export function useBookmarkStore() {
     placeItemAt, mergeBookmarks, mergeFromFolder, addBookmarkToFolder,
     toggleLocked, setIconSize, sortByColor, setBookmarkIcon,
     batchDelete, batchMoveToFolder, batchMoveToNewFolder, batchMoveToPartition,
-    setWallpaper, setSearchEngine, reorderMobileItem, replaceState,
+    setWallpaper, setFont, setFontScale, setSearchEngine, reorderMobileItem, replaceState,
   }
 }
 

@@ -70,6 +70,8 @@ export function createInitialState(): AppState {
   }
   return {
     version: 1,
+    font: 'system',
+    fontScale: 100,
     partitions: [home],
     activePartitionId: home.id,
     wallpaper: 'dusk-ridge',

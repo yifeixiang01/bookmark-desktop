@@ -1,0 +1,36 @@
+[
+  {
+    "id": "dusk-ridge",
+    "callbacks": 0,
+    "meanMs": null,
+    "totalMs": 0,
+    "errors": []
+  },
+  {
+    "id": "bookmark-islands",
+    "callbacks": 152,
+    "meanMs": 2.440789476821297,
+    "p95Ms": 4.5,
+    "maxMs": 6.5,
+    "totalMs": 371.00000047683716,
+    "errors": []
+  },
+  {
+    "id": "kite-meadow",
+    "callbacks": 145,
+    "meanMs": 0.19310344334306387,
+    "p95Ms": 0.40000009536743164,
+    "maxMs": 0.6000001430511475,
+    "totalMs": 27.999999284744263,
+    "errors": []
+  },
+  {
+    "id": "koi-pond",
+    "callbacks": 145,
+    "meanMs": 11.103448289016198,
+    "p95Ms": 18.100000143051147,
+    "maxMs": 51.700000047683716,
+    "totalMs": 1610.0000019073486,
+    "errors": []
+  }
+]

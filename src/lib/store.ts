@@ -1,6 +1,7 @@
 import type { AppState, Bookmark, DesktopItem, Group, Partition } from '@/types/bookmark'
 import { migrateNoteHistory } from '@/apps/note/state'
 import { createInitialState } from './initialState'
+import { normalizeFont, normalizeFontScale } from './fonts'
 export { createInitialState } from './initialState'
 
 /**
@@ -36,6 +37,8 @@ function migrate(parsed: AppState): AppState {
   }
   parsed.locked ??= false
   parsed.iconSize ??= 'm'
+  parsed.font = normalizeFont(parsed.font)
+  parsed.fontScale = normalizeFontScale(parsed.fontScale)
   return parsed
 }
 

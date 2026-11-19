@@ -70,6 +70,7 @@ export function BookmarkTile({
         </a>
       )}
       <span
+        data-desktop-label
         className="w-full truncate text-center text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]"
         title={bookmark.name}
       >

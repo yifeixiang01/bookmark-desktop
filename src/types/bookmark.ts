@@ -61,6 +61,10 @@ export const ICON_PX: Record<IconSize, number> = { s: 44, m: 56, l: 68 }
 
 export interface AppState {
   version: 1
+  /** 全局字体预设；旧数据缺省时使用系统默认。 */
+  font?: import('@/lib/fonts').FontPreference
+  /** 文字缩放百分比，默认 100。 */
+  fontScale?: number
   partitions: Partition[]
   activePartitionId: string
   /** 壁纸预设 id，或 "custom:<url>" */

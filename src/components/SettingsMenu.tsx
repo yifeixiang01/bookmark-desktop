@@ -5,13 +5,14 @@ import type { AppType, Partition } from '@/types/bookmark'
 import { useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Settings, Plus, Trash2, Upload, Download, FileUp, Pencil, LogOut, Cloud, CloudUpload } from 'lucide-react'
-import { WallpaperPicker } from './WallpaperPicker'
+import { DynamicWallpaperPicker, WallpaperPicker } from './WallpaperPicker'
 import { APP_CATALOG } from '@/apps'
 import { AppPreview } from '@/apps/AppPreview'
 import { AppIcon } from '@/apps/AppIcon'
+import { FONT_OPTIONS, FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP, type FontPreference } from '@/lib/fonts'
 
 const SETTINGS_SECTIONS = [
-  ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '壁纸背景'], ['data', '数据备份'], ['account', '账号'],
+  ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '壁纸背景'], ['font', '字体外观'], ['data', '数据备份'], ['account', '账号'],
 ] as const
 
 interface Props {
@@ -25,6 +26,10 @@ interface Props {
   onDeletePartition: (id: string) => void
   wallpaper: string
   onWallpaper: (id: string) => void
+  font: FontPreference
+  onFont: (font: FontPreference) => void
+  fontScale: number
+  onFontScale: (scale: number) => void
   onImportHTML: (file: File) => void
   onExportJSON: () => void
   onImportJSON: (file: File) => void
@@ -36,7 +41,7 @@ interface Props {
 
 export function SettingsMenu({
   currentPartitionName, appCounts, onAddApp,
-  wallpaper, onWallpaper, onImportHTML, onExportJSON, onImportJSON,
+  wallpaper, onWallpaper, font, onFont, fontScale, onFontScale, onImportHTML, onExportJSON, onImportJSON,
   accountLabel, syncing, syncError, onLogout, partitions, onAddPartition, onRenamePartition, onDeletePartition, onReorderPartitions,
 }: Props) {
   const sensors = useSensors(
@@ -62,7 +67,7 @@ export function SettingsMenu({
         <DialogContent className="flex h-[min(640px,85dvh)] max-w-3xl flex-col gap-0 overflow-hidden bg-white/95 p-0 backdrop-blur-xl sm:max-w-3xl">
           <DialogHeader className="border-b px-6 py-5 text-left">
             <DialogTitle>设置</DialogTitle>
-            <DialogDescription>管理空间、应用、壁纸背景、书签备份和账号。</DialogDescription>
+            <DialogDescription>管理空间、应用、壁纸、字体、书签备份和账号。</DialogDescription>
           </DialogHeader>
           <div className="flex min-h-0 flex-1">
             <nav aria-label="设置分类" className="w-24 shrink-0 overflow-y-auto border-r bg-slate-50/80 p-2 sm:w-40 sm:p-3">
@@ -145,6 +150,7 @@ export function SettingsMenu({
           <h3 className="text-base font-semibold">壁纸背景</h3>
           <p className="pb-2 text-xs font-medium text-slate-500">内置壁纸</p>
           <WallpaperPicker value={wallpaper} onChange={onWallpaper} />
+          <div className="pt-3"><h4 className="mb-3 text-sm font-semibold text-slate-800">动态壁纸</h4><DynamicWallpaperPicker value={wallpaper} onChange={onWallpaper} /></div>
           <p className="pt-3 pb-1 text-xs font-medium text-slate-500">自定义图片 URL</p>
           <form
             onSubmit={(e) => {
@@ -163,6 +169,35 @@ export function SettingsMenu({
               应用
             </button>
           </form>
+          </section>
+          <section hidden={section !== 'font'} className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-base font-semibold">字体外观</h3>
+              <button type="button" onClick={() => onFont('system')} disabled={font === 'system'} className="rounded-md px-3 py-2 text-xs text-sky-700 hover:bg-sky-50 disabled:opacity-40">恢复默认</button>
+            </div>
+            <p className="text-xs leading-5 text-slate-500">选择后立即生效，自动保存并同步到账号，手机端跟随。使用设备已有字体；未安装所选字体时会自动使用替代字体，实际效果以预览为准。</p>
+            <div className="space-y-3 rounded-xl border border-slate-200 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label htmlFor="app-font-scale" className="text-sm font-medium">字体大小 <output htmlFor="app-font-scale">{fontScale}%</output></label>
+                <button type="button" onClick={() => onFontScale(100)} disabled={fontScale === 100} className="rounded-md px-3 py-2 text-xs text-sky-700 hover:bg-sky-50 disabled:opacity-40">恢复默认字号</button>
+              </div>
+              <input id="app-font-scale" type="range" min={FONT_SCALE_MIN} max={FONT_SCALE_MAX} step={FONT_SCALE_STEP} value={fontScale} onChange={(event) => onFontScale(Number(event.target.value))} aria-valuetext={`${fontScale}%`} className="block w-full accent-sky-600" />
+              <div className="flex justify-between text-xs text-slate-500"><span>较小 {FONT_SCALE_MIN}%</span><span>标准 100%</span><span>较大 {FONT_SCALE_MAX}%</span></div>
+              <p className="text-sm leading-relaxed text-slate-700">字号实时预览：收藏每一份灵感 · Bookmark 0123456789</p>
+            </div>
+            <fieldset className="space-y-3">
+              <legend className="sr-only">选择界面字体</legend>
+              {FONT_OPTIONS.map((option) => (
+                <label key={option.id} className={`block cursor-pointer rounded-xl border p-4 transition-colors ${font === option.id ? 'border-sky-400 bg-sky-50' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <span className="flex items-center gap-2">
+                    <input type="radio" name="app-font" value={option.id} checked={font === option.id} onChange={() => onFont(option.id)} className="h-4 w-4 accent-sky-600" />
+                    <span className="text-sm font-medium">{option.name}</span>
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-500">{option.description}</span>
+                  <span style={{ fontFamily: option.family }} className="mt-3 block break-words text-base leading-7 text-slate-800">收藏每一份灵感，让桌面更顺手。<br />Bookmark Desktop · 0123456789</span>
+                </label>
+              ))}
+            </fieldset>
           </section>
           <section hidden={section !== 'data'} className="space-y-3">
             <h3 className="text-base font-semibold">数据备份</h3>

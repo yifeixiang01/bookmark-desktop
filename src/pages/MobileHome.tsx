@@ -3,6 +3,7 @@ import { Bookmark as BookmarkIcon, Cloud, Folder, Loader2, LogOut, Search, Setti
 import { useAuth } from '@/hooks/useAuth'
 import { useBookmarkStore } from '@/hooks/useBookmarkStore'
 import { useCloudSync } from '@/hooks/useCloudSync'
+import { useAppFont } from '@/hooks/useAppFont'
 import { mobileItems } from '@/lib/mobileLayout'
 import { searchBookmarks } from '@/lib/searchBookmarks'
 import { FaviconImg } from '@/components/FaviconImg'
@@ -46,6 +47,7 @@ export default function MobileHome() {
   const { user, isLoading: authLoading, logout } = useAuth({ redirectOnUnauthenticated: true })
   const store = useBookmarkStore()
   const { state } = store
+  useAppFont(state.font, state.fontScale)
   const [selectedPartitionId, setSelectedPartitionId] = useState<string | null>(null)
   const activePartition = state.partitions.find((partition) => partition.id === selectedPartitionId) ?? store.activePartition
   const cloud = useCloudSync(state, store.replaceState, user?.id, { readOnly: true })

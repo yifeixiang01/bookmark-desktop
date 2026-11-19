@@ -11,11 +11,12 @@ import { useBookmarkStore } from '@/hooks/useBookmarkStore'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
 import { useCloudSync } from '@/hooks/useCloudSync'
+import { useAppFont } from '@/hooks/useAppFont'
 import { useDesktopDrag, SETTLE_MS, type GridFrame } from '@/hooks/useDesktopDrag'
 import { FaviconImg } from '@/components/FaviconImg'
 import { parseBookmarkHTML } from '@/lib/importBookmarks'
 import { dragState } from '@/lib/dragState'
-import { allBookmarks, exportJSON, parseStateJSON } from '@/lib/store'
+import { exportJSON, parseStateJSON } from '@/lib/store'
 import { ICON_PX, type Bookmark } from '@/types/bookmark'
 import { Wallpaper } from '@/components/Wallpaper'
 import { SearchBar } from '@/components/SearchBar'
@@ -40,6 +41,7 @@ export default function Home() {
   const { user, isLoading: authLoading, logout } = useAuth({ redirectOnUnauthenticated: true })
   const store = useBookmarkStore()
   const { state, activePartition } = store
+  useAppFont(state.font, state.fontScale)
   const cloud = useCloudSync(state, store.replaceState, user?.id)
 
   const { finishApps } = store
@@ -64,6 +66,7 @@ export default function Home() {
     editing?: { groupId: string | null; bookmark: Bookmark } | null
   }>({ open: false })
   const [toast, setToast] = useState('')
+  const [spaceNavigationKey, setSpaceNavigationKey] = useState(0)
   const [confirm, setConfirm] = useState<(ConfirmConfig & { action: () => void }) | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -234,7 +237,6 @@ export default function Home() {
   })
 
   const groups = useMemo(() => activePartition.items.flatMap((it) => (it.kind === 'group' ? [it.group] : [])), [activePartition.items])
-  const totalBookmarks = useMemo(() => allBookmarks(activePartition).length, [activePartition])
 
   // 切空间时关闭文件夹面板
   useEffect(() => {
@@ -258,6 +260,7 @@ export default function Home() {
 
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault()
+        setSpaceNavigationKey((key) => key + 1)
         const idx = state.partitions.findIndex((p) => p.id === state.activePartitionId)
         const next = e.key === 'ArrowDown' ? idx + 1 : idx - 1
         if (next >= 0 && next < state.partitions.length) {
@@ -374,6 +377,10 @@ export default function Home() {
           }
         }}
         wallpaper={state.wallpaper}
+        font={state.font ?? 'system'}
+        onFont={store.setFont}
+        fontScale={state.fontScale ?? 100}
+        onFontScale={store.setFontScale}
         onWallpaper={store.setWallpaper}
         accountLabel={user.email ?? user.name ?? '已登录'}
         syncing={cloud.syncing}
@@ -399,6 +406,7 @@ export default function Home() {
       />
 
       <PartitionSidebar
+        revealKey={spaceNavigationKey}
         partitions={state.partitions}
         activeId={activePartition.id}
         onSelect={store.setActivePartition}
@@ -406,7 +414,9 @@ export default function Home() {
 
       {/* 主区域：整页固定一屏高，桌面列表在内容超宽时横向滚动 */}
       <main
-        className="flex h-screen w-full flex-col pl-3 pr-[96px] sm:pl-6 sm:pr-[112px]"
+        data-wallpaper-surface
+        data-wallpaper-tone={['bookmark-islands', 'kite-meadow'].includes(state.wallpaper) ? 'light' : undefined}
+        className="flex h-screen w-full flex-col px-3 sm:px-6"
         onClickCapture={(e) => {
           // 文件夹面板打开时，点桌面空白处关闭（点图标/按钮/输入框不打扰；拖拽落点不触发）
           if (!openGroup || dragState.suppressClick) return
@@ -421,9 +431,6 @@ export default function Home() {
       >
         <div className="mx-auto flex w-full max-w-5xl flex-col items-center px-1 pt-[5vh] sm:px-0">
           <SearchBar partitions={state.partitions} engine={state.searchEngine} onEngineChange={store.setSearchEngine} />
-          <p className="mt-3 text-sm text-white/70 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-            {activePartition.name} · {totalBookmarks} 个网站
-          </p>
         </div>
 
         {/* 响应式分页桌面：每页容量固定，超出后整页翻动并显示页码圆点。 */}
@@ -660,6 +667,7 @@ export default function Home() {
           return (
             <div
               className="pointer-events-none fixed z-[70] flex flex-col items-center gap-1.5"
+              data-wallpaper-ghost={src.kind === 'desktop-item' ? src.itemId : undefined}
               style={{
                 left: settle ? settle.toX : drag.x + drag.anchor.x,
                 top: settle ? settle.toY : drag.y + drag.anchor.y,

@@ -1,8 +1,44 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { allBookmarks, createInitialState, loadState, parseStateJSON } from './store'
 import { layoutItems, rectsOverlap, spanOf } from './gridLayout'
+import { FONT_OPTIONS } from './fonts'
 
 afterEach(() => vi.unstubAllGlobals())
+
+describe('字体偏好兼容与备份', () => {
+  it('字号兼容旧数据，限制越界值，并保留有效字号', () => {
+    for (const [value, expected] of [[undefined, 100], [null, 100], ['120', 100], [0, 90], [999, 130], [113, 115], [90, 90], [100, 100], [130, 130]] as const) {
+      const state = { ...createInitialState(), fontScale: value }
+      const json = JSON.stringify(state)
+      expect(parseStateJSON(json)?.fontScale).toBe(expected)
+      vi.stubGlobal('localStorage', { getItem: () => json })
+      expect(loadState().fontScale).toBe(expected)
+    }
+  })
+
+  it('旧备份与无效字体回退为系统默认，并保留书签', () => {
+    const state = parseStateJSON(JSON.stringify(createInitialState()))!
+    delete state.font
+    for (const value of [undefined, null, 'unknown', { family: 'serif' }]) {
+      const json = JSON.stringify({ ...state, font: value })
+      const parsed = parseStateJSON(json)
+      expect(parsed?.font).toBe('system')
+      expect(parsed?.partitions).toEqual(state.partitions)
+      vi.stubGlobal('localStorage', { getItem: () => json })
+      expect(loadState()?.font).toBe('system')
+    }
+  })
+
+  it('保留有效偏好，供本地恢复、云端读取和备份导入使用', () => {
+    for (const { id: font } of FONT_OPTIONS) {
+      const state = { ...parseStateJSON(JSON.stringify(createInitialState()))!, font }
+      const json = JSON.stringify(state)
+      expect(parseStateJSON(json)).toEqual(state)
+      vi.stubGlobal('localStorage', { getItem: () => json })
+      expect(loadState()).toEqual(state)
+    }
+  })
+})
 
 describe('首次使用的示例桌面', () => {
   it('在宽屏保持预设布局，在窄屏分页时卡片不重叠且不跨页', () => {

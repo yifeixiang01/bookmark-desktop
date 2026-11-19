@@ -1,83 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 
-interface WallpaperDef {
-  id: string
-  name: string
-  image: string
-  fallback: string
-}
+import { WALLPAPERS } from './wallpapers/catalog'
 
-export const WALLPAPERS: WallpaperDef[] = [
-  {
-    id: 'dusk-ridge',
-    name: '山野暮色',
-    image: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=2400&q=85',
-    fallback: '#344b54',
-  },
-  {
-    id: 'sea-mist',
-    name: '海岸晨光',
-    image: 'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?auto=format&fit=crop&w=2400&q=85',
-    fallback: '#8aa5b0',
-  },
-  {
-    id: 'pine-fog',
-    name: '松林雾起',
-    image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=85',
-    fallback: '#274436',
-  },
-  {
-    id: 'desert-glow',
-    name: '沙海落日',
-    image: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=2400&q=85',
-    fallback: '#a4694b',
-  },
-  {
-    id: 'night-lake',
-    name: '静夜湖畔',
-    image: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=2400&q=85',
-    fallback: '#182540',
-  },
-  // CC0 photographs from Wikimedia Commons, bundled locally for reliable loading.
-  {
-    id: 'lake-reflection',
-    name: '湖光倒影',
-    image: '/wallpapers/lake-reflection.jpg',
-    fallback: '#425c68',
-  },
-  {
-    id: 'yosemite-sunset',
-    name: '山谷夕照',
-    image: '/wallpapers/yosemite-sunset.jpg',
-    fallback: '#685f58',
-  },
-  {
-    id: 'terraced-fields',
-    name: '层叠梯田',
-    image: '/wallpapers/terraced-fields.jpg',
-    fallback: '#536b38',
-  },
-  {
-    id: 'ocean-waves',
-    name: '碧海浪纹',
-    image: '/wallpapers/ocean-waves.jpg',
-    fallback: '#286b73',
-  },
-  {
-    id: 'lofoten-mountains',
-    name: '挪威群山',
-    image: '/wallpapers/lofoten-mountains.jpg',
-    fallback: '#3b535b',
-  },
-  {
-    id: 'mountain-balloon',
-    name: '山间热气球',
-    image: '/wallpapers/mountain-balloon.jpg',
-    fallback: '#59687a',
-  },
-]
+const ArchipelagoWallpaper = lazy(() => import('./wallpapers/ArchipelagoWallpaper').then(module => ({ default: module.ArchipelagoWallpaper })))
+const KoiPondWallpaper = lazy(() => import('./wallpapers/KoiPondWallpaper').then(module => ({ default: module.KoiPondWallpaper })))
+const MeadowWallpaper = lazy(() => import('./wallpapers/MeadowWallpaper').then(module => ({ default: module.MeadowWallpaper })))
 
 function Scene({ id }: { id: string }) {
+  if (id === 'kite-meadow') return <Suspense fallback={<div className="absolute inset-0 bg-[#abc273]" />}><MeadowWallpaper /></Suspense>
+  if (id === 'koi-pond') return <Suspense fallback={<div className="absolute inset-0 bg-[#638c79]" />}><KoiPondWallpaper /></Suspense>
+  if (id === 'bookmark-islands') return <Suspense fallback={<div className="absolute inset-0 bg-[#4cb5b7]" />}><ArchipelagoWallpaper /></Suspense>
   if (id.startsWith('custom:')) {
     const url = id.slice(7)
     return (
@@ -87,7 +19,8 @@ function Scene({ id }: { id: string }) {
       />
     )
   }
-  const def = WALLPAPERS.find((w) => w.id === id) ?? WALLPAPERS[0]
+  const staticId = id === 'interactive-lake' ? 'lake-reflection' : id
+  const def = WALLPAPERS.find((w) => w.id === staticId) ?? WALLPAPERS.find((w) => w.id === 'dusk-ridge')!
   return (
     <>
       <div
@@ -123,14 +56,16 @@ export function Wallpaper({ id }: { id: string }) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
-    setLayers((prev) => (prev[prev.length - 1] === id ? prev : [prev[prev.length - 1], id]))
+    const raf = requestAnimationFrame(() => {
+      setLayers((prev) => (prev[prev.length - 1] === id ? prev : [prev[prev.length - 1], id]))
+    })
     clearTimeout(timer.current)
     timer.current = setTimeout(() => setLayers([id]), 650)
-    return () => clearTimeout(timer.current)
+    return () => { cancelAnimationFrame(raf); clearTimeout(timer.current) }
   }, [id])
 
   return (
-    <div className="fixed inset-0 -z-10">
+    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
       {layers.map((layerId, i) => (
         <FadeScene key={layerId} id={layerId} instant={i < layers.length - 1 || layers.length === 1} />
       ))}

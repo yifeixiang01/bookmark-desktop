@@ -63,7 +63,7 @@ function useContainerSize() {
  * 桌面网格（手机桌面式自由摆放 + 横向翻页）：
  * 行数和每页列数由视口决定，内容超出后按整页横向翻动；
  * 书签占 1x1 格、文件夹占 2x2 格；位置变化带滑动过渡。
- * 外层留 8px 内边距：编辑模式的删除/重命名角标凸出图标边缘，避免被滚动容器裁剪。
+ * 滚动容器内部预留悬停动效空间，避免首行放大后的图标被裁剪。
  */
 export function DesktopGrid(props: Props) {
   const { editMode, locked, iconPx, selected, drag, gridRef, scrollRef } = props
@@ -79,7 +79,9 @@ export function DesktopGrid(props: Props) {
   const rowH = iconPx + 56
   const availW = (w || 960) - EDGE_PAD * 2
   const DOTS_H = 26
-  const availH = (h || 560) - EDGE_PAD * 2 - DOTS_H
+  const HOVER_TOP_PAD = 20
+  const HOVER_BOTTOM_PAD = 8
+  const availH = (h || 560) - EDGE_PAD * 2 - DOTS_H - HOVER_TOP_PAD - HOVER_BOTTOM_PAD
   const fitRows = Math.max(3, Math.floor(availH / rowH))
   // 垂直方向至少 6 行；按实际可用高度逐行扩展，释放 Dock 后的空间可直接增加一行。
   const rows = Math.max(6, fitRows)
@@ -173,8 +175,8 @@ export function DesktopGrid(props: Props) {
     <div ref={ref} className="flex h-full min-w-full flex-col items-center px-2 pt-2">
       <div
         ref={scrollRef}
-        className="no-scrollbar max-w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden"
-        style={{ width: pageWidth, height: pageHeight }}
+        className="no-scrollbar box-content shrink-0 max-w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden"
+        style={{ width: pageWidth, height: pageHeight, paddingTop: HOVER_TOP_PAD, paddingBottom: HOVER_BOTTOM_PAD }}
         onScroll={(event) => setActivePage(Math.round(event.currentTarget.scrollLeft / pageWidth))}
         onWheel={(event) => {
           if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
@@ -228,6 +230,9 @@ export function DesktopGrid(props: Props) {
           return (
             <div
               key={item.id}
+              data-wallpaper-exclude
+              data-wallpaper-anchor={item.kind === 'app' ? undefined : item.id}
+              data-wallpaper-dragging={isSource || undefined}
               onPointerDown={locked || item.kind === 'app' ? undefined : (e) => props.onPress(e, { kind: 'desktop-item', itemId: item.id })}
               className={`absolute flex items-start justify-center ${
                 !noSlide && drag ? 'transition-[left,top] duration-200 ease-out' : ''
