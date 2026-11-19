@@ -130,7 +130,7 @@ export default function Home() {
 
   /** 文件夹迷你预览（删除确认弹窗用） */
   const folderIcon = (g: { bookmarks: Bookmark[] }) => (
-    <div className="grid h-14 w-14 grid-cols-2 place-items-center gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 shadow-[inset_0_1px_0_white]">
+    <div className="grid h-16 w-16 grid-cols-2 place-items-center gap-1 rounded-[18px] border-2 border-slate-300 bg-slate-100 p-2 shadow-sm">
       {g.bookmarks.slice(0, 4).map((b) => (
         <FaviconImg key={b.id} url={b.url} name={b.name} customIcon={b.icon} size={20} className="rounded-md" />
       ))}
