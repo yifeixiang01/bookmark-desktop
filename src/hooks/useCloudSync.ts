@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { trpc } from '@/providers/trpc'
 import type { AppState } from '@/types/bookmark'
-import { parseStateJSON } from '@/lib/store'
+import { createInitialState, parseStateJSON } from '@/lib/store'
 
 /** Serialize writes; revision checks prevent a stale desktop overwriting extension saves. */
 export function useCloudSync(state: AppState, replaceState: (s: AppState) => void, userId: number | undefined, { readOnly = false }: { readOnly?: boolean } = {}) {
@@ -30,12 +30,14 @@ export function useCloudSync(state: AppState, replaceState: (s: AppState) => voi
         revision = snapshot.revision
         const parsed = snapshot.state ? parseStateJSON(JSON.stringify(snapshot.state)) : null
         if (snapshot.state && !parsed) throw new Error('云端数据无法读取')
-        const next = parsed ?? latest.current.state
+        const next = parsed ?? (readOnly ? latest.current.state : createInitialState())
         baseline = JSON.stringify(next)
         if (parsed) latest.current.replaceState(parsed)
         else if (!readOnly) {
           const result = await latest.current.mutate({ state: next, expectedRevision: revision })
+          if (disposed) return
           revision = result.revision
+          latest.current.replaceState(next)
         }
         update({ hydrated: true, loadError: false, error: '' })
       } catch {
