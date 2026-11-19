@@ -3,3 +3,13 @@ dist
 .git
 *.swp
 *.log
+.pnpm-store
+.codex-artifacts
+.local-data
+.env
+.env.*
+!.env.example
+docs
+extension
+coverage
+*.tsbuildinfo

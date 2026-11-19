@@ -40,37 +40,37 @@ export const WALLPAPERS: WallpaperDef[] = [
   {
     id: 'lake-reflection',
     name: '湖光倒影',
-    image: '/wallpapers/lake-reflection.jpg',
+    image: '/wallpapers/lake-reflection.webp',
     fallback: '#425c68',
   },
   {
     id: 'yosemite-sunset',
     name: '山谷夕照',
-    image: '/wallpapers/yosemite-sunset.jpg',
+    image: '/wallpapers/yosemite-sunset.webp',
     fallback: '#685f58',
   },
   {
     id: 'terraced-fields',
     name: '层叠梯田',
-    image: '/wallpapers/terraced-fields.jpg',
+    image: '/wallpapers/terraced-fields.webp',
     fallback: '#536b38',
   },
   {
     id: 'ocean-waves',
     name: '碧海浪纹',
-    image: '/wallpapers/ocean-waves.jpg',
+    image: '/wallpapers/ocean-waves.webp',
     fallback: '#286b73',
   },
   {
     id: 'lofoten-mountains',
     name: '挪威群山',
-    image: '/wallpapers/lofoten-mountains.jpg',
+    image: '/wallpapers/lofoten-mountains.webp',
     fallback: '#3b535b',
   },
   {
     id: 'mountain-balloon',
     name: '山间热气球',
-    image: '/wallpapers/mountain-balloon.jpg',
+    image: '/wallpapers/mountain-balloon.webp',
     fallback: '#59687a',
   },
 ]
