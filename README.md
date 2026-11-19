@@ -1,4 +1,4 @@
-# Dandan
+# Stashy
 
 Chrome / Edge 浏览器插件：快速收藏当前网页或右键链接，并保存到账号下的一个或多个空间。
 
@@ -18,7 +18,7 @@ npm run package
 - 源码：`extension/src`
 - Manifest 与图标：`extension/public`
 - 构建目录：`extension/dist`
-- 安装包：`extension/Dandan-0.1.0.zip`
+- 安装包：`extension/Stashy-0.1.0.zip`
 
 `npm run build` 只构建插件；`npm run package` 额外生成 ZIP（打包脚本使用 Windows PowerShell）。`npm run dev` 仅用于网页界面开发预览，实际扩展功能需加载构建目录验证。
 
@@ -26,13 +26,13 @@ npm run package
 
 1. Chrome 打开 `chrome://extensions`，或 Edge 打开 `edge://extensions`。
 2. 开启开发者模式，点击“加载已解压的扩展程序”，选择 `extension/dist`。安装包需先解压。
-3. 点击 Dandan → 登录并授权。在 https://bookmark.yifeixiang.com.cn 使用邮箱账号登录，再确认授权。没有账号时请先在网站注册。
+3. 点击 Stashy → 登录并授权。在 https://bookmark.yifeixiang.com.cn 使用邮箱账号登录，再确认授权。没有账号时请先在网站注册。
 4. 点击工具栏插件，或在网页右键选择“保存书签”。右键链接时保存链接，其他位置保存当前页。
 5. 可修改标题、填写简介、选择多个空间。收藏保存到空间顶层，同空间已存在的网址会跳过，包括文件夹内已有书签。
 
 按账号记住上次保存的空间。登录凭证有效期 30 天，退出时撤销；断网退出仅清除本机凭证，界面会提示。草稿保留在浏览器会话存储中，浏览器关闭后清除。
 
-HTTP / HTTPS 网站可收藏；浏览器内部页面和文件页面不支持。右键链接的标题默认是 URL，可手动修改。当前采用临时 D 字图标，无需上架。
+HTTP / HTTPS 网站可收藏；浏览器内部页面和文件页面不支持。右键链接的标题默认是 URL，可手动修改。当前采用临时 S 字图标，无需上架。
 
 ## 服务端依赖
 
