@@ -27,3 +27,4 @@ body::-webkit-scrollbar-thumb:hover{background:#78977a;border-width:1px}
 .description-field textarea{height:58px;min-height:58px;max-height:100px;resize:none;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#a9bca8 transparent}
 .meta-notice{margin:-4px 0 8px;color:#7d8c7d;font-size:10px;line-height:1.5;overflow-wrap:anywhere}
 .preview strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.description-field textarea{height:72px;min-height:72px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
