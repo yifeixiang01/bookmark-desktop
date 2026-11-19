@@ -2,21 +2,27 @@ import { describe, it, expect } from 'vitest'
 import { addToSpaces, canonicalUrl, defaultState } from './extension-state'
 
 describe('extension bookmark operations', () => {
-  it('initializes one empty space and adds the same bookmark to multiple spaces', () => {
+  it('initializes a populated home and adds the same bookmark to multiple spaces', () => {
     const state = defaultState()
     expect(state.partitions).toHaveLength(1)
+    expect(state.partitions[0].name).toBe('主页')
+    expect(state.partitions[0].items.some(item => item.kind === 'bookmark')).toBe(true)
+    expect(state.partitions[0].items.some(item => item.kind === 'group')).toBe(true)
+    expect(state.partitions[0].items.filter(item => item.kind === 'app').map(item => item.app.type)).toEqual(['note', 'todo', 'pomodoro'])
+    const initialCount = state.partitions[0].items.length
     const first = state.partitions[0].id
     state.partitions.push({ id: 'second', name: '工作', items: [] })
     const result = addToSpaces(state, { title: 'Example', url: 'https://example.com', spaceIds: [first, 'second', first] })
     expect(result.added).toEqual([first, 'second'])
-    expect(state.partitions.map(p => p.items.length)).toEqual([1, 1])
+    expect(state.partitions.map(p => p.items.length)).toEqual([initialCount + 1, 1])
     expect(addToSpaces(state, { title: 'Again', url: 'https://example.com/', spaceIds: [first, 'second'] }).skipped).toEqual([first, 'second'])
-    expect(state.partitions.map(p => p.items.length)).toEqual([1, 1])
+    expect(state.partitions.map(p => p.items.length)).toEqual([initialCount + 1, 1])
   })
   it('checks all selected spaces before mutation', () => {
     const state = defaultState()
+    const before = structuredClone(state)
     expect(() => addToSpaces(state, { title: 'Test', url: 'https://example.com', spaceIds: [state.partitions[0].id, 'not-owned'] })).toThrow('空间不存在')
-    expect(state.partitions[0].items).toHaveLength(0)
+    expect(state).toEqual(before)
   })
   it('recognizes folder copies and retains meaningful query strings and fragments', () => {
     const state = defaultState(), id = state.partitions[0].id

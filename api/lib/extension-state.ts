@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import type { AppState, Bookmark } from '../../src/types/bookmark';
+import { createInitialState } from '../../src/lib/initialState';
 
 export function defaultState(): AppState {
-  const id = randomUUID();
-  return { version: 1, partitions: [{ id, name: '我的空间', items: [] }], activePartitionId: id, wallpaper: 'dusk-ridge', searchEngine: 'baidu', locked: false, iconSize: 'm' };
+  return createInitialState();
 }
 export function canonicalUrl(value: string) {
   const url = new URL(value);
