@@ -57,7 +57,7 @@ export function ConfirmDialog({
           <X size={17} />
         </button>
         <div className="px-7 pb-7 pt-8 sm:px-8">
-          <div className="mb-5 w-fit">
+          <div className="mx-auto mb-5 w-fit">
             {icon ?? (
               <div className="grid h-14 w-14 place-items-center rounded-[18px] border border-rose-100 bg-rose-50 text-rose-500 shadow-[inset_0_1px_0_white]">
                 <Trash2 size={25} strokeWidth={1.7} />
