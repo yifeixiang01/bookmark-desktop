@@ -66,10 +66,13 @@ function useContainerSize() {
  * 外层留 8px 内边距：编辑模式的删除/重命名角标凸出图标边缘，避免被滚动容器裁剪。
  */
 export function DesktopGrid(props: Props) {
-  const { items, editMode, locked, iconPx, selected, drag, gridRef, scrollRef } = props
+  const { editMode, locked, iconPx, selected, drag, gridRef, scrollRef } = props
+  const ponds = props.items.filter((item) => item.kind === 'app' && item.app.type === 'fishpond')
+  const items = props.items.filter((item) => !(item.kind === 'app' && item.app.type === 'fishpond'))
   const { ref, w, h } = useContainerSize()
   const gridElRef = useRef<HTMLDivElement>(null)
-  const [activePage, setActivePage] = useState(0)
+  const [pageIndex, setActivePage] = useState(0)
+  const previousPondCount = useRef(ponds.length)
 
   const colW = iconPx + 40
   const EDGE_PAD = 8
@@ -84,14 +87,20 @@ export function DesktopGrid(props: Props) {
   const visibleCols = Math.max(2, Math.floor(availW / (colW * scale)))
   const { placements, cols: usedCols } = layoutItems(items, rows, visibleCols)
   const requiredCols = Math.max(usedCols + (editMode ? 1 : 0), visibleCols)
-  const pageCount = Math.max(1, Math.ceil(requiredCols / visibleCols))
-  const cols = pageCount * visibleCols
+  const bookmarkPages = items.length || editMode || !ponds.length ? Math.max(1, Math.ceil(requiredCols / visibleCols)) : 0
+  const pageCount = bookmarkPages + ponds.length
+  const activePage = Math.min(pageIndex, pageCount - 1)
+  const cols = bookmarkPages * visibleCols
   const pageWidth = visibleCols * colW * scale
   const pageHeight = rows * rowH * scale
 
   useEffect(() => {
-    setActivePage((page) => Math.min(page, pageCount - 1))
-  }, [pageCount])
+    const added = ponds.length > previousPondCount.current
+    previousPondCount.current = ponds.length
+    if (!added) return
+    const frame = requestAnimationFrame(() => setActivePage(pageCount - 1))
+    return () => cancelAnimationFrame(frame)
+  }, [ponds.length, pageCount])
 
   useLayoutEffect(() => {
     const page = Math.min(activePage, pageCount - 1)
@@ -285,6 +294,9 @@ export function DesktopGrid(props: Props) {
           </div>
         </div>}
         </div>
+        {ponds.map((item, index) => item.kind === 'app' && <div key={item.id} className="absolute top-0 z-10" style={{ left: (bookmarkPages + index) * pageWidth }}>
+          <AppTile app={item.app} width={pageWidth - 8} height={pageHeight - 8} editMode={editMode} onAction={(action) => props.onAppAction?.(item.id, action)} onRemove={() => props.onDeleteApp?.(item.id)} />
+        </div>)}
       </div>
       </div>
       {pageCount > 1 && (

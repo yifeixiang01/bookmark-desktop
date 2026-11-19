@@ -5,6 +5,7 @@ export type { TodoApp } from '@/apps/todo/types'
 export type { WaterApp } from '@/apps/water/types'
 export type { WoodfishApp } from '@/apps/woodfish/types'
 export type { PomodoroApp } from '@/apps/pomodoro/types'
+export type { FishPondApp } from '@/apps/fishpond/types'
 
 // 数据模型 —— 华为手机桌面式：空间 > 桌面项目（独立书签 | 文件夹）
 export interface Bookmark {

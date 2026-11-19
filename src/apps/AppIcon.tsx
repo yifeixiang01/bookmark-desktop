@@ -1,4 +1,4 @@
-import { Cat, CircleDot, Droplets, ListTodo, NotebookPen, Timer } from 'lucide-react'
+import { Cat, CircleDot, Droplets, Fish, ListTodo, NotebookPen, Timer } from 'lucide-react'
 import type { AppType } from './types'
 
 const icons = {
@@ -7,6 +7,7 @@ const icons = {
   todo: ListTodo,
   water: Droplets,
   woodfish: CircleDot,
+  fishpond: Fish,
   pet: Cat,
 }
 
@@ -16,6 +17,7 @@ const colors = {
   todo: 'bg-emerald-50 text-emerald-700',
   water: 'bg-cyan-50 text-cyan-700',
   woodfish: 'bg-amber-50 text-amber-800',
+  fishpond: 'bg-teal-50 text-teal-700',
   pet: 'bg-stone-100 text-stone-700',
 }
 

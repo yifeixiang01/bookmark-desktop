@@ -189,6 +189,7 @@ export function layoutItems(
   const pending: DesktopItem[] = []
 
   for (const it of items) {
+    if (it.kind === 'app' && it.app.type === 'fishpond') continue // 独占分页的应用不参与普通网格占位。
     const span = spanOf(it)
     const p = it.pos
     // Columns grow horizontally. A saved position beyond the viewport is still
