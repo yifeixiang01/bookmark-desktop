@@ -11,6 +11,7 @@ import { useBookmarkStore } from '@/hooks/useBookmarkStore'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
 import { useCloudSync } from '@/hooks/useCloudSync'
+import { useSyncedLogout } from '@/hooks/useSyncedLogout'
 import { useAppFont } from '@/hooks/useAppFont'
 import { useDesktopDrag, SETTLE_MS, type GridFrame } from '@/hooks/useDesktopDrag'
 import { FaviconImg } from '@/components/FaviconImg'
@@ -38,20 +39,22 @@ type NamePrompt =
   | null
 
 export default function Home() {
-  const { user, isLoading: authLoading, logout } = useAuth({ redirectOnUnauthenticated: true })
+  const { user, isLoading: authLoading, isLoggingOut, logout } = useAuth({ redirectOnUnauthenticated: true })
   const store = useBookmarkStore()
   const { state, activePartition } = store
   useAppFont(state.font, state.fontScale)
   const cloud = useCloudSync(state, store.replaceState, user?.id)
+  const [logoutError, setLogoutError] = useState('')
+  const { exiting, exit } = useSyncedLogout(cloud.flushPending, logout, setLogoutError)
 
   const { finishApps } = store
   useEffect(() => {
-    if (!cloud.hydrated) return
+    if (!cloud.hydrated || exiting) return
     finishApps()
     const timer = window.setInterval(finishApps, 1000)
     window.addEventListener('focus', finishApps)
     return () => { window.clearInterval(timer); window.removeEventListener('focus', finishApps) }
-  }, [cloud.hydrated, finishApps])
+  }, [cloud.hydrated, finishApps, exiting])
 
   const [editingGroup, setEditingGroup] = useState<{ id: string; value: string } | null>(null)
   const [movingGroup, setMovingGroup] = useState<string | null>(null)
@@ -258,6 +261,14 @@ export default function Home() {
         !!document.querySelector('[role="dialog"],[role="menu"]')
       if (busy) return
 
+      // Desktop arrow shortcuts leave unrelated buttons behind. Release their
+      // focus so the next key cannot leave a ring on an old settings/page button.
+      // Space navigation manages its own focus; inputs and dialogs are excluded above.
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) &&
+        t instanceof HTMLButtonElement && !t.closest('nav[aria-label="切换空间"]')) {
+        t.blur()
+      }
+
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault()
         setSpaceNavigationKey((key) => key + 1)
@@ -315,7 +326,7 @@ export default function Home() {
   )
 
   // 未登录会被 useAuth 重定向到 /login；已登录则等云端数据水合完成再渲染桌面
-  if (authLoading || !user || !cloud.hydrated) {
+  if (exiting || authLoading || !user || !cloud.hydrated) {
     return (
       <div className="min-h-screen select-none font-sans">
         <Wallpaper id={state.wallpaper} />
@@ -336,7 +347,7 @@ export default function Home() {
           ) : (
             <>
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/25 border-t-white" />
-              <p className="text-sm text-white/70">正在同步云端数据…</p>
+              <p role="status" className="text-sm text-white/70">{exiting || isLoggingOut ? '正在退出登录…' : '正在同步云端数据…'}</p>
             </>
           )}
         </div>
@@ -346,6 +357,7 @@ export default function Home() {
 
   return (
     <div className="h-screen select-none overflow-hidden font-sans">
+      {logoutError && <div role="alert" className="fixed left-1/2 top-4 z-[100] w-max max-w-[90vw] -translate-x-1/2 rounded-xl bg-amber-100 px-5 py-3 text-sm text-amber-950">{logoutError}</div>}
       <Wallpaper id={state.wallpaper} />
       {state.locked && (
         <span role="status" className="fixed right-[104px] top-4 z-20 rounded-full border border-white/15 bg-black/25 px-3 py-2 text-[13px] text-white/90 backdrop-blur-md">
@@ -384,8 +396,8 @@ export default function Home() {
         onWallpaper={store.setWallpaper}
         accountLabel={user.email ?? user.name ?? '已登录'}
         syncing={cloud.syncing}
-        syncError={cloud.error}
-        onLogout={logout}
+        syncError={logoutError || cloud.error}
+        onLogout={() => { setLogoutError(''); void exit() }}
         onExportJSON={() => exportJSON(state)}
         onImportHTML={async (file) => {
           const gs = parseBookmarkHTML(await file.text())

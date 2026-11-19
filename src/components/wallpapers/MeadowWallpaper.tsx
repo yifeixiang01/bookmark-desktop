@@ -115,8 +115,9 @@ export function MeadowWallpaper() {
       }
       clouds = clouds.filter(cloud => {
         if (ids.has(cloud.id)) return true
-        cloud.life *= Math.exp(-dt * 1.3); dirty = true
-        return cloud.life > 0.012
+        const scale = reduced.matches ? 0 : Math.max(0, (Math.sqrt(cloud.life) + 0.08) * Math.exp(-dt * 0.65) - 0.08)
+        cloud.life = scale * scale; dirty = true
+        return scale > 0
       })
     }
 
@@ -132,6 +133,7 @@ export function MeadowWallpaper() {
       distances.fill(1000)
       for (const cloud of masses) {
         const scale = Math.sqrt(cloud.life)
+        if (scale <= 0) continue
         const anchor = { ...cloud, rx: cloud.rx * scale, ry: cloud.ry * scale }
         const left = Math.max(0, Math.floor((cloud.x - anchor.rx - 35) / step))
         const right = Math.min(cols - 1, Math.ceil((cloud.x + anchor.rx + 35) / step))
@@ -142,7 +144,8 @@ export function MeadowWallpaper() {
           // Overlapping, irregular billows with fine wisps instead of outlined circles.
           const billow = seaNoise(x * 0.033 + cloud.seed % 59, y * 0.033) - 0.5
           const fine = seaNoise(x * 0.095, y * 0.095) - 0.5
-          const distance = anchorDistance(x, y, anchor) + (billow * 30 + fine * 7) * scale
+          // Scale the soft edge too, so a tiny cloud cannot leave a full-size wisp.
+          const distance = anchorDistance(x, y, anchor) / scale + billow * 30 + fine * 7
           distances[index] = smoothUnion(distances[index], distance, 30)
         }
       }
@@ -212,26 +215,30 @@ export function MeadowWallpaper() {
     const birds = () => {
       // Slow passages separated by quiet intervals.
       if (reduced.matches) return
-      const duration = 120
-      const interval = duration + 34
+      const interval = 196
       const cycle = Math.floor(time / interval)
-      const elapsed = time % interval - 10
-      if (elapsed < 0 || elapsed > duration) return
-      const progress = elapsed / duration
-      const heading = random(birdRouteSeed + cycle * 13) * Math.PI * 2
-      const dx = Math.cos(heading), dy = Math.sin(heading)
-      const centerX = width * (0.3 + random(birdRouteSeed + cycle * 17 + 1) * 0.4)
-      const centerY = height * (0.3 + random(birdRouteSeed + cycle * 19 + 2) * 0.4)
       // Extend both ends beyond the viewport, including diagonal approaches.
       const reach = Math.hypot(width, height) * 0.65 + 100
       const count = 1 + Math.floor(random(birdRouteSeed + cycle * 23 + 3) * 3)
+      const flockSeed = birdRouteSeed + cycle * 101
+      const together = count > 1 && random(flockSeed + 8) < 0.5
+      const spacing = 30 + random(flockSeed + 9) * 30
       for (let i = 0; i < count; i++) {
-        // Each passage has its own loose formation, with gentle changes in spacing.
-        const seed = birdRouteSeed + cycle * 101 + i * 29
+        // Companions share one trajectory; solitary birds choose their own timing and route.
+        const seed = together ? flockSeed : flockSeed + i * 29
+        const duration = together ? 120 : 105 + random(seed + 10) * 45
+        const elapsed = time % interval - (together ? 10 : 10 + random(seed + 11) * 12)
+        if (elapsed < 0 || elapsed > duration) continue
+        const progress = elapsed / duration
+        const heading = random(seed + 12) * Math.PI * 2
+        const dx = Math.cos(heading), dy = Math.sin(heading)
+        const centerX = width * (0.3 + random(seed + 13) * 0.4)
+        const centerY = height * (0.3 + random(seed + 14) * 0.4)
         const phase = random(seed + 4) * Math.PI * 2
         const drift = 5 + random(seed + 5) * 7
-        const offsetAlong = (i - (count - 1) / 2) * 42 + (random(seed + 6) - 0.5) * 24
-        const offsetAcross = (random(seed + 7) - 0.5) * 100
+        const slot = i - (count - 1) / 2
+        const offsetAlong = together ? slot * spacing * 0.65 : 0
+        const offsetAcross = together ? slot * spacing : (random(seed + 7) - 0.5) * 100
         const along = (progress * 2 - 1) * reach + offsetAlong
         const across = Math.sin(progress * Math.PI * 1.5) * 28 + offsetAcross
           + Math.sin(progress * Math.PI * 2 + phase) * drift

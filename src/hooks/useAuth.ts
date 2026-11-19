@@ -28,12 +28,13 @@ export function useAuth(options?: UseAuthOptions) {
 
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: async () => {
-      await utils.invalidate();
-      navigate(redirectPath);
+      utils.auth.me.setData(undefined, null);
+      navigate(redirectPath, { replace: true });
+      void utils.invalidate().catch(() => {});
     },
   });
 
-  const logout = useCallback(() => logoutMutation.mutate(), [logoutMutation]);
+  const logout = useCallback(() => logoutMutation.mutateAsync(), [logoutMutation]);
 
   useEffect(() => {
     if (redirectOnUnauthenticated && !isLoading && !user) {
@@ -49,6 +50,7 @@ export function useAuth(options?: UseAuthOptions) {
       user: user ?? null,
       isAuthenticated: !!user,
       isLoading: isLoading || logoutMutation.isPending,
+      isLoggingOut: logoutMutation.isPending,
       error,
       logout,
       refresh: refetch,

@@ -39,7 +39,7 @@ export function ArchipelagoWallpaper() {
     let reefs = new Float32Array(0)
     let waterTone = new Float32Array(0)
     let pixels: ImageData
-    let anchors: IslandAnchor[] = []
+    let anchors: (IslandAnchor & { retreatScale?: number })[] = []
     let targets: IslandAnchor[] = []
     let frame = 0
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -120,7 +120,6 @@ export function ArchipelagoWallpaper() {
 
     const morph = (dt: number) => {
       const amount = reduced.matches ? 1 : 1 - Math.exp(-dt * 1.25)
-      const ebb = reduced.matches ? 1 : 1 - Math.exp(-dt * 0.95)
       const targetIds = new Set(targets.map(a => a.id))
       for (const target of targets) {
         let current = anchors.find(a => a.id === target.id)
@@ -132,9 +131,9 @@ export function ArchipelagoWallpaper() {
       }
       anchors = anchors.filter(a => {
         if (targetIds.has(a.id)) return true
-        a.rx = lerp(a.rx, 0, ebb); a.ry = lerp(a.ry, 0, ebb)
+        a.retreatScale = reduced.matches ? 0 : Math.max(0, ((a.retreatScale ?? 1) + 0.04) * Math.exp(-dt * 0.95) - 0.04)
         dirty = true
-        return a.rx > 1 && a.ry > 1
+        return a.retreatScale > 0
       })
     }
 
@@ -143,19 +142,24 @@ export function ArchipelagoWallpaper() {
       // every icon at every ocean pixel; beyond 220px the sea color is constant.
       field.fill(220)
       for (const anchor of anchors) {
+        const scale = anchor.retreatScale ?? 1
+        const shape = { ...anchor, rx: anchor.rx * scale, ry: anchor.ry * scale }
         const left = Math.max(0, Math.floor((anchor.x - anchor.rx - 222) / step))
         const right = Math.min(cols - 1, Math.ceil((anchor.x + anchor.rx + 222) / step))
         const top = Math.max(0, Math.floor((anchor.y - anchor.ry - 222) / step))
         const bottom = Math.min(rows - 1, Math.ceil((anchor.y + anchor.ry + 222) / step))
         for (let row = top; row <= bottom; row++) for (let col = left; col <= right; col++) {
           const index = row * cols + col
-          field[index] = smoothUnion(field[index], anchorDistance((col + 0.5) * step, (row + 0.5) * step, anchor))
+          const x = (col + 0.5) * step, y = (row + 0.5) * step
+          // Shrink shoreline detail and the shallow-water halo along with the sand.
+          const distance = anchorDistance(x, y, shape) / scale + coastNoise(x, y)
+          field[index] = smoothUnion(field[index], distance, 38 * scale)
         }
       }
       for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
         const x = (col + 0.5) * step, y = (row + 0.5) * step
         const index = row * cols + col
-        const distance = field[index] + coastNoise(x, y)
+        const distance = field[index]
         field[index] = distance
         let high = 1
         while (high < palette.length - 1 && distance > palette[high].d) high++

@@ -34,6 +34,17 @@ export function PartitionSidebar({
   const activeIndex = Math.max(0, partitions.findIndex((p) => p.id === activeId))
   return (
     <nav ref={navRef} aria-label="切换空间" data-expanded={expanded}
+      onKeyDown={(event) => {
+        if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
+        event.preventDefault()
+        event.stopPropagation()
+        const nextIndex = Math.max(0, Math.min(partitions.length - 1,
+          activeIndex + (event.key === 'ArrowDown' ? 1 : -1)))
+        const next = partitions[nextIndex]
+        if (!next) return
+        if (next.id !== activeId) onSelect(next.id)
+        navRef.current?.querySelectorAll<HTMLButtonElement>('button')[nextIndex]?.focus({ preventScroll: true })
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onFocusCapture={() => setFocused(true)}

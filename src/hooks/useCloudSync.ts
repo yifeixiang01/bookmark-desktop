@@ -10,12 +10,14 @@ export function useCloudSync(state: AppState, replaceState: (s: AppState) => voi
   const latest = useRef({ state, replaceState, utils, mutate: save.mutateAsync })
   latest.current = { state, replaceState, utils, mutate: save.mutateAsync }
   const [status, setStatus] = useState({ hydrated: false, syncing: false, loadError: false, error: '' })
-  const controller = useRef<{ retry: () => void }>({ retry: () => {} })
+  const controller = useRef<{ retry: () => void; flush: () => Promise<boolean> }>({ retry: () => {}, flush: async () => false })
 
   useEffect(() => {
     if (!userId) return
     let disposed = false, busy = false, stopped = false, revision = 0
     let baseline = ''
+    let idle: (() => void)[] = []
+    const release = () => { busy = false; const waiting = idle; idle = []; waiting.forEach(resolve => resolve()) }
     setStatus({ hydrated: false, syncing: false, loadError: false, error: '' })
     const update = (patch: Partial<typeof status>) => { if (!disposed) setStatus(s => ({ ...s, ...patch })) }
     async function load(initial = false) {
@@ -42,31 +44,46 @@ export function useCloudSync(state: AppState, replaceState: (s: AppState) => voi
         update({ hydrated: true, loadError: false, error: '' })
       } catch {
         update({ loadError: initial, error: initial ? '' : '云端读取失败，将在下次切回时重试' })
-      } finally { busy = false }
+      } finally { release() }
     }
     async function flush() {
-      if (readOnly || busy || stopped || disposed || !baseline) return
+      if (readOnly) return true
+      if (busy || stopped || disposed || !baseline) return false
       const local = latest.current.state
       const json = JSON.stringify(local)
-      if (json === baseline) return
+      if (json === baseline) return true
       busy = true
       update({ syncing: true })
       try {
         const result = await latest.current.mutate({ state: local, expectedRevision: revision })
-        if (disposed) return
+        if (disposed) return false
         revision = result.revision
         baseline = json
         update({ error: '' })
+        return true
       } catch (error) {
         const code = (error as { data?: { code?: string } }).data?.code
         if (code === 'CONFLICT' || code === 'UNAUTHORIZED') stopped = true
         update({ error: code === 'CONFLICT' ? '云端已有新修改，本地修改尚未上传。请先导出本地备份，再刷新页面获取云端数据。' : code === 'UNAUTHORIZED' ? '登录已失效，请重新登录；本地修改尚未上传。' : '同步失败，本地修改已保留，正在等待重试。' })
+        return false
       } finally {
-        busy = false
+        release()
         update({ syncing: false })
       }
     }
     controller.current.retry = () => { void load(true) }
+    controller.current.flush = async () => {
+      if (readOnly) return true
+      // Join an ongoing read/write before comparing the latest state, then
+      // drain edits made while the previous save was in flight.
+      while (!disposed && !stopped) {
+        if (busy) { await new Promise<void>(resolve => idle.push(resolve)); continue }
+        if (!baseline) return false
+        if (JSON.stringify(latest.current.state) === baseline) return true
+        if (!await flush()) return false
+      }
+      return false
+    }
     void load(true)
     const tick = () => { void flush() }
     const timer = setInterval(tick, 1000)
@@ -76,7 +93,7 @@ export function useCloudSync(state: AppState, replaceState: (s: AppState) => voi
       if (!readOnly && baseline && JSON.stringify(latest.current.state) !== baseline) { event.preventDefault(); event.returnValue = '' }
     }
     window.addEventListener('beforeunload', beforeUnload)
-    return () => { disposed = true; clearInterval(timer); window.removeEventListener('focus', focus); window.removeEventListener('beforeunload', beforeUnload) }
+    return () => { disposed = true; release(); clearInterval(timer); window.removeEventListener('focus', focus); window.removeEventListener('beforeunload', beforeUnload) }
   }, [userId, readOnly])
-  return { ...status, retryLoad: () => controller.current.retry() }
+  return { ...status, retryLoad: () => controller.current.retry(), flushPending: () => controller.current.flush() }
 }

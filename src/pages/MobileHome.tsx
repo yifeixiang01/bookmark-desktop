@@ -3,6 +3,7 @@ import { Bookmark as BookmarkIcon, Cloud, Folder, Loader2, LogOut, Search, Setti
 import { useAuth } from '@/hooks/useAuth'
 import { useBookmarkStore } from '@/hooks/useBookmarkStore'
 import { useCloudSync } from '@/hooks/useCloudSync'
+import { useSyncedLogout } from '@/hooks/useSyncedLogout'
 import { useAppFont } from '@/hooks/useAppFont'
 import { mobileItems } from '@/lib/mobileLayout'
 import { searchBookmarks } from '@/lib/searchBookmarks'
@@ -29,13 +30,13 @@ function MobileSheet({ open, onOpenChange, title, description, children }: {
   )
 }
 
-function LoadingScreen({ retry, failed }: { retry: () => void; failed: boolean }) {
+function LoadingScreen({ retry, failed, exiting = false }: { retry: () => void; failed: boolean; exiting?: boolean }) {
   return (
     <main className="mobile-home grid min-h-dvh place-items-center px-6 text-center">
       <div className="mobile-loading">
         <span className="mobile-brand-mark mx-auto"><BookmarkIcon size={25} /></span>
         <h1 className="mt-5 text-xl font-semibold">书签桌面</h1>
-        <p className="mt-2 text-sm text-slate-500">{failed ? '暂时无法读取书签，请检查网络后重试' : '正在为你准备空间…'}</p>
+        <p className="mt-2 text-sm text-slate-500">{exiting ? '正在退出登录…' : failed ? '暂时无法读取书签，请检查网络后重试' : '正在为你准备空间…'}</p>
         {failed ? <button onClick={retry} className="mobile-primary mt-5 px-7">重新加载</button>
           : <Loader2 className="mx-auto mt-5 animate-spin text-[#367467]" size={20} aria-label="正在加载" />}
       </div>
@@ -51,6 +52,8 @@ export default function MobileHome() {
   const [selectedPartitionId, setSelectedPartitionId] = useState<string | null>(null)
   const activePartition = state.partitions.find((partition) => partition.id === selectedPartitionId) ?? store.activePartition
   const cloud = useCloudSync(state, store.replaceState, user?.id, { readOnly: true })
+  const [logoutError, setLogoutError] = useState('')
+  const { exiting, exit } = useSyncedLogout(cloud.flushPending, logout, setLogoutError)
   const [query, setQuery] = useState('')
   const [openGroupId, setOpenGroupId] = useState<string | null>(null)
   const [accountOpen, setAccountOpen] = useState(false)
@@ -68,8 +71,8 @@ export default function MobileHome() {
     [activePartition, query],
   )
 
-  if (authLoading || !user || !cloud.hydrated) {
-    return <LoadingScreen retry={cloud.retryLoad} failed={cloud.loadError} />
+  if (exiting || authLoading || !user || !cloud.hydrated) {
+    return <LoadingScreen retry={cloud.retryLoad} failed={cloud.loadError} exiting={exiting} />
   }
 
   const switchPartition = (id: string) => {
@@ -101,7 +104,7 @@ export default function MobileHome() {
         </div>
       </header>
       <div className="mobile-content">
-        {cloud.error && <div role="alert" className="mobile-error">{cloud.error}</div>}
+        {(cloud.error || logoutError) && <div role="alert" className="mobile-error">{logoutError || cloud.error}</div>}
 
         <section className="mobile-library" aria-label={normalizedQuery ? '搜索结果' : '空间项目'}>
           {normalizedQuery ? (
@@ -160,7 +163,7 @@ export default function MobileHome() {
       <MobileSheet open={accountOpen} onOpenChange={setAccountOpen} title="账号与数据" description={user.email ?? user.name ?? '已登录'}>
         <PwaInstall />
         <div className="mobile-account-status"><Cloud size={19} /><div><strong>{cloud.error ? '云端读取需要留意' : '只读浏览'}</strong><p>{cloud.error ? '请检查网络，切回页面后将重试' : '可切换空间、搜索和打开书签；内容请在电脑端管理'}</p></div></div>
-        <button onClick={logout} className="mobile-logout"><LogOut size={17} />退出登录</button>
+        <button onClick={() => { setLogoutError(''); void exit() }} className="mobile-logout"><LogOut size={17} />退出登录</button>
       </MobileSheet>
 
     </main>
