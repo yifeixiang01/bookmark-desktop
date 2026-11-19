@@ -4,7 +4,7 @@ import type { AppState } from '@/types/bookmark'
 import { parseStateJSON } from '@/lib/store'
 
 /** Serialize writes; revision checks prevent a stale desktop overwriting extension saves. */
-export function useCloudSync(state: AppState, replaceState: (s: AppState) => void, userId: number | undefined) {
+export function useCloudSync(state: AppState, replaceState: (s: AppState) => void, userId: number | undefined, { readOnly = false }: { readOnly?: boolean } = {}) {
   const utils = trpc.useUtils()
   const save = trpc.state.save.useMutation()
   const latest = useRef({ state, replaceState, utils, mutate: save.mutateAsync })
@@ -20,20 +20,20 @@ export function useCloudSync(state: AppState, replaceState: (s: AppState) => voi
     const update = (patch: Partial<typeof status>) => { if (!disposed) setStatus(s => ({ ...s, ...patch })) }
     async function load(initial = false) {
       if (busy || stopped || disposed) return
-      if (!initial && JSON.stringify(latest.current.state) !== baseline) return
+      if (!readOnly && !initial && JSON.stringify(latest.current.state) !== baseline) return
       busy = true
       try {
         const snapshot = await latest.current.utils.state.snapshot.fetch()
         if (disposed) return
         // A user may edit while the read is in flight. Keep their edits for CAS save.
-        if (!initial && JSON.stringify(latest.current.state) !== baseline) return
+        if (!readOnly && !initial && JSON.stringify(latest.current.state) !== baseline) return
         revision = snapshot.revision
         const parsed = snapshot.state ? parseStateJSON(JSON.stringify(snapshot.state)) : null
         if (snapshot.state && !parsed) throw new Error('云端数据无法读取')
         const next = parsed ?? latest.current.state
         baseline = JSON.stringify(next)
         if (parsed) latest.current.replaceState(parsed)
-        else {
+        else if (!readOnly) {
           const result = await latest.current.mutate({ state: next, expectedRevision: revision })
           revision = result.revision
         }
@@ -43,7 +43,7 @@ export function useCloudSync(state: AppState, replaceState: (s: AppState) => voi
       } finally { busy = false }
     }
     async function flush() {
-      if (busy || stopped || disposed || !baseline) return
+      if (readOnly || busy || stopped || disposed || !baseline) return
       const local = latest.current.state
       const json = JSON.stringify(local)
       if (json === baseline) return
@@ -68,13 +68,13 @@ export function useCloudSync(state: AppState, replaceState: (s: AppState) => voi
     void load(true)
     const tick = () => { void flush() }
     const timer = setInterval(tick, 1000)
-    const focus = () => { if (JSON.stringify(latest.current.state) === baseline) void load(); else void flush() }
+    const focus = () => { if (readOnly || JSON.stringify(latest.current.state) === baseline) void load(); else void flush() }
     window.addEventListener('focus', focus)
     const beforeUnload = (event: BeforeUnloadEvent) => {
-      if (baseline && JSON.stringify(latest.current.state) !== baseline) { event.preventDefault(); event.returnValue = '' }
+      if (!readOnly && baseline && JSON.stringify(latest.current.state) !== baseline) { event.preventDefault(); event.returnValue = '' }
     }
     window.addEventListener('beforeunload', beforeUnload)
     return () => { disposed = true; clearInterval(timer); window.removeEventListener('focus', focus); window.removeEventListener('beforeunload', beforeUnload) }
-  }, [userId])
+  }, [userId, readOnly])
   return { ...status, retryLoad: () => controller.current.retry() }
 }
