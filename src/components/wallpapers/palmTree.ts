@@ -10,8 +10,13 @@ export function drawPalmTree(ctx: CanvasRenderingContext2D, x: number, y: number
     bend: (random(50 + i) - 0.5) * 8,
     width: 3.8 + random(70 + i) * 1.6,
   }))
-  const rootX = 6 + random(90) * 6
-  const rootY = 34 + random(91) * 5
+  const leanAngle = random(90) * Math.PI * 2
+  const trunkLength = 32 + random(91) * 9
+  const rootX = Math.cos(leanAngle) * trunkLength
+  const rootY = Math.sin(leanAngle) * trunkLength
+  const trunkBend = (random(92) < 0.5 ? -1 : 1) * (4 + random(93) * 12)
+  const controlX = rootX * 0.5 - Math.sin(leanAngle) * trunkBend
+  const controlY = rootY * 0.5 + Math.cos(leanAngle) * trunkBend
   ctx.save(); ctx.translate(x, y); ctx.scale(size, size)
   // Plant the trunk base at the tested land position, not the canopy center.
   // Fronds remain unrestricted so they can overhang the shoreline naturally.
@@ -49,9 +54,9 @@ export function drawPalmTree(ctx: CanvasRenderingContext2D, x: number, y: number
   // A leaning trunk projects beyond the canopy while the crown stays overhead.
   ctx.lineCap = 'round'
   ctx.strokeStyle = '#9c8b69'; ctx.lineWidth = 3.1
-  ctx.beginPath(); ctx.moveTo(rootX, rootY); ctx.quadraticCurveTo(rootX - 17, 19, 0, 0); ctx.stroke()
+  ctx.beginPath(); ctx.moveTo(rootX, rootY); ctx.quadraticCurveTo(controlX, controlY, 0, 0); ctx.stroke()
   ctx.strokeStyle = '#d1c19a'; ctx.lineWidth = 1.1
-  ctx.beginPath(); ctx.moveTo(rootX - 0.8, rootY - 1); ctx.quadraticCurveTo(rootX - 17.8, 19, -0.8, 0); ctx.stroke()
+  ctx.beginPath(); ctx.moveTo(rootX - 0.8, rootY - 1); ctx.quadraticCurveTo(controlX - 0.8, controlY - 0.5, -0.8, 0); ctx.stroke()
   ctx.save(); ctx.translate(9, 12); ctx.globalAlpha *= 0.09
   canopy(true); ctx.restore()
   canopy(false)

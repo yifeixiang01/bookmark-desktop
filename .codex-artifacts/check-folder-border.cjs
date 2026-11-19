@@ -1,0 +1,10 @@
+const {chromium}=require('C:/Users/yifeixiang/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');const assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'});try{const page=await browser.newPage({viewport:{width:1440,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));const state={version:1,activePartitionId:'home',wallpaper:'koi-pond',searchEngine:'baidu',locked:false,iconSize:'m',partitions:[{id:'home',name:'主页',items:[{id:'folder',kind:'group',pos:{x:0,y:0},group:{id:'development',name:'开发',bookmarks:[{id:'one',name:'示例一',url:'https://example.com/1'},{id:'two',name:'示例二',url:'https://example.com/2'}]}}]}]};await page.route('**/api/trpc/**',async route=>{const names=new URL(route.request().url()).pathname.split('/').pop().split(',');await route.fulfill({contentType:'application/json',body:JSON.stringify(names.map(n=>({result:{data:{json:n==='auth.me'?{id:989,name:'预览',email:'preview@example.com'}:n==='state.snapshot'?{state,revision:0}:{revision:1}}}})))});});await page.goto('http://127.0.0.1:3000/');await page.locator('[data-wallpaper-anchor="folder"]').click({button:'right'});
+await page.getByRole('menuitem',{name:/删除/}).click();
+const dialog=page.getByRole('alertdialog');await dialog.waitFor();await page.waitForTimeout(350);
+const icon=dialog.locator('.grid.grid-cols-2');
+const style=await icon.evaluate(el=>{const s=getComputedStyle(el);return {border:s.borderTopWidth,color:s.borderTopColor,background:s.backgroundColor}});
+assert.equal(style.border,'2px');assert.notEqual(style.color,style.background);
+await page.screenshot({path:'.codex-artifacts/folder-delete-border.png'});
+await dialog.getByRole('button',{name:'取消',exact:true}).click();assert.equal(await dialog.count(),0);
+assert.deepEqual(errors,[]);console.log('PASS: folder preview has a visible 2px border and tinted background; cancel preserves folder.');}finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});

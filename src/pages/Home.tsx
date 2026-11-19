@@ -6,7 +6,7 @@ import { dragVisualOf } from '@/lib/gridLayout'
 import { BookmarkSpaceDialog } from '@/components/BookmarkSpaceDialog'
 import { containingPartitions } from '@/lib/bookmarkActions'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Layers } from 'lucide-react'
+import { Layers, Expand } from 'lucide-react'
 import { useBookmarkStore } from '@/hooks/useBookmarkStore'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
@@ -478,7 +478,17 @@ export default function Home() {
               }}
               onDissolveGroup={(id) => {
                 const group = activePartition.items.find((it) => it.kind === 'group' && it.group.id === id)
-                if (group?.kind === 'group') setConfirm({ title: `解除卡片「${group.group.name}」？`, description: '卡片会被删除，其中的书签会释放到当前桌面。', action: () => store.dissolveGroup(id) })
+                if (group?.kind === 'group') setConfirm({
+                  title: `解散文件夹「${group.group.name}」？`,
+                  description: '解散后，文件夹中的书签将移到当前桌面，书签不会被删除。',
+                  icon: (
+                    <div className="grid h-14 w-14 place-items-center rounded-[18px] border border-sky-100 bg-sky-50 text-sky-600 shadow-[inset_0_1px_0_white]">
+                      <Expand size={25} strokeWidth={1.7} aria-hidden="true" />
+                    </div>
+                  ),
+                  confirmText: '解散',
+                  action: () => store.dissolveGroup(id),
+                })
               }}
               onDeleteGroup={(g) => {
                 if (g.bookmarks.length === 0) {

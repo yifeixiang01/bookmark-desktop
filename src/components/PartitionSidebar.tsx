@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Partition } from '@/types/bookmark'
 import './PartitionSidebar.css'
 
@@ -13,9 +13,18 @@ interface Props {
 export function PartitionSidebar({
   partitions, activeId, onSelect, revealKey = 0,
 }: Props) {
+  const navRef = useRef<HTMLElement>(null)
   const [temporarilyVisible, setTemporarilyVisible] = useState(true)
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
+  useLayoutEffect(() => {
+    const nav = navRef.current
+    // When arrow shortcuts change spaces, keep an existing navigation focus
+    // on the selected space rather than leaving an outline on the old button.
+    if (nav?.contains(document.activeElement)) {
+      nav.querySelector<HTMLButtonElement>('button[aria-current="page"]')?.focus({ preventScroll: true })
+    }
+  }, [activeId])
   useEffect(() => {
     setTemporarilyVisible(true)
     const timer = window.setTimeout(() => setTemporarilyVisible(false), 2200)
@@ -24,7 +33,7 @@ export function PartitionSidebar({
   const expanded = temporarilyVisible || hovered || focused
   const activeIndex = Math.max(0, partitions.findIndex((p) => p.id === activeId))
   return (
-    <nav aria-label="切换空间" data-expanded={expanded}
+    <nav ref={navRef} aria-label="切换空间" data-expanded={expanded}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onFocusCapture={() => setFocused(true)}
