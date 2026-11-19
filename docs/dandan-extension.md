@@ -1,4 +1,4 @@
-# Dandan 插件配套服务端部署
+# Stashy 插件配套服务端部署
 
 浏览器插件源码和本地安装说明位于同一仓库的 `codex/browser-extension` 分支；`main` 只维护网站及服务端。
 

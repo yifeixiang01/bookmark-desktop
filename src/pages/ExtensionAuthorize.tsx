@@ -22,11 +22,11 @@ export default function ExtensionAuthorize() {
   }
   const returnTo = `/extension/authorize${location.search}`
   return <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-white"><section className="w-full max-w-md rounded-3xl bg-white/10 p-8 space-y-5">
-    <div className="text-3xl font-bold">Dandan</div><h1 className="text-xl">授权浏览器插件</h1>
-    {!valid ? <p>授权链接无效，请从 Dandan 插件重新发起登录。</p> : isLoading ? <p>正在确认账号…</p> : !user ? <><p>登录后，Dandan 可以读取你的空间，并将收藏保存到你的账号。</p><a className="block rounded-xl bg-white p-3 text-center text-slate-900" href={`/login?returnTo=${encodeURIComponent(returnTo)}`}>前往邮箱登录</a><p className="text-sm text-white/60">没有账号？请在本站注册，完成后返回插件继续授权。</p></> : <>
-    <p>当前账号：{user.email || user.name}</p><p className="text-white/70">允许 Dandan 查看空间列表并保存书签。插件不会获取你的密码，也不会自动读取浏览历史。</p>
+    <div className="text-3xl font-bold">Stashy</div><h1 className="text-xl">授权浏览器插件</h1>
+    {!valid ? <p>授权链接无效，请从 Stashy 插件重新发起登录。</p> : isLoading ? <p>正在确认账号…</p> : !user ? <><p>登录后，Stashy 可以读取你的空间，并将收藏保存到你的账号。</p><a className="block rounded-xl bg-white p-3 text-center text-slate-900" href={`/login?returnTo=${encodeURIComponent(returnTo)}`}>前往邮箱登录</a><p className="text-sm text-white/60">没有账号？请在本站注册，完成后返回插件继续授权。</p></> : <>
+    <p>当前账号：{user.email || user.name}</p><p className="text-white/70">允许 Stashy 查看空间列表并保存书签。插件不会获取你的密码，也不会自动读取浏览历史。</p>
     <p className="break-all text-xs text-white/50">插件 ID：{new URL(redirectUri).hostname.split('.')[0]}</p>
-    <button disabled={busy} className="w-full rounded-xl bg-white p-3 text-slate-900 disabled:opacity-50" onClick={approve}>{busy ? '正在授权…' : '同意并返回 Dandan'}</button>
+    <button disabled={busy} className="w-full rounded-xl bg-white p-3 text-slate-900 disabled:opacity-50" onClick={approve}>{busy ? '正在授权…' : '同意并返回 Stashy'}</button>
     <a className="block text-center text-white/60" href={valid ? `${redirectUri}?error=access_denied&state=${encodeURIComponent(state)}` : '/'}>取消授权</a></>}
     {error && <p role="alert" className="text-red-300">{error}</p>}
   </section></main>

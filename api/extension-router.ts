@@ -35,7 +35,7 @@ app.post('/authorize', async c => {
   let user;
   try { user = await authenticateRequest(c.req.raw.headers); } catch { return c.json({ error: '请先登录' }, 401); }
   const parsed = authorization.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) return c.json({ error: '授权参数无效，请从 Dandan 重新登录' }, 400);
+  if (!parsed.success) return c.json({ error: '授权参数无效，请从 Stashy 重新登录' }, 400);
   const { redirectUri, challenge, state } = parsed.data;
   const code = randomBytes(32).toString('base64url');
   await getDb().delete(extensionCodes).where(lt(extensionCodes.expiresAt, new Date()));
@@ -85,7 +85,7 @@ app.get('/meta', async c => {
   try {
     const target = new URL(raw || '');
     if (!['http:', 'https:'].includes(target.protocol)) throw new Error();
-    const response = await fetch(target, { signal: AbortSignal.timeout(8000), headers: { accept: 'text/html,application/xhtml+xml', 'user-agent': 'Dandan/0.1' } });
+    const response = await fetch(target, { signal: AbortSignal.timeout(8000), headers: { accept: 'text/html,application/xhtml+xml', 'user-agent': 'Stashy/0.1' } });
     const html = (await response.text()).slice(0, 512 * 1024);
     const value = (re: RegExp) => re.exec(html)?.[1]?.replace(/\s+/g, ' ').trim() || '';
     const title = value(/<meta[^>]+(?:property|name)=["'](?:og:title|twitter:title)["'][^>]+content=["']([^"']*)["'][^>]*>/i) || value(/<title[^>]*>([^<]*)<\/title>/i);
