@@ -40,3 +40,15 @@ npm test
 ```
 
 不设置该变量时集成测试跳过。正式站尚需部署后真实账号验证。插件安装包需要在插件分支运行 `npm run package`，此分支不构建插件。
+
+## 网站中的插件下载
+
+设置 → 浏览器插件提供版本号与 ZIP 下载。当前发布文件随网站静态资源部署在 `public/downloads/`；不需要在服务器检出插件分支。
+
+更新插件包时，先在插件项目运行 `npm run package`（package.json 与 manifest.json 的版本必须一致），再在 main 项目执行：
+
+```powershell
+powershell -NoProfile -File scripts/import-stashy-release.ps1 -ArchivePath 'D:\项目生产基地\bookmark-desktop-extension\extension\Stashy-0.1.0.zip'
+```
+
+脚本校验 ZIP 根目录 manifest，复制带版本号的安装包并生成 `src/lib/stashyRelease.ts`，使设置面板中的版本、大小与下载地址一致。提交安装包和生成的版本信息后，重新构建部署网站即可发布。新版本需更新插件 package.json 与 manifest.json 的 version。

@@ -10,9 +10,10 @@ import { APP_CATALOG } from '@/apps'
 import { AppPreview } from '@/apps/AppPreview'
 import { AppIcon } from '@/apps/AppIcon'
 import { FONT_OPTIONS, FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP, type FontPreference } from '@/lib/fonts'
+import { STASHY_RELEASE } from '@/lib/stashyRelease'
 
 const SETTINGS_SECTIONS = [
-  ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '壁纸背景'], ['font', '字体外观'], ['data', '数据备份'], ['account', '账号'],
+  ['partitions', '空间管理'], ['apps', '应用中心'], ['extension', '浏览器插件'], ['wallpaper', '壁纸背景'], ['font', '字体外观'], ['data', '数据备份'], ['account', '账号'],
 ] as const
 
 interface Props {
@@ -79,6 +80,15 @@ export function SettingsMenu({
               </div>
             </nav>
             <div className="settings-panels min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
+          <section hidden={section !== 'extension'} className="space-y-5">
+            <div><h3 className="text-base font-semibold">浏览器插件</h3><p className="mt-1 text-xs leading-5 text-slate-500">浏览网页时，右键即可收藏到你的空间。</p></div>
+            <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5">
+              <div className="flex items-center gap-3"><span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-800 text-2xl font-bold text-white">S</span><div><h4 className="font-semibold text-slate-800">Stashy <span className="ml-1 text-xs font-normal text-slate-500">v{STASHY_RELEASE.version}</span></h4><p className="mt-1 text-xs text-slate-500">Chrome / Edge · {Math.ceil(STASHY_RELEASE.bytes / 1024)} KB</p></div></div>
+              <p className="my-4 text-sm leading-6 text-slate-600">登录同一个账号，自动获取网站信息，支持一次保存到多个空间。</p>
+              <a href={STASHY_RELEASE.url} download className="inline-flex items-center gap-2 rounded-full bg-emerald-800 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"><Download size={16} />下载插件 ZIP</a>
+            </div>
+            <div className="space-y-3 text-sm leading-6 text-slate-600"><h4 className="font-medium text-slate-800">安装方法</h4><ol className="list-decimal space-y-2 pl-5"><li>下载并解压 ZIP，保留解压后的文件夹。</li><li>打开 Chrome 或 Edge 的扩展程序管理页面，开启「开发者模式」。</li><li>点击「加载已解压的扩展程序」，选择包含 manifest.json 的解压目录。</li><li>点击 Stashy 登录并授权，在网页右键选择「保存书签」。</li></ol><p className="text-xs text-slate-400">更新时解压新版到原目录，再点击扩展程序的「重新加载」。</p></div>
+          </section>
           <section hidden={section !== 'apps'} className="space-y-4">
             <div><h3 className="text-base font-semibold">应用中心</h3><p className="mt-1 text-xs leading-5 text-slate-500">挑选适合你的工具，添加到「{currentPartitionName}」空间，让桌面更顺手。</p></div>
             <div className="grid gap-3 sm:grid-cols-2">
