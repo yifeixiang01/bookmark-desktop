@@ -24,6 +24,30 @@ export default function App() {
   const latest = useRef({ page, description, selected })
   latest.current = { page, description, selected }
   const captureMode = new URLSearchParams(location.search).has('capture')
+  const capturePanel = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!captureMode || !capturePanel.current) return
+    const panel = capturePanel.current
+    let disposed = false
+    let timer: ReturnType<typeof setTimeout>
+    const resize = () => {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        void (async () => {
+          const current = await chrome.windows.getCurrent()
+          if (disposed || current.id === undefined) return
+          // Chrome's window height includes the native title bar and borders.
+          const frame = Math.max(0, window.outerHeight - window.innerHeight)
+          const height = Math.ceil(panel.offsetHeight + frame)
+          if (current.height !== height) await chrome.windows.update(current.id, { height })
+        })().catch(() => { /* The window may have closed while resizing. */ })
+      }, 80)
+    }
+    const observer = new ResizeObserver(resize)
+    observer.observe(panel)
+    resize()
+    return () => { disposed = true; clearTimeout(timer); observer.disconnect() }
+  }, [captureMode])
   useEffect(() => {
     if (!captureMode || !success) return
     const timer = window.setTimeout(() => window.close(), 1200)
@@ -161,7 +185,7 @@ export default function App() {
     </section> : <button className="secondary" onClick={refreshAccount}>重新连接</button>}
     {error && <p className="error" role="alert">{error}</p>}
   </main>
-  return <main className="capture-panel">
+  return <main ref={capturePanel} className="capture-panel">
     <header><h1>保存书签</h1><a href={SITE} target="_blank" rel="noreferrer" title="打开书签桌面">Stashy ↗</a></header>
     {loading ? <div className="empty" aria-live="polite">正在加载空间…</div> : needsLogin ? <section className="login"><p>在网站使用邮箱登录，并确认授权 Stashy，即可开始收藏。</p><button className="primary" disabled={busy} onClick={login}>{busy ? '请在打开的网站完成授权…' : '登录并授权'}</button><a href={`${SITE}/login`} target="_blank" rel="noreferrer">没有账号？前往官网注册 ↗</a></section> : account ? <>
     <section className="preview"><div className="page-icon">{isWebUrl(page.icon) ? <img src={page.icon} alt="" referrerPolicy="no-referrer" onError={e => { e.currentTarget.style.display = 'none' }} /> : '↗'}</div><div><strong>{page.title || '未命名网页'}</strong><p title={page.url}>{page.url || '无法读取网址'}</p></div></section>
