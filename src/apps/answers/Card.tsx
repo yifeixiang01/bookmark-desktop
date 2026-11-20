@@ -18,7 +18,8 @@ export function Card(props: AppCardProps) {
   const pending = useRef(false)
   useEffect(() => () => { clearTimeout(timer.current) }, [])
   if (app.type !== 'answers') return null
-  const answer = app.answer === null ? null : ANSWERS[app.answer] ?? null
+  // Saved answers are only used for draw history. The paper starts blank on mount.
+  const answer = reveal?.text ?? null
   const busy = phase !== 'idle'
   const draw = () => {
     if (pending.current || props.preview || props.editMode) return
@@ -61,8 +62,7 @@ export function Card(props: AppCardProps) {
       <div className="answer-slip-space" aria-busy={busy}>
         <div className="answer-slip-wait" aria-hidden={phase !== 'waiting'}><span className="answer-slip-inkdrop" /><p>听见了，容我想一想。</p></div>
         <div className="answer-slip-answer-layer">
-          {reveal ? <Suspense fallback={null}><Handwriting key={reveal.key} text={reveal.text} animate onComplete={() => { if (phase === 'writing') finish() }} /></Suspense>
-            : answer && !collected && phase !== 'waiting' ? <Suspense fallback={null}><Handwriting text={answer} animate={false} onComplete={() => {}} /></Suspense> : null}
+          {reveal ? <Suspense fallback={null}><Handwriting key={reveal.key} text={reveal.text} animate onComplete={() => { if (phase === 'writing') finish() }} /></Suspense> : null}
         </div>
         <div className="answer-slip-invitation"><Feather size={24} strokeWidth={1} /><p>心里，想一个问题。</p><span>不必说出口，我在这里。</span></div>
       </div>
