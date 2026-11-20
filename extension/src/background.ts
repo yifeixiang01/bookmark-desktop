@@ -1,10 +1,36 @@
 import { SITE, isWebUrl } from './shared'
 import type { Page } from './shared'
 
+const menuProperties: chrome.contextMenus.CreateProperties = {
+  id: 'dandan-save', title: '保存书签',
+  contexts: ['page', 'link', 'selection', 'image', 'video', 'audio', 'editable'],
+  documentUrlPatterns: ['http://*/*', 'https://*/*'],
+}
+let menuRegistration: Promise<void> | undefined
+function ensureSaveMenu() {
+  if (menuRegistration) return menuRegistration
+  const { id, ...properties } = menuProperties
+  menuRegistration = (async () => {
+    try { await chrome.contextMenus.update(id!, properties) }
+    catch {
+      await new Promise<void>((resolve, reject) => {
+        chrome.contextMenus.create(menuProperties, () => {
+          const error = chrome.runtime.lastError
+          if (error) reject(new Error(error.message))
+          else resolve()
+        })
+      })
+    }
+  })().catch(error => console.error('[Stashy] Unable to register save menu:', error)).finally(() => { menuRegistration = undefined })
+  return menuRegistration
+}
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' })
-  chrome.contextMenus.removeAll(() => chrome.contextMenus.create({ id: 'dandan-save', title: '保存书签', contexts: ['page', 'link'], documentUrlPatterns: ['http://*/*', 'https://*/*'] }))
+  void chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' })
+  void ensureSaveMenu()
 })
+chrome.runtime.onStartup.addListener(() => { void ensureSaveMenu() })
+// Repair missing menus whenever Chrome starts the service worker, including after reloads.
+void ensureSaveMenu()
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== 'dandan-save') return
   const url = info.linkUrl || info.pageUrl || tab?.url
