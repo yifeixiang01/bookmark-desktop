@@ -1,13 +1,44 @@
 {
   "manifest_version": 3,
   "name": "Stashy",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "快速收藏网页到你的书签空间，支持多个空间同步保存。",
-  "permissions": ["activeTab", "contextMenus", "storage", "identity"],
-  "host_permissions": ["https://bookmark.yifeixiang.com.cn/*"],
-  "action": { "default_title": "Stashy · 保存书签", "default_popup": "index.html" },
-  "background": { "service_worker": "background.js", "type": "module" },
-  "content_scripts": [{ "matches": ["http://*/*", "https://*/*"], "js": ["pointer.js"], "all_frames": true }],
-  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
-  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'none'" }
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "storage",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://bookmark.yifeixiang.com.cn/*"
+  ],
+  "action": {
+    "default_title": "Stashy · 保存书签",
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "pointer.js"
+      ],
+      "all_frames": true
+    }
+  ],
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  }
 }

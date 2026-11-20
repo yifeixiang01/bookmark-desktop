@@ -41,3 +41,8 @@ html:has(.capture-panel),body:has(.capture-panel),#root:has(.capture-panel){heig
 .save-success-check{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 16px;border-radius:50%;background:#396b4b;color:white;font-size:30px;box-shadow:0 8px 28px #396b4b24}
 .save-success-card strong{display:block;font-size:20px;letter-spacing:1px}
 .save-success-card p{margin:10px 0 0;font-size:12px;line-height:1.7;color:#7b8c7d;overflow-wrap:anywhere}
+
+/* Toolbar popups need an explicit intrinsic width before React renders. */
+html[data-popup="account"],html[data-popup="account"] body{width:340px;min-width:340px;max-width:340px}
+.account-panel header{flex-wrap:nowrap}
+.account-panel header h1,.account-panel header a{flex-shrink:0;white-space:nowrap}
