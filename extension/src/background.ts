@@ -11,7 +11,15 @@ function ensureSaveMenu() {
   if (menuRegistration) return menuRegistration
   const { id, ...properties } = menuProperties
   menuRegistration = (async () => {
-    try { await chrome.contextMenus.update(id!, properties) }
+    try {
+      await new Promise<void>((resolve, reject) => {
+        chrome.contextMenus.update(id!, properties, () => {
+          const error = chrome.runtime.lastError
+          if (error) reject(new Error(error.message))
+          else resolve()
+        })
+      })
+    }
     catch {
       await new Promise<void>((resolve, reject) => {
         chrome.contextMenus.create(menuProperties, () => {
@@ -25,8 +33,14 @@ function ensureSaveMenu() {
   return menuRegistration
 }
 chrome.runtime.onInstalled.addListener(() => {
-  void chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' })
   void ensureSaveMenu()
+  // Some Chromium environments omit this method; menu setup must not depend on it.
+  if (typeof chrome.storage.local.setAccessLevel === 'function') {
+    try {
+      void Promise.resolve(chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' }))
+        .catch(error => console.warn('[Stashy] Storage access restriction unavailable:', error))
+    } catch (error) { console.warn('[Stashy] Storage access restriction unavailable:', error) }
+  }
 })
 chrome.runtime.onStartup.addListener(() => { void ensureSaveMenu() })
 // Repair missing menus whenever Chrome starts the service worker, including after reloads.
