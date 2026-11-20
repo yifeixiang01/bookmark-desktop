@@ -10,6 +10,7 @@ dist
 .env.*
 !.env.example
 docs
+.github
 extension
 coverage
 *.tsbuildinfo

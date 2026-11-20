@@ -9,7 +9,7 @@
 - Docker 构建上下文排除验证产物、本地缓存、环境文件和文档等；运行时环境变量在 Dokploy 中配置。
 - 保留依赖文件独立复制的缓存层，并用 BuildKit npm 下载缓存加速依赖变化后的安装。
 
-## Dokploy 配置
+## Dokploy 源码构建配置（切换前）
 
 1. 继续使用 Dockerfile 构建，Dockerfile 路径 `Dockerfile`，上下文为项目根目录。
 2. 保留 Docker 构建缓存，日常更新不要启用无缓存构建或清理构建缓存。
@@ -18,8 +18,8 @@
 
 若完整克隆全部历史，旧截图和照片依然存在 Git 历史中。优先开启浅克隆，不需要重写历史。
 
-## 进一步提速
+## GitHub Actions 镜像部署（推荐）
 
-如果瘦身后 GitHub 下载速度仍然只有数十 KiB/s，网络仍是主瓶颈。可以在 GitHub Actions 构建并推送镜像至服务器可快速访问的镜像仓库，再将 Dokploy 构建类型改为 Docker Image：服务器只拉镜像，不再克隆源码和编译。该方案需先配置镜像仓库凭据、工作流及 Dokploy 镜像来源。
+项目已加入 `.github/workflows/publish-image.yml`：推送 main 后在 GitHub 构建并发布 GHCR 镜像，支持缓存和固定提交版本。按 [配置说明](github-actions-deploy.md) 将 Dokploy 来源切换为 Docker Image，服务器即可直接拉镜像，跳过源码克隆与编译。可选部署 Webhook 需在 Dokploy 切换完成后配置。
 
 本地验证：`npm run check`、`npm run build`。Docker 缓存命中及服务器总耗时需以下一次真实部署日志为准。
