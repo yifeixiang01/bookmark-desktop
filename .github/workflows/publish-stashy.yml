@@ -1,0 +1,44 @@
+name: Publish Stashy extension
+on:
+  push:
+    branches: [codex/browser-extension]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: stashy-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run lint
+      - run: npm run build
+      - name: Package extension and version metadata
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const manifest = JSON.parse(fs.readFileSync('extension/dist/manifest.json', 'utf8'));
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          if (manifest.version !== pkg.version) throw new Error('Manifest/package versions differ');
+          fs.writeFileSync('version.json', JSON.stringify({ version: manifest.version, commit: process.env.GITHUB_SHA }));
+          JS
+          cd extension/dist
+          zip -r ../../Stashy.zip .
+      - name: Publish stable download URL
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view stashy-latest >/dev/null 2>&1; then
+            gh release create stashy-latest --target "$GITHUB_SHA" --title 'Stashy browser extension' --notes 'Automatically built from the plugin branch.' --latest=false
+          fi
+          gh release upload stashy-latest Stashy.zip version.json --clobber
+          VERSION=$(node -p "JSON.parse(require('fs').readFileSync('version.json','utf8')).version")
+          gh release edit stashy-latest --title 'Stashy browser extension' --notes "Version: $VERSION. Automatically built from codex/browser-extension. Source commit: $GITHUB_SHA" --latest=false
