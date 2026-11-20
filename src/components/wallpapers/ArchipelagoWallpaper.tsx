@@ -124,6 +124,13 @@ export function ArchipelagoWallpaper() {
       for (const target of targets) {
         let current = anchors.find(a => a.id === target.id)
         if (!current) { current = { ...target, rx: 1, ry: 1 }; anchors.push(current) }
+        // Returning to a space can reactivate an island halfway through its
+        // retreat. Restore its rendered scale as well as its anchor dimensions.
+        if (current.retreatScale !== undefined) {
+          current.retreatScale = lerp(current.retreatScale, 1, amount)
+          if (1 - current.retreatScale < 0.001) delete current.retreatScale
+          dirty = true
+        }
         for (const key of ['x', 'y', 'rx', 'ry'] as const) {
           if (Math.abs(target[key] - current[key]) > 0.15) dirty = true
           current[key] = Math.abs(target[key] - current[key]) < 0.15 ? target[key] : lerp(current[key], target[key], amount)
@@ -262,6 +269,30 @@ export function ArchipelagoWallpaper() {
         if (palms.size >= 4 || [...palms.values()].some(p => Math.hypot(p.x - x, p.y - y) < 190)) continue
         palms.set(i, { x, y, islandId: island.id, unsuitable: 0, opacity: reduced.matches ? 1 : 0 })
         palmCandidates.delete(i)
+      }
+      // Guarantee a first tree when a usable island exists. The regular
+      // sampler intentionally waits for stable land, but on small or newly
+      // grown islands all of its candidates can otherwise miss the narrow
+      // shoreline band and leave the whole scene treeless.
+      if (palms.size === 0 && targets.length > 0) {
+        let fallback: { x: number; y: number; islandId: string; depth: number } | undefined
+        for (const island of targets) {
+          for (let j = 0; j < 160; j++) {
+            const angle = j * 2.39996
+            const radius = (j % 10 + 1) / 10 * 0.98
+            const x = island.x + Math.cos(angle) * island.rx * radius
+            const y = island.y + Math.sin(angle) * island.ry * radius
+            if (x < 12 || x > width - 12 || y < 12 || y > height - 12) continue
+            const depth = seaDistance(x, y)
+            if (depth < -4 && clearOfIcons(x, y) && (!fallback || depth < fallback.depth)) {
+              fallback = { x, y, islandId: island.id, depth }
+            }
+          }
+        }
+        if (fallback) {
+          const seed = 9000 + Math.round(fallback.x + fallback.y)
+          palms.set(seed, { x: fallback.x, y: fallback.y, islandId: fallback.islandId, unsuitable: 0, opacity: reduced.matches ? 1 : 0 })
+        }
       }
       for (let i = ripples.length - 1; i >= 0; i--) {
         const ring = ripples[i], age = time - ring.born

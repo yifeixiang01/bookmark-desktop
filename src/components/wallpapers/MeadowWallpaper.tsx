@@ -3,7 +3,7 @@ import { anchorDistance, smoothUnion } from './islandGeometry'
 import { seaNoise } from './seaTexture'
 import { wallpaperPixelRatio } from './renderBudget'
 
-type Cloud = { id: string; x: number; y: number; rx: number; ry: number; life: number; seed: number }
+type Cloud = { id: string; x: number; y: number; rx: number; ry: number; life: number; seed: number; fade?: number }
 const hash = (text: string) => Array.from(text).reduce((n, c) => (Math.imul(n, 31) + c.charCodeAt(0)) | 0, 17) >>> 0
 const random = (seed: number) => { const n = Math.sin(seed * 127.1 + 311.7) * 43758.5453; return n - Math.floor(n) }
 
@@ -24,6 +24,7 @@ export function MeadowWallpaper() {
     const shadowCtx = shadow.getContext('2d')!
     let cloudPixels: ImageData
     let distances: Float32Array
+    let opacityLimits: Float32Array
     let cloudStep = 3
     const reduced = matchMedia('(prefers-reduced-motion: reduce)')
     let width = 0, height = 0, time = 0, previous = 0, sampled = -1000, painted = -1000
@@ -98,6 +99,7 @@ export function MeadowWallpaper() {
       raster.height = shadow.height = Math.ceil(height / cloudStep)
       cloudPixels = rasterCtx.createImageData(raster.width, raster.height)
       distances = new Float32Array(raster.width * raster.height)
+      opacityLimits = new Float32Array(raster.width * raster.height)
       sample(); dirty = true
     }
 
@@ -115,9 +117,17 @@ export function MeadowWallpaper() {
       }
       clouds = clouds.filter(cloud => {
         if (ids.has(cloud.id)) return true
-        const scale = reduced.matches ? 0 : Math.max(0, (Math.sqrt(cloud.life) + 0.08) * Math.exp(-dt * 0.65) - 0.08)
-        cloud.life = scale * scale; dirty = true
-        return scale > 0
+        if (reduced.matches) return false
+        if (cloud.life > .36) {
+          const scale = Math.max(.6, Math.sqrt(cloud.life) * Math.exp(-dt * .65))
+          cloud.life = scale * scale
+        } else {
+          // Keep the remaining cloud's shape while it dissolves, including
+          // clouds removed before their entrance animation finishes.
+          cloud.fade = Math.max(0, (cloud.fade ?? 1) - dt / 1.3)
+        }
+        dirty = true
+        return (cloud.fade ?? 1) > 0
       })
     }
 
@@ -131,6 +141,7 @@ export function MeadowWallpaper() {
         { id: 'free-b', x: width * 0.82, y: height * 0.18, rx: 42, ry: 27, life: 1, seed: 371 },
       ]
       distances.fill(1000)
+      opacityLimits.fill(0)
       for (const cloud of masses) {
         const scale = Math.sqrt(cloud.life)
         if (scale <= 0) continue
@@ -147,6 +158,11 @@ export function MeadowWallpaper() {
           // Scale the soft edge too, so a tiny cloud cannot leave a full-size wisp.
           const distance = anchorDistance(x, y, anchor) / scale + billow * 30 + fine * 7
           distances[index] = smoothUnion(distances[index], distance, 30)
+          if (distance < 10) {
+            const fade = cloud.fade ?? 1
+            const alpha = fade * fade * (3 - 2 * fade)
+            opacityLimits[index] = Math.max(opacityLimits[index], alpha)
+          }
         }
       }
       for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
@@ -167,7 +183,7 @@ export function MeadowWallpaper() {
         pixels.data[index * 4 + 1] = light + 1
         pixels.data[index * 4 + 2] = Math.min(255, light + 7 + Math.max(0, -verticalLight) * 5)
         const opacity = Math.max(0, Math.min(1, (8 - d) / 9))
-        pixels.data[index * 4 + 3] = opacity * opacity * (3 - 2 * opacity) * 255
+        pixels.data[index * 4 + 3] = opacity * opacity * (3 - 2 * opacity) * opacityLimits[index] * 255
       }
       rasterCtx.putImageData(pixels, 0, 0)
       c.clearRect(0, 0, width, height)
