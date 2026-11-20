@@ -1,7 +1,8 @@
-import { Cat, CircleDot, Droplets, ListTodo, NotebookPen, Timer } from 'lucide-react'
+import { Cat, CircleDot, Droplets, ListTodo, NotebookPen, Timer, TrendingUp } from 'lucide-react'
 import type { AppType } from './types'
 
 const icons = {
+  salary: TrendingUp,
   pomodoro: Timer,
   note: NotebookPen,
   todo: ListTodo,
@@ -11,6 +12,7 @@ const icons = {
 }
 
 const colors = {
+  salary: 'bg-emerald-50 text-emerald-800',
   pomodoro: 'bg-rose-50 text-rose-700',
   note: 'bg-blue-50 text-blue-700',
   todo: 'bg-emerald-50 text-emerald-700',

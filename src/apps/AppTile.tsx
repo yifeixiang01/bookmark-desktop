@@ -4,6 +4,7 @@ import type { ComponentType } from 'react'
 import type { AppCardProps, AppType } from './types'
 
 const APP_CARDS: Record<AppType, React.LazyExoticComponent<ComponentType<AppCardProps>>> = {
+  salary: lazy(() => import('./salary/Card').then((module) => ({ default: module.Card }))),
   note: lazy(() => import('./note/Card').then((module) => ({ default: module.Card }))),
   todo: lazy(() => import('./todo/Card').then((module) => ({ default: module.Card }))),
   water: lazy(() => import('./water/Card').then((module) => ({ default: module.Card }))),

@@ -6,9 +6,10 @@ import type { PomodoroApp } from './pomodoro/types'
 import type { PomodoroAction } from './pomodoro/types'
 import type { NoteArchive } from './note/types'
 import type { PointerEvent } from 'react'
-export type DesktopApp = NoteApp | TodoApp | WaterApp | WoodfishApp | PomodoroApp
+import type { SalaryApp, SalaryAction } from './salary/types'
+export type DesktopApp = NoteApp | TodoApp | WaterApp | WoodfishApp | PomodoroApp | SalaryApp
 export type AppType = DesktopApp['type']
-export type AppAction = PomodoroAction | NoteAction | TodoAction | WaterAction | WoodfishAction
+export type AppAction = PomodoroAction | NoteAction | TodoAction | WaterAction | WoodfishAction | SalaryAction
 export interface ControlProps<T, A> { app: T; disabled: boolean; onAction: (action: A) => void }
 
 export interface AppCardProps {
