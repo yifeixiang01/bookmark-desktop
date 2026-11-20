@@ -2,7 +2,7 @@ import { DndContext, PointerSensor, KeyboardSensor, closestCenter, useSensor, us
 import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { SortablePartitionRow } from './SortablePartitionRow'
 import type { AppType, Partition } from '@/types/bookmark'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Settings, Plus, Trash2, Upload, Download, FileUp, Pencil, LogOut, Cloud, CloudUpload } from 'lucide-react'
 import { DynamicWallpaperPicker, WallpaperPicker } from './WallpaperPicker'
@@ -52,6 +52,16 @@ export function SettingsMenu({
   const [section, setSection] = useState('partitions')
   const [previewType, setPreviewType] = useState<AppType | null>(null)
   const [open, setOpen] = useState(false)
+  const [extensionVersion, setExtensionVersion] = useState('')
+  useEffect(() => {
+    if (!open || section !== 'extension') return
+    const controller = new AbortController()
+    void fetch(STASHY_RELEASE.metadataUrl, { signal: controller.signal, cache: 'no-store' })
+      .then(response => { if (!response.ok) throw new Error('Release unavailable'); return response.json() })
+      .then((release: { body?: string }) => setExtensionVersion(/Version: (\d+\.\d+\.\d+(?:\.\d+)?)/.exec(release.body || '')?.[1] || ''))
+      .catch(() => { /* The stable download link remains available offline. */ })
+    return () => controller.abort()
+  }, [open, section])
   const [newPartition, setNewPartition] = useState('')
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
   const htmlInput = useRef<HTMLInputElement>(null)
@@ -83,9 +93,9 @@ export function SettingsMenu({
           <section hidden={section !== 'extension'} className="space-y-5">
             <div><h3 className="text-base font-semibold">浏览器插件</h3><p className="mt-1 text-xs leading-5 text-slate-500">浏览网页时，右键即可收藏到你的空间。</p></div>
             <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5">
-              <div className="flex items-center gap-3"><span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-800 text-2xl font-bold text-white">S</span><div><h4 className="font-semibold text-slate-800">Stashy <span className="ml-1 text-xs font-normal text-slate-500">v{STASHY_RELEASE.version}</span></h4><p className="mt-1 text-xs text-slate-500">Chrome / Edge · {Math.ceil(STASHY_RELEASE.bytes / 1024)} KB</p></div></div>
+              <div className="flex items-center gap-3"><span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-800 text-2xl font-bold text-white">S</span><div><h4 className="font-semibold text-slate-800">Stashy <span className="ml-1 text-xs font-normal text-slate-500">{extensionVersion ? `v${extensionVersion}` : '最新版本'}</span></h4><p className="mt-1 text-xs text-slate-500">Chrome / Edge</p></div></div>
               <p className="my-4 text-sm leading-6 text-slate-600">登录同一个账号，自动获取网站信息，支持一次保存到多个空间。</p>
-              <a href={STASHY_RELEASE.url} download className="inline-flex items-center gap-2 rounded-full bg-emerald-800 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"><Download size={16} />下载插件 ZIP</a>
+              <a href={STASHY_RELEASE.url} className="inline-flex items-center gap-2 rounded-full bg-emerald-800 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"><Download size={16} />下载插件 ZIP</a>
             </div>
             <div className="space-y-3 text-sm leading-6 text-slate-600"><h4 className="font-medium text-slate-800">安装方法</h4><ol className="list-decimal space-y-2 pl-5"><li>下载并解压 ZIP，保留解压后的文件夹。</li><li>打开 Chrome 或 Edge 的扩展程序管理页面，开启「开发者模式」。</li><li>点击「加载已解压的扩展程序」，选择包含 manifest.json 的解压目录。</li><li>点击 Stashy 登录并授权，在网页右键选择「保存书签」。</li></ol><p className="text-xs text-slate-400">更新时解压新版到原目录，再点击扩展程序的「重新加载」。</p></div>
           </section>

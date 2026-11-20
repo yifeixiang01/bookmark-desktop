@@ -43,12 +43,8 @@ npm test
 
 ## 网站中的插件下载
 
-设置 → 浏览器插件提供版本号与 ZIP 下载。当前发布文件随网站静态资源部署在 `public/downloads/`；不需要在服务器检出插件分支。
+设置 → 浏览器插件链接到 GitHub Release 的固定下载地址。main 不保存 ZIP，不参与插件构建。
 
-更新插件包时，先在插件项目运行 `npm run package`（package.json 与 manifest.json 的版本必须一致），再在 main 项目执行：
+插件分支每次 push 后，由 .github/workflows/publish-stashy.yml 自动安装依赖、检查、构建并压缩 dist，发布至 stashy-latest Release。固定附件名 Stashy.zip，包内 manifest.json 保留实际版本号。设置页面从 GitHub Release 读取当前版本，无需重部署网站。
 
-```powershell
-powershell -NoProfile -File scripts/import-stashy-release.ps1 -ArchivePath 'D:\项目生产基地\bookmark-desktop-extension\extension\Stashy-0.1.0.zip'
-```
-
-脚本校验 ZIP 根目录 manifest，复制带版本号的安装包并生成 `src/lib/stashyRelease.ts`，使设置面板中的版本、大小与下载地址一致。提交安装包和生成的版本信息后，重新构建部署网站即可发布。新版本需更新插件 package.json 与 manifest.json 的 version。
+发布新版本时在插件分支同时更新 package.json 与 extension/public/manifest.json 的 version。首次工作流成功后下载链接生效；仓库需允许 GitHub Actions 具有 contents: write 权限。
