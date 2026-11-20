@@ -24,6 +24,11 @@ export default function App() {
   const latest = useRef({ page, description, selected })
   latest.current = { page, description, selected }
   const captureMode = new URLSearchParams(location.search).has('capture')
+  useEffect(() => {
+    if (!captureMode || !success) return
+    const timer = window.setTimeout(() => window.close(), 1200)
+    return () => window.clearTimeout(timer)
+  }, [captureMode, success])
 
   async function api(path: string, init?: RequestInit) {
     const { session } = await chrome.storage.local.get<{ session?: { token: string; expiresAt: string } }>('session')
@@ -168,6 +173,7 @@ export default function App() {
     <div className="spaces">{spaces.map(space => <label className={`space ${selected.includes(space.id) ? 'chosen' : ''}`} key={space.id}><input type="checkbox" checked={selected.includes(space.id)} disabled={busy} onChange={e => { setSelected(e.target.checked ? [...selected, space.id] : selected.filter(id => id !== space.id)); setSuccess('') }} /><span>{space.name}</span>{space.saved && <small>已收藏</small>}</label>)}{!spaces.length && <p>暂无空间，请前往网页端创建后刷新。</p>}</div>
     <button className="primary" disabled={busy || metaLoading || !supported || !selected.length || !page.title.trim()} onClick={save}>{busy ? '正在处理…' : metaLoading ? '正在获取网站信息…' : `保存书签${selected.length ? ` · ${selected.length} 个空间` : ''}`}</button>
     </> : <button className="primary" onClick={() => refresh(page)}>重新连接</button>}
-    {error && <p className="error" role="alert">{error}</p>}{success && <p className="success" role="status">✓ {success}</p>}
+    {error && <p className="error" role="alert">{error}</p>}
+    {success && <div className="save-success-overlay" role="status" aria-live="polite"><div className="save-success-card"><span className="save-success-check" aria-hidden="true">✓</span><strong>保存成功</strong><p>{success}</p></div></div>}
   </main>
 }
