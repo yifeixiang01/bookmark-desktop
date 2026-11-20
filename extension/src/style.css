@@ -28,3 +28,11 @@ body::-webkit-scrollbar-thumb:hover{background:#78977a;border-width:1px}
 .meta-notice{margin:-4px 0 8px;color:#7d8c7d;font-size:10px;line-height:1.5;overflow-wrap:anywhere}
 .preview strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .description-field textarea{height:72px;min-height:72px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+/* Reserve room for the form and feedback; only the space list scrolls. */
+html:has(.capture-panel),body:has(.capture-panel),#root:has(.capture-panel){height:100%;overflow:hidden}
+.capture-panel{height:100%;display:flex;flex-direction:column;overflow:hidden}
+.capture-panel>*{flex-shrink:0}
+.capture-panel .spaces{height:144px;min-height:144px;max-height:144px;flex-shrink:0;overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#a9bca8 transparent;scrollbar-gutter:stable}
+.capture-panel .spaces::-webkit-scrollbar{display:block;width:7px;height:0}
+.capture-panel .space{width:98%}
+.capture-panel .error,.capture-panel .success{font-size:11px;line-height:1.5;max-height:50px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}

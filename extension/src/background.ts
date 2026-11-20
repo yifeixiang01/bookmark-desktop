@@ -15,7 +15,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     const key = `pointer:${tab?.id}:${info.frameId ?? 0}`
     const stored = await chrome.storage.session.get(key)
     const pointer = stored[key] as { x: number; y: number; left: number; top: number; width: number; height: number; time: number } | undefined
-    const width = 360, height = 490
+    const width = 360, height = 660
     const position = pointer && Date.now() - pointer.time < 120_000 ? {
       left: Math.round(Math.max(pointer.left, Math.min(pointer.x, pointer.left + pointer.width - width))),
       top: Math.round(Math.max(pointer.top, Math.min(pointer.y, pointer.top + pointer.height - height))),
@@ -63,3 +63,4 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
   login().then(() => reply({ ok: true })).catch(e => reply({ error: e instanceof Error ? e.message : '授权未完成，请重试' })).finally(() => { loggingIn = false })
   return true
 })
+

@@ -156,7 +156,7 @@ export default function App() {
     </section> : <button className="secondary" onClick={refreshAccount}>重新连接</button>}
     {error && <p className="error" role="alert">{error}</p>}
   </main>
-  return <main>
+  return <main className="capture-panel">
     <header><h1>保存书签</h1><a href={SITE} target="_blank" rel="noreferrer" title="打开书签桌面">Stashy ↗</a></header>
     {loading ? <div className="empty" aria-live="polite">正在加载空间…</div> : needsLogin ? <section className="login"><p>在网站使用邮箱登录，并确认授权 Stashy，即可开始收藏。</p><button className="primary" disabled={busy} onClick={login}>{busy ? '请在打开的网站完成授权…' : '登录并授权'}</button><a href={`${SITE}/login`} target="_blank" rel="noreferrer">没有账号？前往官网注册 ↗</a></section> : account ? <>
     <section className="preview"><div className="page-icon">{isWebUrl(page.icon) ? <img src={page.icon} alt="" referrerPolicy="no-referrer" onError={e => { e.currentTarget.style.display = 'none' }} /> : '↗'}</div><div><strong>{page.title || '未命名网页'}</strong><p title={page.url}>{page.url || '无法读取网址'}</p></div></section>
