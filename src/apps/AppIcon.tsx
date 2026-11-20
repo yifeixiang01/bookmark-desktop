@@ -1,7 +1,8 @@
-import { Cat, CircleDot, Droplets, ListTodo, NotebookPen, Timer, TrendingUp } from 'lucide-react'
+import { BookOpen, Cat, CircleDot, Droplets, ListTodo, NotebookPen, Timer, TrendingUp } from 'lucide-react'
 import type { AppType } from './types'
 
 const icons = {
+  answers: BookOpen,
   salary: TrendingUp,
   pomodoro: Timer,
   note: NotebookPen,
@@ -12,6 +13,7 @@ const icons = {
 }
 
 const colors = {
+  answers: 'bg-[#eee9d9] text-[#405c4c]',
   salary: 'bg-emerald-50 text-emerald-800',
   pomodoro: 'bg-rose-50 text-rose-700',
   note: 'bg-blue-50 text-blue-700',

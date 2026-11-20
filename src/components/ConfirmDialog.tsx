@@ -10,6 +10,7 @@ export interface ConfirmConfig {
 }
 
 interface Props extends ConfirmConfig {
+  children?: React.ReactNode
   open: boolean
   onConfirm: () => void
   onCancel: () => void
@@ -25,6 +26,7 @@ export function ConfirmDialog({
   description,
   icon,
   confirmText = '删除',
+  children,
   onConfirm,
   onCancel,
 }: Props) {
@@ -68,6 +70,7 @@ export function ConfirmDialog({
           {description && (
             <p id={descriptionId} className="mt-2 break-words text-sm leading-6 text-slate-500">{description}</p>
           )}
+          {children}
         </div>
         <div className="flex gap-3 border-t border-slate-200/70 bg-slate-50/80 px-6 py-4">
           <button

@@ -13,7 +13,7 @@ import { FONT_OPTIONS, FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP, type Fon
 import { STASHY_RELEASE } from '@/lib/stashyRelease'
 
 const SETTINGS_SECTIONS = [
-  ['partitions', '空间管理'], ['apps', '应用中心'], ['extension', '浏览器插件'], ['wallpaper', '壁纸背景'], ['font', '字体外观'], ['data', '数据备份'], ['account', '账号'],
+  ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '壁纸背景'], ['font', '字体外观'], ['data', '数据备份'], ['extension', '插件'], ['account', '账号'],
 ] as const
 
 interface Props {
@@ -91,7 +91,7 @@ export function SettingsMenu({
             </nav>
             <div className="settings-panels min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
           <section hidden={section !== 'extension'} className="space-y-5">
-            <div><h3 className="text-base font-semibold">浏览器插件</h3><p className="mt-1 text-xs leading-5 text-slate-500">浏览网页时，右键即可收藏到你的空间。</p></div>
+            <div><h3 className="text-base font-semibold">插件</h3><p className="mt-1 text-xs leading-5 text-slate-500">浏览网页时，右键即可收藏到你的空间。</p></div>
             <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5">
               <div className="flex items-center gap-3"><span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-800 text-2xl font-bold text-white">S</span><div><h4 className="font-semibold text-slate-800">Stashy <span className="ml-1 text-xs font-normal text-slate-500">{extensionVersion ? `v${extensionVersion}` : '最新版本'}</span></h4><p className="mt-1 text-xs text-slate-500">Chrome / Edge</p></div></div>
               <p className="my-4 text-sm leading-6 text-slate-600">登录同一个账号，自动获取网站信息，支持一次保存到多个空间。</p>

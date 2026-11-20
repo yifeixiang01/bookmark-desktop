@@ -13,7 +13,7 @@ export interface Span {
 }
 
 export function spanOf(item: DesktopItem): Span {
-  if (item.kind === 'app') return { w: 3, h: 3 }
+  if (item.kind === 'app') return item.app.type === 'salary' ? { w: 4, h: 4 } : { w: 3, h: 3 }
   if (item.kind !== 'group') return { w: 1, h: 1 }
   return { w: 2, h: 2 }
 }
@@ -34,7 +34,10 @@ export function dragVisualOf(
   iconPx: number
 ): { w: number; h: number; ratio: number } {
   if (!item || item.kind === 'bookmark') return { w: iconPx, h: iconPx, ratio: 0.22 }
-  if (item.kind === 'app') return { w: 3 * (iconPx + 40) - 16, h: 3 * (iconPx + 56) - 16, ratio: 0.08 }
+  if (item.kind === 'app') {
+    const span = spanOf(item)
+    return { w: span.w * (iconPx + 40) - 16, h: span.h * (iconPx + 56) - 16, ratio: 0.08 }
+  }
   const t = folderTilePx(iconPx)
   return { w: t, h: t, ratio: 0.15 }
 }

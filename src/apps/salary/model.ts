@@ -1,4 +1,5 @@
 import type { SalaryAction, SalaryApp } from './types'
+import { encouragementAt } from './encouragement'
 
 export const createSalary = (): SalaryApp => ({ type: 'salary', monthlySalary: null, start: '09:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00', lunchEnabled: true, workdays: [1, 2, 3, 4, 5] })
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/
@@ -43,13 +44,6 @@ export function salarySnapshot(app: SalaryApp, now: number) {
   const earned = dailyMinutes > 0 ? Math.min(daily, daily * workedMinutes / dailyMinutes) : 0
   const remainingSeconds = workday ? Math.max(0, (end - clock) * 60) : 0
   const progress = dailyMinutes > 0 ? workedMinutes / dailyMinutes : 0
-  const encouragement = status === 'rest' ? '今天安心休息吧，你也值得被自己的生活好好照顾。'
-    : status === 'before' ? '新的一天，按自己的节奏来，你不用急着证明什么。'
-    : status === 'lunch' ? '先好好吃饭，愿这一会儿的停下让你舒服一些。'
-    : status === 'after' ? '今天辛苦了，接下来的时间留给自己，慢慢放松下来吧。'
-    : progress < .25 ? '你已经迈出第一步了，接下来也可以慢慢来。'
-    : progress < .6 ? '你正在认真照顾自己的生活，这份坚持很珍贵。'
-    : progress < .85 ? '今天已经走了很远，记得也给自己一声温柔的肯定。'
-    : '快到下班时间了，再陪自己一小会儿，今天就圆满了。'
+  const encouragement = encouragementAt(now, status, progress, remainingSeconds)
   return { totalDays, remainingDays, daily, hourly, perSecond: hourly / 3600, earned, monthEarned: Math.min(app.monthlySalary ?? 0, completedDays * daily + earned), workedSeconds: workedMinutes * 60, remainingSeconds, progress, status, encouragement }
 }

@@ -1,7 +1,22 @@
 import { expect, it } from 'vitest'
 import type { DesktopItem } from '@/types/bookmark'
-import { layoutItems, previewInsert, rectsOverlap, removeGroupPreservingLayout, spanOf } from './gridLayout'
+import { dragVisualOf, layoutItems, previewInsert, rectsOverlap, removeGroupPreservingLayout, spanOf } from './gridLayout'
 import { createPomodoro } from '@/apps/pomodoro/model'
+import { createSalary } from '@/apps/salary/model'
+
+it('keeps a four-column salary card inside its page and reserves its wider footprint', () => {
+  const salary: DesktopItem = { id: 'salary', kind: 'app', app: createSalary(), pos: { x: 3, y: 0 } }
+  const items = [salary, ...Array.from({ length: 10 }, (_, i) => icon(`salary-neighbor-${i}`))]
+  const { placements } = layoutItems(items, 6, 5)
+  const position = placements.get(salary.id)!
+  expect(spanOf(salary)).toEqual({ w: 4, h: 4 })
+  expect(dragVisualOf(salary, 56)).toMatchObject({ w: 368, h: 432 })
+  expect(position.x % 5 + 4).toBeLessThanOrEqual(5)
+  for (const neighbor of items.slice(1)) {
+    const p = placements.get(neighbor.id)!
+    expect(rectsOverlap(position.x, position.y, spanOf(salary), p.x, p.y, spanOf(neighbor))).toBe(false)
+  }
+})
 
 it('keeps automatically placed cards and icons stationary after deleting an earlier card', () => {
   const items: DesktopItem[] = [

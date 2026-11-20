@@ -83,8 +83,9 @@ export function DesktopGrid(props: Props) {
   const fitRows = Math.max(3, Math.floor(availH / rowH))
   // 垂直方向至少 6 行；按实际可用高度逐行扩展，释放 Dock 后的空间可直接增加一行。
   const rows = Math.max(6, fitRows)
-  const scale = Math.min(1, availH / (rows * rowH))
-  const visibleCols = Math.max(2, Math.floor(availW / (colW * scale)))
+  const widestItem = Math.max(2, ...items.map(item => spanOf(item).w))
+  const scale = Math.min(1, availH / (rows * rowH), availW / (widestItem * colW))
+  const visibleCols = Math.max(widestItem, Math.floor(availW / (colW * scale)))
   const { placements, cols: usedCols } = layoutItems(items, rows, visibleCols)
   const requiredCols = Math.max(usedCols + (editMode ? 1 : 0), visibleCols)
   const pageCount = Math.max(1, Math.ceil(requiredCols / visibleCols))
