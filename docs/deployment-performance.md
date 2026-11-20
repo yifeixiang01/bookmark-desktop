@@ -5,7 +5,7 @@
 ## 已做调整
 
 - `.codex-artifacts/` 为本地截图、验证脚本和性能记录，不再纳入 Git；已有本地文件保留。
-- 六张内置照片转为 WebP，最长边 2560px；壁纸 ID 不变，旧账号无需重新选择壁纸。原始图片来源与许可保留在 `public/wallpapers/SOURCES.txt`。
+- 六张内置静态壁纸保留原始 JPG、原始尺寸及画质，不通过有损压缩降低部署体积。图片来源与许可保留在 `public/wallpapers/SOURCES.txt`。
 - Docker 构建上下文排除验证产物、本地缓存、环境文件和文档等；运行时环境变量在 Dokploy 中配置。
 - 保留依赖文件独立复制的缓存层，并用 BuildKit npm 下载缓存加速依赖变化后的安装。
 

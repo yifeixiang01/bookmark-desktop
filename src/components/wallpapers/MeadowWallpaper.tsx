@@ -3,7 +3,7 @@ import { anchorDistance, smoothUnion } from './islandGeometry'
 import { seaNoise } from './seaTexture'
 import { wallpaperPixelRatio } from './renderBudget'
 
-type Cloud = { id: string; x: number; y: number; rx: number; ry: number; life: number; seed: number; fade?: number }
+type Cloud = { id: string; x: number; y: number; rx: number; ry: number; life: number; seed: number; fade?: number; dissolveX?: number; dissolveY?: number }
 const hash = (text: string) => Array.from(text).reduce((n, c) => (Math.imul(n, 31) + c.charCodeAt(0)) | 0, 17) >>> 0
 const random = (seed: number) => { const n = Math.sin(seed * 127.1 + 311.7) * 43758.5453; return n - Math.floor(n) }
 
@@ -118,16 +118,29 @@ export function MeadowWallpaper() {
       clouds = clouds.filter(cloud => {
         if (ids.has(cloud.id)) return true
         if (reduced.matches) return false
-        if (cloud.life > .36) {
-          const scale = Math.max(.6, Math.sqrt(cloud.life) * Math.exp(-dt * .65))
-          cloud.life = scale * scale
-        } else {
-          // Keep the remaining cloud's shape while it dissolves, including
-          // clouds removed before their entrance animation finishes.
-          cloud.fade = Math.max(0, (cloud.fade ?? 1) - dt / 1.3)
+        if (cloud.dissolveX === undefined) {
+          const nearby = clouds
+            .filter(other => ids.has(other.id))
+            .sort((a, b) => Math.hypot(a.x - cloud.x, a.y - cloud.y) - Math.hypot(b.x - cloud.x, b.y - cloud.y))[0]
+          if (nearby) {
+            const distance = Math.hypot(nearby.x - cloud.x, nearby.y - cloud.y) || 1
+            cloud.dissolveX = (nearby.x - cloud.x) / distance
+            cloud.dissolveY = (nearby.y - cloud.y) / distance
+          } else { cloud.dissolveX = 0; cloud.dissolveY = 0 }
         }
+        // Continue reducing the mass throughout the retreat. Only after the
+        // cloud is small do gaps start to open between its remaining wisps.
+        const thinning = 1 - (cloud.fade ?? 1)
+        const shrinkRate = 0.72 + thinning * thinning * (3 - 2 * thinning) * 0.63
+        cloud.life = Math.max(0, cloud.life * Math.exp(-dt * shrinkRate))
+        // Tie visibility to the remaining size. The cloud cannot become
+        // invisible while its silhouette is still large.
+        // Delay transparency until the cloud has physically shrunk to a
+        // small remnant, especially noticeable around large desktop cards.
+        const remainingRadius = Math.max(cloud.rx, cloud.ry) * Math.sqrt(cloud.life)
+        cloud.fade = Math.min(1, remainingRadius / 20)
         dirty = true
-        return (cloud.fade ?? 1) > 0
+        return cloud.life > 0.0001
       })
     }
 
@@ -146,6 +159,8 @@ export function MeadowWallpaper() {
         const scale = Math.sqrt(cloud.life)
         if (scale <= 0) continue
         const anchor = { ...cloud, rx: cloud.rx * scale, ry: cloud.ry * scale }
+        const retreating = cloud.dissolveX !== undefined
+        const organic = retreating ? Math.min(1, (1 - scale) * 2) : 0
         const left = Math.max(0, Math.floor((cloud.x - anchor.rx - 35) / step))
         const right = Math.min(cols - 1, Math.ceil((cloud.x + anchor.rx + 35) / step))
         const top = Math.max(0, Math.floor((cloud.y - anchor.ry - 35) / step))
@@ -156,13 +171,34 @@ export function MeadowWallpaper() {
           const billow = seaNoise(x * 0.033 + cloud.seed % 59, y * 0.033) - 0.5
           const fine = seaNoise(x * 0.095, y * 0.095) - 0.5
           // Scale the soft edge too, so a tiny cloud cannot leave a full-size wisp.
-          const distance = anchorDistance(x, y, anchor) / scale + billow * 30 + fine * 7
-          distances[index] = smoothUnion(distances[index], distance, 30)
-          if (distance < 10) {
-            const fade = cloud.fade ?? 1
-            const alpha = fade * fade * (3 - 2 * fade)
-            opacityLimits[index] = Math.max(opacityLimits[index], alpha)
+          const nx = (x - cloud.x) / Math.max(0.001, anchor.rx)
+          const ny = (y - cloud.y) / Math.max(0.001, anchor.ry)
+          const ovalDistance = (Math.hypot(nx, ny) - 1) * Math.min(cloud.rx, cloud.ry)
+          const shapeDistance = anchorDistance(x, y, anchor) / scale
+          const distance = shapeDistance * (1 - organic) + ovalDistance * organic + billow * (30 + organic * 14) + fine * 7
+          let coverage = 1
+          if (cloud.fade !== undefined && cloud.fade < 1) {
+            const dx = (x - cloud.x) / Math.max(1, cloud.rx * scale)
+            const dy = (y - cloud.y) / Math.max(1, cloud.ry * scale)
+            const towardNeighbor = Math.max(0, dx * (cloud.dissolveX ?? 0) + dy * (cloud.dissolveY ?? 0))
+            const seed = cloud.seed % 59
+            // Stretch and warp the texture into wisps throughout the mass.
+            // No radial mask: the center must not turn into a circular hole.
+            const sparse = 1 - cloud.fade
+            const warp = seaNoise(x * 0.045 + seed, y * 0.045 + 7) * 2
+            const strands = seaNoise(x * 0.055 + seed, y * 0.24 + warp)
+            const detail = seaNoise(x * 0.12 + seed * 0.41, y * 0.36 + warp)
+            const density = strands * 0.75 + detail * 0.25
+            const erosion = sparse * (1.18 + towardNeighbor * 0.12) - 0.22
+            const edge = Math.max(0, Math.min(1, (density - erosion) / 0.32))
+            const wisps = edge * edge * (3 - 2 * edge)
+            // Blend into the strand pattern gradually so the first gaps do
+            // not appear as a sudden texture change.
+            coverage = (1 - sparse) + sparse * wisps
           }
+          if (coverage === 0) continue
+          distances[index] = smoothUnion(distances[index], distance, 30)
+          if (distance < 10) opacityLimits[index] = Math.max(opacityLimits[index], coverage)
         }
       }
       for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
