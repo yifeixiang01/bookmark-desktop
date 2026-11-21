@@ -26,9 +26,12 @@ const authErrorMessages = new Set([
   "密码最长 72 位",
 ]);
 
-function getAuthErrorMessage(message?: string) {
-  return message && authErrorMessages.has(message)
-    ? message
+function getAuthErrorMessage(error: { message?: string; data?: { code?: string } | null } | null, mode: "login" | "register") {
+  const code = error?.data?.code;
+  if (mode === "login" && code === "UNAUTHORIZED") return "邮箱或密码不正确";
+  if (mode === "register" && code === "CONFLICT") return "该邮箱已注册，请直接登录";
+  return error?.message && authErrorMessages.has(error.message)
+    ? error.message
     : "暂时无法完成请求，请检查网络后重试";
 }
 
@@ -58,8 +61,8 @@ export default function Login() {
   const loginMut = trpc.emailAuth.login.useMutation({ onSuccess });
   const registerMut = trpc.emailAuth.register.useMutation({ onSuccess });
   const pending = loginMut.isPending || registerMut.isPending;
-  const mutationError = loginMut.error ?? registerMut.error;
-  const serverError = mutationError ? getAuthErrorMessage(mutationError.message) : "";
+  const mutationError = mode === "login" ? loginMut.error : registerMut.error;
+  const serverError = mutationError ? getAuthErrorMessage(mutationError, mode) : "";
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const passwordScore = useMemo(() => {

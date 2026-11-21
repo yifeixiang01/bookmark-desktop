@@ -39,7 +39,7 @@ export function ArchipelagoWallpaper() {
     let reefs = new Float32Array(0)
     let waterTone = new Float32Array(0)
     let pixels: ImageData
-    let anchors: (IslandAnchor & { retreatScale?: number })[] = []
+    let anchors: (IslandAnchor & { retreatScale?: number; retreatTargetId?: string })[] = []
     let targets: IslandAnchor[] = []
     let frame = 0
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -127,6 +127,7 @@ export function ArchipelagoWallpaper() {
         // Returning to a space can reactivate an island halfway through its
         // retreat. Restore its rendered scale as well as its anchor dimensions.
         if (current.retreatScale !== undefined) {
+          delete current.retreatTargetId
           current.retreatScale = lerp(current.retreatScale, 1, amount)
           if (1 - current.retreatScale < 0.001) delete current.retreatScale
           dirty = true
@@ -138,7 +139,25 @@ export function ArchipelagoWallpaper() {
       }
       anchors = anchors.filter(a => {
         if (targetIds.has(a.id)) return true
+        if (a.retreatScale === undefined) {
+          let nearest = Math.max(260, Math.max(a.rx, a.ry) * 3.2)
+          for (const neighbor of anchors) {
+            if (!targetIds.has(neighbor.id) || Math.min(neighbor.rx, neighbor.ry) < 8) continue
+            const distance = Math.hypot(neighbor.x - a.x, neighbor.y - a.y)
+            if (distance >= nearest) continue
+            nearest = distance
+            a.retreatTargetId = neighbor.id
+          }
+        }
         a.retreatScale = reduced.matches ? 0 : Math.max(0, ((a.retreatScale ?? 1) + 0.04) * Math.exp(-dt * 0.95) - 0.04)
+        const destination = a.retreatTargetId && targetIds.has(a.retreatTargetId)
+          ? anchors.find(neighbor => neighbor.id === a.retreatTargetId)
+          : undefined
+        if (destination) {
+          const attraction = 1 - Math.exp(-dt * (0.45 + (1 - a.retreatScale) * 1.1))
+          a.x = lerp(a.x, destination.x, attraction)
+          a.y = lerp(a.y, destination.y, attraction)
+        }
         dirty = true
         return a.retreatScale > 0
       })

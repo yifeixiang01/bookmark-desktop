@@ -3,7 +3,7 @@ import { anchorDistance, smoothUnion } from './islandGeometry'
 import { seaNoise } from './seaTexture'
 import { wallpaperPixelRatio } from './renderBudget'
 
-type Cloud = { id: string; x: number; y: number; rx: number; ry: number; life: number; seed: number; fade?: number; dissolveX?: number; dissolveY?: number }
+type Cloud = { id: string; x: number; y: number; rx: number; ry: number; life: number; seed: number; fade?: number; dissolveX?: number; dissolveY?: number; collapseTo?: string }
 const hash = (text: string) => Array.from(text).reduce((n, c) => (Math.imul(n, 31) + c.charCodeAt(0)) | 0, 17) >>> 0
 const random = (seed: number) => { const n = Math.sin(seed * 127.1 + 311.7) * 43758.5453; return n - Math.floor(n) }
 
@@ -109,6 +109,13 @@ export function MeadowWallpaper() {
       for (const target of targets) {
         let cloud = clouds.find(old => old.id === target.id)
         if (!cloud) { cloud = { ...target, life: 0 }; clouds.push(cloud) }
+        if (cloud.dissolveX !== undefined) {
+          delete cloud.dissolveX
+          delete cloud.dissolveY
+          delete cloud.collapseTo
+          delete cloud.fade
+          dirty = true
+        }
         for (const key of ['x', 'y', 'rx', 'ry', 'life'] as const) {
           const difference = target[key] - cloud[key]
           if (Math.abs(difference) > 0.002) { cloud[key] += difference * amount; dirty = true }
@@ -122,10 +129,14 @@ export function MeadowWallpaper() {
           const nearby = clouds
             .filter(other => ids.has(other.id))
             .sort((a, b) => Math.hypot(a.x - cloud.x, a.y - cloud.y) - Math.hypot(b.x - cloud.x, b.y - cloud.y))[0]
-          if (nearby) {
+          const nearbyDistance = nearby && Math.hypot(nearby.x - cloud.x, nearby.y - cloud.y)
+          // Only a genuinely nearby occupied grid cell attracts the retreat.
+          // Distant clouds leave this cloud shrinking in place.
+          if (nearby && nearbyDistance <= Math.max(260, Math.max(cloud.rx, cloud.ry) * 3.2)) {
             const distance = Math.hypot(nearby.x - cloud.x, nearby.y - cloud.y) || 1
             cloud.dissolveX = (nearby.x - cloud.x) / distance
             cloud.dissolveY = (nearby.y - cloud.y) / distance
+            cloud.collapseTo = nearby.id
           } else { cloud.dissolveX = 0; cloud.dissolveY = 0 }
         }
         // Continue reducing the mass throughout the retreat. Only after the
@@ -133,6 +144,14 @@ export function MeadowWallpaper() {
         const thinning = 1 - (cloud.fade ?? 1)
         const shrinkRate = 0.72 + thinning * thinning * (3 - 2 * thinning) * 0.63
         cloud.life = Math.max(0, cloud.life * Math.exp(-dt * shrinkRate))
+        if (cloud.collapseTo) {
+          const destination = clouds.find(other => other.id === cloud.collapseTo && ids.has(other.id))
+          if (destination) {
+            const attraction = 1 - Math.exp(-dt * (0.45 + (1 - Math.sqrt(cloud.life)) * 1.1))
+            cloud.x += (destination.x - cloud.x) * attraction
+            cloud.y += (destination.y - cloud.y) * attraction
+          }
+        }
         // Tie visibility to the remaining size. The cloud cannot become
         // invisible while its silhouette is still large.
         // Delay transparency until the cloud has physically shrunk to a

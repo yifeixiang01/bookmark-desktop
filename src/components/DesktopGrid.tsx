@@ -220,6 +220,7 @@ export function DesktopGrid(props: Props) {
           return (
             <div
               key={item.id}
+              data-desktop-item-id={item.id}
               data-wallpaper-exclude
               data-wallpaper-anchor={item.kind === 'app' ? undefined : item.id}
               data-wallpaper-dragging={isSource || undefined}

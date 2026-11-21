@@ -1,5 +1,6 @@
 import { FolderTile } from '@/components/FolderTile'
 import { AppTile } from '@/apps/AppTile'
+import { AnimatedDragPreview } from '@/components/AnimatedDragPreview'
 import { appName } from '@/apps'
 import type { AppType } from '@/types/bookmark'
 import { dragVisualOf } from '@/lib/gridLayout'
@@ -670,7 +671,10 @@ export default function Home() {
               folderPreview = true
               const visual = dragVisualOf(it, iconPx)
               visualHeight = visual.h
-              icon = <AppTile app={it.app} width={visual.w} height={visual.h} preview />
+              const source = it.app.type === 'answers'
+                ? Array.from(gridRef.current?.el.querySelectorAll<HTMLElement>('[data-desktop-item-id]') ?? []).find(el => el.dataset.desktopItemId === it.id)?.querySelector<HTMLElement>('.app-widget') ?? null
+                : null
+              icon = source ? <AnimatedDragPreview source={source} /> : <AppTile app={it.app} width={visual.w} height={visual.h} preview />
             } else {
               name = it.group.name
               folderPreview = true
