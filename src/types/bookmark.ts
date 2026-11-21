@@ -49,6 +49,7 @@ export interface Partition {
   items: DesktopItem[]
   /** 移动端顶层项目顺序；与 PC 端自由网格坐标互不影响。 */
   mobileOrder?: string[]
+  petEnabled?: boolean
   /** 该空间共享的便签归档；删除便签卡片不会删除这里的历史。 */
   noteHistory?: import('@/apps/note/types').NoteArchive[]
 }

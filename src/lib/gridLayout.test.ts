@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import type { DesktopItem } from '@/types/bookmark'
-import { dragVisualOf, layoutItems, previewInsert, rectsOverlap, removeGroupPreservingLayout, spanOf } from './gridLayout'
+import { dragVisualOf, isDropBlockedByFolder, layoutItems, previewInsert, rectsOverlap, removeItemsPreservingLayout, spanOf } from './gridLayout'
 import { createPomodoro } from '@/apps/pomodoro/model'
 import { createSalary } from '@/apps/salary/model'
 
@@ -18,14 +18,13 @@ it('keeps a four-column salary card inside its page and reserves its wider footp
   }
 })
 
-it('keeps automatically placed cards and icons stationary after deleting an earlier card', () => {
-  const items: DesktopItem[] = [
-    { id: 'first', kind: 'group', group: { id: 'g1', name: 'First', bookmarks: [] } },
-    { id: 'second', kind: 'group', group: { id: 'g2', name: 'Second', bookmarks: [] } },
-    icon('bookmark'),
-  ]
+it.each<DesktopItem>([
+  { id: 'first', kind: 'app', app: createPomodoro() },
+  { id: 'first', kind: 'group', group: { id: 'g1', name: 'First', bookmarks: [] } },
+])('keeps automatically placed cards and icons stationary after deleting an earlier $kind', (first) => {
+  const items = [first, { id: 'second', kind: 'app', app: createPomodoro() } satisfies DesktopItem, icon('bookmark')]
   const before = layoutItems(items, 6, 4).placements
-  const remaining = removeGroupPreservingLayout(items, 'g1', 6, 4)
+  const remaining = removeItemsPreservingLayout(items, (it) => it.id === first.id, 6, 4)
   const after = layoutItems(remaining, 6, 4).placements
   expect(remaining).toHaveLength(2)
   for (const item of remaining) expect(after.get(item.id)).toEqual(before.get(item.id))
@@ -62,6 +61,27 @@ it('keeps multi-column items entirely inside a responsive page', () => {
 })
 
 const icon = (id: string): DesktopItem => ({ id, kind: 'bookmark', bookmark: { id, name: id, url: 'https://example.com' } })
+
+it.each(['source', ''])('blocks an icon drop anywhere in a folder footprint (source ID "%s")', (sourceId) => {
+  const folder: DesktopItem = { id: 'folder', kind: 'group', group: { id: 'g', name: 'Folder', bookmarks: [] }, pos: { x: 1, y: 1 } }
+  const items = sourceId ? [folder, icon(sourceId)] : [folder]
+  const { placements } = layoutItems(items, 6, 4)
+  const cell = { x: 2, y: 2 }
+  expect(isDropBlockedByFolder(items, placements, sourceId, { w: 1, h: 1 }, cell)).toBe(true)
+  expect(previewInsert(items, placements, sourceId, { w: 1, h: 1 }, cell, 6, 4).size).toBe(0)
+})
+
+it('moves each icon covered by a dragged folder out of its footprint', () => {
+  const folder: DesktopItem = { id: 'folder', kind: 'group', group: { id: 'g', name: 'Folder', bookmarks: [] }, pos: { x: 0, y: 0 } }
+  const items = [folder, { ...icon('a'), pos: { x: 2, y: 0 } }, { ...icon('b'), pos: { x: 3, y: 1 } }]
+  const { placements } = layoutItems(items, 6, 4)
+  const cell = { x: 2, y: 0 }
+  const span = spanOf(folder)
+  const moved = previewInsert(items, placements, folder.id, span, cell, 6, 4)
+  expect([...moved.keys()].sort()).toEqual(['a', 'b'])
+  expect(new Set([...moved.values()].map(({ x, y }) => `${x},${y}`)).size).toBe(2)
+  for (const pos of moved.values()) expect(rectsOverlap(cell.x, cell.y, span, pos.x, pos.y, { w: 1, h: 1 })).toBe(false)
+})
 
 it('reserves nine slots for an app and places bookmarks outside its footprint', () => {
   const app: DesktopItem = { id: 'app', kind: 'app', app: createPomodoro(), pos: { x: 0, y: 0 } }

@@ -36,6 +36,7 @@ function migrate(parsed: AppState): AppState {
     }
     // Dock 已移除；读取旧数据时丢弃历史固定记录。
     delete p.dock
+    if (p.petEnabled !== true) delete p.petEnabled
     migrateNoteHistory(p)
   }
   parsed.locked ??= false

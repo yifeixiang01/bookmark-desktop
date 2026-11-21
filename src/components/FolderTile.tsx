@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import type { Group } from '@/types/bookmark'
 import { dragState } from '@/lib/dragState'
 import { folderCellIconPx, folderTilePx } from '@/lib/gridLayout'
+import { useFolderArrival } from '@/hooks/useFolderArrival'
 import { FaviconImg } from './FaviconImg'
 import { TipBubble, useHoverTip } from './HoverTip'
 import { FolderContextMenu } from './FolderContextMenu'
@@ -12,6 +13,7 @@ interface Props {
   iconPx: number
   enterDelay: number
   preview?: boolean
+  dropReady?: boolean
   /** 打开文件夹面板，携带图标位置用于原位展开动画 */
   onOpen: (anchor: DOMRect) => void
   onRename: () => void
@@ -27,9 +29,10 @@ interface Props {
  * 文件夹图标（华为桌面式，图标可直接点击）：
  * 占 2x2 格（宽度=两个图标位），3x3 宫格；超过 8 个时第 9 格为堆叠预览，不足保留透明空位。
  */
-export function FolderTile({ group, editMode, iconPx, enterDelay, preview = false, onOpen, onRename, onDelete, onMove, onDissolve, selected, onToggleSelect, nameEditor }: Props) {
+export function FolderTile({ group, editMode, iconPx, enterDelay, preview = false, dropReady = false, onOpen, onRename, onDelete, onMove, onDissolve, selected, onToggleSelect, nameEditor }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const tip = useHoverTip()
+  useFolderArrival(preview ? null : group, rootRef)
 
   const openWithAnchor = () => {
     const rect = rootRef.current?.getBoundingClientRect()
@@ -46,6 +49,7 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, preview = fals
 
   // 文件夹内图标略小于桌面独立图标；瓷砖边长与布局引擎共用同一公式
   const cellIcon = folderCellIconPx(iconPx)
+  const stackIcon = Math.floor((cellIcon - 16) / 2)
   const tileSize = folderTilePx(iconPx)
 
   const capacity = 9
@@ -55,12 +59,13 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, preview = fals
   /** 可点击的网站图标格 */
   const iconCell = (b: Group['bookmarks'][number]) =>
     editMode ? (
-      <button key={b.id} onClick={openWithAnchor} className="spring-hover active:scale-95">
+      <button key={b.id} data-folder-bookmark={b.id} onClick={openWithAnchor} className="spring-hover active:scale-95">
         <FaviconImg url={b.url} name={b.name} customIcon={b.icon} size={cellIcon} />
       </button>
     ) : (
       <a draggable={false}
         key={b.id}
+        data-folder-bookmark={b.id}
         href={b.url}
         target="_blank"
         rel="noreferrer"
@@ -72,23 +77,29 @@ export function FolderTile({ group, editMode, iconPx, enterDelay, preview = fals
     )
 
   const tile = (
-    <div className="grid grid-cols-3 place-items-center gap-2 rounded-[26px] border border-white/25 bg-white/20 p-2.5 shadow-lg shadow-black/15 backdrop-blur-md">
+    <div className="folder-drop-surface relative grid grid-cols-3 place-items-center gap-2 rounded-[26px] border border-white/25 bg-white/20 p-2.5 shadow-lg shadow-black/15 backdrop-blur-md" data-folder-drop-ready={dropReady || undefined}>
+      <span aria-hidden="true" data-folder-arrival-glow className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 ring-2 ring-inset ring-white/80" />
       {group.bookmarks.slice(0, directCount).map(iconCell)}
       {overflow && (
         <button
+          data-folder-drop-slot
+          data-folder-bookmark={group.bookmarks[directCount]?.id}
           onClick={openWithAnchor}
-          className="spring-hover grid grid-cols-2 place-items-center gap-1 rounded-xl bg-white/25 p-1.5 backdrop-blur-sm hover:scale-105 active:scale-95"
+          className="spring-hover grid grid-cols-2 grid-rows-2 place-items-center gap-1 rounded-xl bg-white/25 p-1.5 backdrop-blur-sm hover:scale-105 active:scale-95"
           style={{ width: cellIcon, height: cellIcon }}
           title={`查看全部 ${group.bookmarks.length} 个`}
         >
-          {group.bookmarks.slice(directCount, directCount + 4).map((b) => (
-            <FaviconImg key={b.id} url={b.url} name={b.name} customIcon={b.icon} size={Math.round(cellIcon * 0.36)} className="rounded-md" />
+          {group.bookmarks.slice(directCount, directCount + 4).map((b, index) => (
+            <span key={b.id} data-folder-bookmark={index > 0 ? b.id : undefined}>
+              <FaviconImg url={b.url} name={b.name} customIcon={b.icon} size={stackIcon} className="rounded-md" />
+            </span>
           ))}
         </button>
       )}
       {Array.from({ length: capacity - directCount - (overflow ? 1 : 0) }).map((_, i) => (
         <button
           key={`pad-${i}`}
+          data-folder-drop-slot={i === 0 || undefined}
           onClick={openWithAnchor}
           className="rounded-xl"
           style={{ width: cellIcon, height: cellIcon }}

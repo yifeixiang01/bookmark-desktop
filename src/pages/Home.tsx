@@ -29,6 +29,7 @@ import { BookmarkFormDialog } from '@/components/BookmarkFormDialog'
 import { NamePromptDialog } from '@/components/NamePromptDialog'
 import { OptionPickerDialog } from '@/components/OptionPickerDialog'
 import { ConfirmDialog, type ConfirmConfig } from '@/components/ConfirmDialog'
+import { DesktopPet } from '@/apps/pet/DesktopPet'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { DesktopContextMenu } from '@/components/DesktopContextMenu'
 
@@ -201,12 +202,12 @@ export default function Home() {
     scrollRef: desktopScrollRef,
     locked: state.locked,
     onPlace: (source, cell) => {
-      const rows = gridRef.current?.rows ?? 4
+      const rows = gridRef.current?.rows ?? 6
       const pageCols = gridRef.current?.pageCols
       if (source.kind === 'desktop-item') {
         store.placeItemAt(source.itemId, cell, rows, pageCols)
       } else {
-        store.moveBookmarkToDesktop(source.bookmarkId, cell)
+        store.moveBookmarkToDesktop(source.bookmarkId, cell, rows, pageCols)
         showToast('已移出到桌面')
       }
     },
@@ -220,7 +221,7 @@ export default function Home() {
           store.mergeBookmarks(src.bookmark.id, target.bookmark.id)
           showToast('已合并为文件夹')
         } else {
-          store.addBookmarkToFolder(src.bookmark.id, target.group.id)
+          store.addBookmarkToFolder(src.bookmark.id, target.group.id, gridRef.current?.rows, gridRef.current?.pageCols)
           showToast(`已加入「${target.group.name}」`)
         }
       } else if (target.kind === 'bookmark') {
@@ -235,7 +236,7 @@ export default function Home() {
       if (source.kind !== 'desktop-item' || !openGroupData) return
       const src = activePartition.items.find((i) => i.id === source.itemId)
       if (src?.kind !== 'bookmark') return
-      store.addBookmarkToFolder(src.bookmark.id, openGroupData.id)
+      store.addBookmarkToFolder(src.bookmark.id, openGroupData.id, gridRef.current?.rows, gridRef.current?.pageCols)
       showToast(`已加入「${openGroupData.name}」`)
     },
   })
@@ -366,7 +367,10 @@ export default function Home() {
         </span>
       )}
 
+      {activePartition.petEnabled && <DesktopPet key={activePartition.id} onRemove={() => store.setPetEnabled(false)} />}
       <SettingsMenu
+        petEnabled={activePartition.petEnabled === true}
+        onPetEnabled={store.setPetEnabled}
         currentPartitionName={activePartition.name}
         appCounts={activePartition.items.reduce<Partial<Record<AppType, number>>>((counts, it) => { if (it.kind === 'app') counts[it.app.type] = (counts[it.app.type] ?? 0) + 1; return counts }, {})}
         onAddApp={(type) => { store.addApp(type); showToast(`已添加${appName(type)}到「${activePartition.name}」`) }}
@@ -455,7 +459,7 @@ export default function Home() {
               noteHistory={activePartition.noteHistory}
               onDeleteApp={(id) => {
                 const item = activePartition.items.find((it) => it.id === id)
-                if (item?.kind === 'app') setConfirm({ title: `移除${appName(item.app.type)}？`, description: item.app.type === 'note' ? '仅移除这张卡片及未归档的内容。当前空间的便签历史会保留，重新添加便签后仍可查看。' : '这张卡片的内容和记录会一起移除。其他卡片不受影响。', action: () => store.removeApp(id) })
+                if (item?.kind === 'app') setConfirm({ title: `移除${appName(item.app.type)}？`, description: item.app.type === 'note' ? '仅移除这张卡片及未归档的内容。当前空间的便签历史会保留，重新添加便签后仍可查看。' : '这张卡片的内容和记录会一起移除。其他卡片不受影响。', action: () => store.removeApp(id, gridRef.current?.rows, gridRef.current?.pageCols) })
               }}
               items={activePartition.items}
               editMode={false}
@@ -631,7 +635,7 @@ export default function Home() {
               store.copyBookmarkToPartitions(spaceAction.bookmark, spaceAction.sourceId, ids)
               showToast('已复制到所选空间')
             } else {
-              store.deleteBookmarkScoped(spaceAction.bookmark, spaceAction.sourceId, allSpaces)
+              store.deleteBookmarkScoped(spaceAction.bookmark, spaceAction.sourceId, allSpaces, gridRef.current?.rows, gridRef.current?.pageCols)
               showToast(allSpaces ? '已从所有空间删除' : '已从当前空间删除')
             }
             setSpaceAction(null)
@@ -690,23 +694,26 @@ export default function Home() {
             )
           }
           const gScale = gridRef.current?.scale ?? 1
+          const x = settle?.toX ?? drag.x + drag.anchor.x
+          const y = settle?.toY ?? drag.y + drag.anchor.y
+          const scale = gScale * (settle?.scale ?? 1)
+          const fadeTransition = settle?.intoFolder ? `85ms ease ${SETTLE_MS - 85}ms` : `${SETTLE_MS}ms ease`
           return (
             <div
-              className="pointer-events-none fixed z-[70] flex flex-col items-center gap-1.5"
+              className="pointer-events-none fixed left-0 top-0 z-[70] flex flex-col items-center gap-1.5"
               data-wallpaper-ghost={src.kind === 'desktop-item' ? src.itemId : undefined}
               style={{
-                left: settle ? settle.toX : drag.x + drag.anchor.x,
-                top: settle ? settle.toY : drag.y + drag.anchor.y,
-                transform: `translate(-50%, -${visualHeight / 2}px) scale(${gScale * (settle ? settle.scale : 1)})`,
+                // 跟手和落位共用一个变换：位移与缩放同步，缩放中心始终是图标中心。
+                transform: `translate3d(${x}px, ${y}px, 0) translate(-50%, -${visualHeight / 2}px) scale(${scale})`,
                 transformOrigin: `50% ${visualHeight / 2}px`,
                 opacity: settle?.fade ? 0 : 1,
                 transition: settle
-                  ? `left ${SETTLE_MS}ms cubic-bezier(.25,.8,.35,1), top ${SETTLE_MS}ms cubic-bezier(.25,.8,.35,1), transform ${SETTLE_MS}ms ease, opacity ${SETTLE_MS}ms ease`
+                  ? `transform ${SETTLE_MS}ms cubic-bezier(.25,.8,.35,1), opacity ${fadeTransition}`
                   : undefined,
               }}
             >
               <div>{icon}</div>
-              <span hidden={folderPreview} className="max-w-24 truncate rounded bg-black/35 px-1.5 py-0.5 text-xs text-white backdrop-blur-sm">
+              <span hidden={folderPreview} className={`max-w-24 truncate rounded bg-black/35 px-1.5 py-0.5 text-xs text-white backdrop-blur-sm ${settle?.intoFolder ? 'opacity-0 transition-opacity duration-75' : ''}`}>
                 {name}
               </span>
             </div>

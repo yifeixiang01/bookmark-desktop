@@ -17,6 +17,8 @@ const SETTINGS_SECTIONS = [
 ] as const
 
 interface Props {
+  petEnabled: boolean
+  onPetEnabled: (enabled: boolean) => void
   currentPartitionName: string
   appCounts: Partial<Record<AppType, number>>
   onAddApp: (type: AppType) => void
@@ -41,7 +43,7 @@ interface Props {
 }
 
 export function SettingsMenu({
-  currentPartitionName, appCounts, onAddApp,
+  currentPartitionName, appCounts, onAddApp, petEnabled, onPetEnabled,
   wallpaper, onWallpaper, font, onFont, fontScale, onFontScale, onImportHTML, onExportJSON, onImportJSON,
   accountLabel, syncing, syncError, onLogout, partitions, onAddPartition, onRenamePartition, onDeletePartition, onReorderPartitions,
 }: Props) {
@@ -106,10 +108,15 @@ export function SettingsMenu({
                 <div className="mb-4 flex h-12 items-center transition-transform duration-300 group-hover:translate-x-1"><AppIcon type={app.type} /></div>
                 <h4 className="text-sm font-semibold tracking-wide text-slate-800">{app.name}</h4>
                 <p className="mb-4 mt-1 flex-1 text-xs leading-5 text-slate-500">{app.description}</p>
-                {app.available ? <>
+                {app.type === 'pet' ? (
+                  <button type="button" className="app-action rounded-full bg-slate-800 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700" onClick={() => {
+                    onPetEnabled(!petEnabled)
+                    if (!petEnabled) setOpen(false)
+                  }}>{petEnabled ? '收起桌宠' : '添加到桌面'}</button>
+                ) : <>
                   <div className="flex flex-wrap gap-2"><button type="button" aria-label={`预览${app.name}`} className="app-action rounded-full border border-stone-200 bg-white px-4 py-2 text-xs text-stone-500 hover:border-stone-400" onClick={() => setPreviewType(app.type)}>预览</button><button type="button" aria-label={`添加${app.name}到当前桌面`} className="app-action flex flex-1 items-center justify-center gap-1 rounded-full bg-slate-800 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700" onClick={() => onAddApp(app.type)}><Plus size={14} />添加到桌面</button></div>
                   <p role="status" className="mt-2 text-center text-[11px] text-slate-400">{appCounts[app.type] ? `当前桌面已添加 ${appCounts[app.type]} 张` : '可添加多个，独立保存'}</p>
-                </> : <button type="button" disabled className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-400">即将上线</button>}
+                </>}
               </article>)}
             </div>
           </section>

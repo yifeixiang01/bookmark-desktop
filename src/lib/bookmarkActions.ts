@@ -1,4 +1,5 @@
 import type { AppState, Bookmark, Partition } from '@/types/bookmark'
+import { removeItemsPreservingLayout } from './gridLayout'
 import { allBookmarks, uid } from './store'
 
 function canonicalUrl(url: string) {
@@ -21,9 +22,12 @@ export function syncBookmark(state: AppState, original: Bookmark, updated: Bookm
   }
 }
 
-export function removeBookmarkCopies(p: Partition, bookmark: Bookmark) {
+export function removeBookmarkCopies(p: Partition, bookmark: Bookmark, layout?: { rows: number; pageCols?: number }) {
   const ids = new Set(allBookmarks(p).filter((b) => sameBookmark(b, bookmark)).map((b) => b.id))
-  p.items = p.items.filter((it) => it.kind !== 'bookmark' || !ids.has(it.bookmark.id))
+  const shouldRemove = (it: Partition['items'][number]) => it.kind === 'bookmark' && ids.has(it.bookmark.id)
+  p.items = layout
+    ? removeItemsPreservingLayout(p.items, shouldRemove, layout.rows, layout.pageCols)
+    : p.items.filter((it) => !shouldRemove(it))
   for (const it of p.items) {
     if (it.kind === 'group') it.group.bookmarks = it.group.bookmarks.filter((b) => !ids.has(b.id))
   }

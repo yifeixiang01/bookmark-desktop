@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
-import type { AppState, Bookmark, GridPos, Group, IconSize, Partition, AppType } from '@/types/bookmark'
+import type { AppState, Bookmark, DesktopItem, GridPos, Group, IconSize, Partition, AppType } from '@/types/bookmark'
 import { allBookmarks, findBookmark, loadState, saveState, uid } from '@/lib/store'
-import { previewInsert, layoutItems, removeGroupPreservingLayout, spanOf } from '@/lib/gridLayout'
+import { isDropBlockedByFolder, previewInsert, layoutItems, removeItemsPreservingLayout, spanOf } from '@/lib/gridLayout'
 import { hostHue } from '@/lib/favicon'
 import { folderNameFor } from '@/lib/categorize'
 import { copyBookmark, moveGroup, removeBookmarkCopies, syncBookmark } from '@/lib/bookmarkActions'
@@ -24,6 +24,20 @@ function removeBookmarkEverywhere(p: Partition, bookmarkId: string) {
   }
 }
 
+function placeDesktopItem(items: DesktopItem[], item: DesktopItem, pos: GridPos, rows: number, pageCols?: number) {
+  const span = spanOf(item)
+  const cell = { x: Math.max(0, pos.x), y: Math.max(0, Math.min(pos.y, rows - span.h)) }
+  const { placements } = layoutItems(items, rows, pageCols)
+  if (isDropBlockedByFolder(items, placements, item.id, span, cell)) return false
+  const moved = previewInsert(items, placements, item.id, span, cell, rows, pageCols)
+  // 固化显示坐标，未被挤动的项目留在原位。
+  for (const it of items) {
+    if (it.id !== item.id) it.pos = { ...(moved.get(it.id) ?? placements.get(it.id)!) }
+  }
+  item.pos = cell
+  return true
+}
+
 export function useBookmarkStore() {
   const [state, setState] = useState<AppState>(loadState)
 
@@ -42,6 +56,13 @@ export function useBookmarkStore() {
   const activePartition =
     state.partitions.find((p) => p.id === state.activePartitionId) ?? state.partitions[0]
 
+  const setPetEnabled = useCallback((enabled: boolean) => update((d) => {
+    const partition = activeOf(d)
+    if (!partition) return
+    if (enabled) partition.petEnabled = true
+    else delete partition.petEnabled
+  }), [update])
+
   const addApp = useCallback((type: AppType = 'pomodoro') => update((d) => {
     const p = activeOf(d)
     if (!p) return
@@ -49,10 +70,11 @@ export function useBookmarkStore() {
     p.items.push({ id: uid(), kind: 'app', app })
   }), [update])
 
-  const removeApp = useCallback((id: string) => update((d) => {
+  const removeApp = useCallback((id: string, rows = 6, pageCols?: number) => update((d) => {
     const p = activeOf(d)
-    if (p) migrateNoteHistory(p)
-    if (p) p.items = p.items.filter((it) => !(it.kind === 'app' && it.id === id))
+    if (!p) return
+    migrateNoteHistory(p)
+    p.items = removeItemsPreservingLayout(p.items, (it) => it.kind === 'app' && it.id === id, rows, pageCols)
   }), [update])
 
   const appAction = useCallback((id: string, action: AppAction) => update((d) => {
@@ -144,7 +166,7 @@ export function useBookmarkStore() {
     (groupId: string, rows = 6, pageCols?: number) => update((d) => {
       const p = activeOf(d)
       if (!p) return
-      p.items = removeGroupPreservingLayout(p.items, groupId, rows, pageCols)
+      p.items = removeItemsPreservingLayout(p.items, (it) => it.kind === 'group' && it.group.id === groupId, rows, pageCols)
     }),
     [update]
   )
@@ -208,13 +230,15 @@ export function useBookmarkStore() {
 
   /** 把书签从文件夹移出为桌面独立图标；可指定目标格（面板拖出时） */
   const moveBookmarkToDesktop = useCallback(
-    (bookmarkId: string, pos?: GridPos) => update((d) => {
+    (bookmarkId: string, pos?: GridPos, rows = 6, pageCols?: number) => update((d) => {
       const p = activeOf(d)
       if (!p) return
       const found = findBookmark(p, bookmarkId)
       if (!found || !found.group) return
+      const item: DesktopItem = { id: uid(), kind: 'bookmark', bookmark: found.bookmark }
+      if (pos && !placeDesktopItem(p.items, item, pos, rows, pageCols)) return
       removeBookmarkEverywhere(p, bookmarkId)
-      p.items.push({ id: uid(), kind: 'bookmark', bookmark: found.bookmark, ...(pos ? { pos } : {}) })
+      p.items.push(item)
     }),
     [update]
   )
@@ -234,18 +258,19 @@ export function useBookmarkStore() {
   )
 
   const deleteBookmark = useCallback(
-    (bookmarkId: string) => update((d) => {
+    (bookmarkId: string, rows = 6, pageCols?: number) => update((d) => {
       const p = activeOf(d)
       if (!p) return
+      p.items = removeItemsPreservingLayout(p.items, (it) => it.kind === 'bookmark' && it.bookmark.id === bookmarkId, rows, pageCols)
       removeBookmarkEverywhere(p, bookmarkId)
     }),
     [update]
   )
 
   const deleteBookmarkScoped = useCallback(
-    (bookmark: Bookmark, sourceId: string, allSpaces: boolean) => update((d) => {
+    (bookmark: Bookmark, sourceId: string, allSpaces: boolean, rows = 6, pageCols?: number) => update((d) => {
       for (const p of d.partitions) {
-        if (allSpaces || p.id === sourceId) removeBookmarkCopies(p, bookmark)
+        if (allSpaces || p.id === sourceId) removeBookmarkCopies(p, bookmark, { rows, pageCols })
       }
     }),
     [update]
@@ -285,32 +310,13 @@ export function useBookmarkStore() {
   )
 
   // ---------- 拖拽 ----------
-  /** 自由落位：把桌面项目放到指定格；压到其他项目时优先互换位置，否则为被压项另找空位（rows 为固定行数，列向右不限） */
+  /** 自由落位：预览和松手使用同一套排开规则。 */
   const placeItemAt = useCallback(
     (itemId: string, pos: GridPos, rows: number, pageCols?: number) => update((d) => {
       const p = activeOf(d)
       if (!p) return
       const item = p.items.find((i) => i.id === itemId)
-      if (!item) return
-      const span = spanOf(item)
-      const nx = Math.max(0, pos.x)
-      const ny = Math.max(0, Math.min(pos.y, Math.max(0, rows - span.h)))
-
-      // 先按当前布局固化所有项目的坐标：没有 pos 的项目由布局引擎自动填充空位，
-      // 若不固化，移动任意项目后它们会重新流式补位（后面的图标跟着移动）
-      const { placements: current } = layoutItems(p.items, rows, pageCols)
-      for (const it of p.items) {
-        const cp = current.get(it.id)
-        if (cp) it.pos = { ...cp }
-      }
-
-      const cell = { x: nx, y: ny }
-      const moved = previewInsert(p.items, current, itemId, span, cell, rows, pageCols)
-      item.pos = cell
-      for (const it of p.items) {
-        const target = moved.get(it.id)
-        if (target) it.pos = { ...target }
-      }
+      if (item) placeDesktopItem(p.items, item, pos, rows, pageCols)
     }),
     [update]
   )
@@ -358,14 +364,15 @@ export function useBookmarkStore() {
 
   /** 拖拽加入：把桌面独立书签放入已有文件夹 */
   const addBookmarkToFolder = useCallback(
-    (bookmarkId: string, groupId: string) => update((d) => {
+    (bookmarkId: string, groupId: string, rows = 6, pageCols?: number) => update((d) => {
       const p = activeOf(d)
       if (!p) return
       const found = findBookmark(p, bookmarkId)
       if (!found || found.group) return // 只允许桌面独立书签
-      removeBookmarkEverywhere(p, bookmarkId)
       const it = p.items.find((i) => i.kind === 'group' && i.group.id === groupId)
-      if (it && it.kind === 'group') it.group.bookmarks.push(found.bookmark)
+      if (!it || it.kind !== 'group') return
+      p.items = removeItemsPreservingLayout(p.items, (item) => item.kind === 'bookmark' && item.bookmark.id === bookmarkId, rows, pageCols)
+      it.group.bookmarks.push(found.bookmark)
     }),
     [update]
   )
@@ -521,7 +528,7 @@ export function useBookmarkStore() {
   }, [])
 
   return {
-    addApp, removeApp, appAction, finishApps,
+    setPetEnabled, addApp, removeApp, appAction, finishApps,
     state,
     activePartition,
     findBookmark: (bid: string) => findBookmark(activePartition, bid),

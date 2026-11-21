@@ -5,6 +5,7 @@ import type { Bookmark, Group } from '@/types/bookmark'
 import { FaviconImg } from './FaviconImg'
 import { dragState } from '@/lib/dragState'
 import { TipBubble, useHoverTip } from './HoverTip'
+import { useFolderArrival } from '@/hooks/useFolderArrival'
 
 interface Props {
   group: Group | null
@@ -54,6 +55,7 @@ function PanelBookmarkCell({
   return (
     <BookmarkContextMenu onMove={onMove} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
     <div
+      data-folder-bookmark={b.id}
       className={`relative flex flex-col items-center gap-1.5 ${dragging ? 'opacity-25' : ''}`}
       onPointerDown={(e) => {
         tip.bind.onPointerDown()
@@ -127,6 +129,7 @@ export function FolderPanel({
   onClose, onRename, onAddBookmark, onMoveBookmark, onCopyBookmark, onEditBookmark, onDeleteBookmark, onMoveToDesktop,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  useFolderArrival(group, scrollRef)
   const [activePage, setActivePage] = useState(0)
 
   useEffect(() => {

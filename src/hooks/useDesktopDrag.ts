@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DesktopItem, GridPos } from '@/types/bookmark'
-import { dragVisualOf, spanOf, type Span } from '@/lib/gridLayout'
+import { dragVisualOf, folderCellIconPx, isDropBlockedByFolder, spanOf, type Span } from '@/lib/gridLayout'
 import { dragState } from '@/lib/dragState'
 
 /** 拖拽来源：桌面项目（书签/文件夹），或文件夹面板里的书签 */
@@ -34,6 +34,8 @@ export interface SettleInfo {
   scale: number
   /** 到达时是否淡出（合并/放入面板/无效落点） */
   fade: boolean
+  /** 飞入文件夹时保留图标，接近落点后再淡出。 */
+  intoFolder?: boolean
 }
 
 export interface DragInfo {
@@ -111,6 +113,17 @@ export function useDesktopDrag(opts: Opts) {
     isTouch: boolean
     holdTimer?: ReturnType<typeof setTimeout>
   } | null>(null)
+  const pointerCaptureTarget = useRef<HTMLElement | null>(null)
+  const snapScrollElement = useRef<HTMLElement | null>(null)
+  const snapScrollBehavior = useRef('')
+
+  const setDragSnap = (enabled: boolean) => {
+    const el = snapScrollElement.current
+    if (!el) return
+    el.style.scrollSnapType = enabled ? '' : 'none'
+    el.style.scrollBehavior = enabled ? snapScrollBehavior.current : 'auto'
+    if (enabled) snapScrollElement.current = null
+  }
   const dragRef = useRef<DragInfo | null>(null)
   const mergeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const settleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -144,7 +157,7 @@ export function useDesktopDrag(opts: Opts) {
     else if (px > r.right - EDGE_ZONE) vx = ((px - (r.right - EDGE_ZONE)) / EDGE_ZONE) * EDGE_SPEED
     if (!vx) return // 不在边缘区，等下一次指针移动再调度
     const before = el.scrollLeft
-    el.scrollLeft += vx
+    el.scrollTo({ left: Math.max(0, Math.min(el.scrollWidth - el.clientWidth, before + vx)), behavior: 'auto' })
     if (el.scrollLeft !== before) {
       // 网格在指针下方移动了：重算命中格，让"排开"预览和指示框跟着滑动走
       const hit = hitTest(pointerPos.current.x, pointerPos.current.y, d.source)
@@ -166,6 +179,12 @@ export function useDesktopDrag(opts: Opts) {
       if (optsRef.current.locked) return
       if (dragRef.current) return // 吸附动画进行中，忽略新按压
       if (e.pointerType === 'mouse' && e.button !== 0) return
+      // Keep receiving pointermove events after the cursor leaves the icon.
+      // This is required for dragging to the viewport edge to switch pages.
+      const captureTarget = e.currentTarget as HTMLElement
+      if (captureTarget.setPointerCapture) {
+        try { captureTarget.setPointerCapture(e.pointerId); pointerCaptureTarget.current = captureTarget } catch { /* target may have unmounted */ }
+      }
       clearTimeout(pendingRef.current?.holdTimer)
       let anchor = { x: 0, y: 0 }
       const g = optsRef.current.gridRef.current
@@ -206,6 +225,13 @@ export function useDesktopDrag(opts: Opts) {
   )
 
   function activate(source: DragSource, x: number, y: number, anchor: { x: number; y: number }) {
+    const scrollElement = optsRef.current.scrollRef?.current
+    if (scrollElement) {
+      snapScrollElement.current = scrollElement
+      snapScrollBehavior.current = scrollElement.style.scrollBehavior
+      scrollElement.style.scrollSnapType = 'none'
+      scrollElement.style.scrollBehavior = 'auto'
+    }
     setBoth({
       source,
       anchor,
@@ -304,10 +330,18 @@ export function useDesktopDrag(opts: Opts) {
       pendingRef.current = null
       clearTimeout(mergeTimer.current)
       stopEdgeScroll()
+      setDragSnap(true)
+      const captureTarget = pointerCaptureTarget.current
+      if (captureTarget?.releasePointerCapture) {
+        try { captureTarget.releasePointerCapture(e.pointerId) } catch { /* already released */ }
+      }
+      pointerCaptureTarget.current = null
       if (!d || d.settle) return
       // 最终落点以松手位置重新判定（与最后一次 move 之间可能有空档）
       const hit = hitTest(e.clientX, e.clientY, d.source)
-      const final: DragInfo = { ...d, ...hit }
+      // pointerup 可能发生在最后一次 pointermove 之后；必须使用真实松手坐标，
+      // 否则幽灵会先跳回旧的 move 坐标，再开始飞入文件夹。
+      const final: DragInfo = { ...d, x: e.clientX, y: e.clientY, ...hit }
       const { onPlace, onMerge, onDropIntoPanel } = optsRef.current
       const items = optsRef.current.gridRef.current?.items ?? []
 
@@ -334,25 +368,40 @@ export function useDesktopDrag(opts: Opts) {
         const r = el.getBoundingClientRect()
         return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
       }
+      const folderSlot = (itemId: string) => {
+        const slot = g?.el.querySelector(`[data-desktop-item-id="${CSS.escape(itemId)}"] [data-folder-drop-slot]`)
+        const rect = slot?.getBoundingClientRect()
+        return rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null
+      }
 
       type Plan = {
         to: { x: number; y: number } | null
         scale: number
         fade: boolean
+        intoFolder?: boolean
         commit: (() => void) | null
       }
       let plan: Plan
 
-      const mergeTargetId = final.mergeTargetItemId
+      const mergeTargetId = !final.overPanel && final.mergeTargetItemId === final.overItemId
+        ? final.mergeTargetItemId
+        : null
+      const span = sourceSpan(final.source, items)
+      const blocked = g && final.overCell && isDropBlockedByFolder(
+        items, g.placements, final.source.kind === 'desktop-item' ? final.source.itemId : '', span, final.overCell,
+      )
       if (mergeTargetId && isBookmarkish(final.source, items)) {
         // 合并：缩小飞入目标图标/文件夹
         const target = items.find((i) => i.id === mergeTargetId) ?? null
         const p = target ? g?.placements.get(target.id) : null
-        const c = target && p ? slotIconCenter(p, spanOf(target), dragVisualOf(target, iconPx)) : null
+        const intoFolder = target?.kind === 'group'
+        const c = (intoFolder ? folderSlot(target.id) : null) ??
+          (target && p ? slotIconCenter(p, spanOf(target), dragVisualOf(target, iconPx)) : null)
         plan = {
           to: c ? { x: c.x, y: c.y } : null,
-          scale: 0.25,
+          scale: intoFolder && target.group.bookmarks.length < 8 ? folderCellIconPx(iconPx) / iconPx : 0.25,
           fade: true,
+          intoFolder,
           commit: () => onMerge(final.source, mergeTargetId),
         }
       } else if (final.overPanel && final.source.kind === 'desktop-item' && isBookmarkish(final.source, items)) {
@@ -361,12 +410,12 @@ export function useDesktopDrag(opts: Opts) {
           to: panelCenter(),
           scale: 0.25,
           fade: true,
+          intoFolder: true,
           commit: () => onDropIntoPanel(final.source),
         }
-      } else if (final.overCell && !final.overPanel) {
+      } else if (final.overCell && !final.overPanel && !blocked) {
         // 常规落位：幽灵保持原尺寸飞到目标槽位，到位即提交
         const srcItem = desktopItemOf(final.source, items)
-        const span = sourceSpan(final.source, items)
         const visual = dragVisualOf(srcItem, iconPx)
         const c = slotIconCenter(final.overCell, span, visual)
         const cell = final.overCell
@@ -395,8 +444,8 @@ export function useDesktopDrag(opts: Opts) {
           : { to: null, scale: 0.6, fade: true, commit: null }
       }
 
-      if (!plan.to) {
-        // 无法计算目标位置时退化为直接提交/取消
+      if (!plan.to || (plan.intoFolder && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        // 没有落点或要求减少动态效果时，直接提交或取消。
         plan.commit?.()
         setBoth(null)
         return
@@ -407,7 +456,7 @@ export function useDesktopDrag(opts: Opts) {
         commit?.()
         setBoth(null)
       }, SETTLE_MS)
-      setBoth({ ...final, settle: { toX: plan.to.x, toY: plan.to.y, scale: plan.scale, fade: plan.fade } })
+      setBoth({ ...final, mergeTargetItemId: mergeTargetId, settle: { toX: plan.to.x, toY: plan.to.y, scale: plan.scale, fade: plan.fade, intoFolder: plan.intoFolder } })
     }
 
     const onCancel = () => {
@@ -415,6 +464,7 @@ export function useDesktopDrag(opts: Opts) {
       clearTimeout(mergeTimer.current)
       clearTimeout(settleTimer.current)
       stopEdgeScroll()
+      setDragSnap(true)
       settleTimer.current = undefined
       pendingRef.current = null
       setBoth(null)

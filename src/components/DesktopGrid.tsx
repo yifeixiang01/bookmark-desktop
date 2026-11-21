@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { Plus } from 'lucide-react'
 import type { DesktopItem, GridPos } from '@/types/bookmark'
-import { dragVisualOf, findFreeRect, layoutItems, previewInsert, spanOf } from '@/lib/gridLayout'
+import { dragVisualOf, findFreeRect, isDropBlockedByFolder, layoutItems, previewInsert, spanOf } from '@/lib/gridLayout'
 import { dragState } from '@/lib/dragState'
 import type { DragInfo, DragSource, GridFrame } from '@/hooks/useDesktopDrag'
 import { BookmarkTile } from './BookmarkTile'
@@ -140,15 +140,16 @@ export function DesktopGrid(props: Props) {
   /** 目标格指示框的可视尺寸：与拖拽物图标等大（而不是整个网格槽位） */
   const dragVisual = dragVisualOf(dragSourceItem, iconPx)
 
-  // 拖拽悬停"排开"预览：拖到两格之间/压到其他项目上时，被压项目实时顺推让位。
-  // 合并悬停（mergeTarget）或悬停在文件夹面板上时不排开；松手后由 placeItemAt 以同样规则提交
+  // 合并目标、文件夹面板和被文件夹挡住的格子都不显示普通落位预览。
+  const targetCell = drag && !drag.overPanel && !drag.mergeTargetItemId &&
+    drag.overCell && !isDropBlockedByFolder(items, placements, dragSourceItemId ?? '', dragSpan, drag.overCell)
+    ? drag.overCell : null
   let previewMoves: Map<string, GridPos> | null = null
-  if (drag && drag.overCell && !drag.overPanel && !drag.mergeTargetItemId && dragSourceItemId && dragSourceItem) {
-    const srcCell = placements.get(dragSourceItemId)
-    const same = srcCell && srcCell.x === drag.overCell.x && srcCell.y === drag.overCell.y
+  if (targetCell) {
+    const srcCell = dragSourceItemId ? placements.get(dragSourceItemId) : undefined
+    const same = srcCell && srcCell.x === targetCell.x && srcCell.y === targetCell.y
     if (!same) {
-      previewMoves = previewInsert(items, placements, dragSourceItemId, dragSpan, drag.overCell, rows, visibleCols)
-      if (previewMoves.size === 0) previewMoves = null
+      previewMoves = previewInsert(items, placements, dragSourceItemId ?? '', dragSpan, targetCell, rows, visibleCols)
     }
   }
 
@@ -192,12 +193,12 @@ export function DesktopGrid(props: Props) {
           }}
         >
         {/* 目标格指示（拖拽经过空位时）：与拖拽物图标等大；文件夹在其格区内顶部对齐（与实际渲染一致） */}
-        {drag && drag.overCell && !drag.overPanel && (
+        {targetCell && (
           <div
             className="pointer-events-none absolute transition-[left,top] duration-100"
             style={{
-              left: drag.overCell.x * colW + (dragSpan.w * colW - dragVisual.w) / 2,
-              top: drag.overCell.y * rowH + 2,
+              left: targetCell.x * colW + (dragSpan.w * colW - dragVisual.w) / 2,
+              top: targetCell.y * rowH + 2,
               width: dragVisual.w,
               height: dragVisual.h,
             }}
@@ -228,7 +229,7 @@ export function DesktopGrid(props: Props) {
               className={`absolute flex items-start justify-center ${
                 !noSlide && drag ? 'transition-[left,top] duration-200 ease-out' : ''
               } ${locked || item.kind === 'app' ? '' : 'cursor-grab'} ${editMode ? 'jiggle' : ''} ${isSource ? 'opacity-25' : ''} ${
-                isMergeTarget ? 'z-10 scale-110 drop-shadow-[0_0_14px_rgba(255,255,255,0.55)]' : ''
+                isMergeTarget ? (item.kind === 'group' ? 'z-10' : 'z-10 scale-110 drop-shadow-[0_0_14px_rgba(255,255,255,0.55)]') : ''
               }`}
               style={{ ...cellStyle(cell, span), touchAction: locked || item.kind === 'app' ? undefined : 'none' }}
             >
@@ -251,6 +252,7 @@ export function DesktopGrid(props: Props) {
                   editMode={editMode}
                   iconPx={iconPx}
                   enterDelay={Math.min(index * 28, 380)}
+                  dropReady={isMergeTarget && !drag?.settle}
                   onOpen={(rect) => props.onOpenGroup(item.group.id, rect)}
                   onRename={() => props.onRenameGroup(item.group.id)}
                   nameEditor={props.editingGroup?.id === item.group.id ? {

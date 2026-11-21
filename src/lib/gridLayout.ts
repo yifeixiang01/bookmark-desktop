@@ -99,6 +99,24 @@ export function findFreeRect(
   return { x: fallbackX, y: 0 }
 }
 
+/** 书签可以悬停加入文件夹，但不能把文件夹当作普通格子挤开。 */
+export function isDropBlockedByFolder(
+  items: DesktopItem[],
+  placements: Map<string, GridPos>,
+  sourceId: string,
+  span: Span,
+  cell: GridPos,
+): boolean {
+  const source = items.find((it) => it.id === sourceId)
+  // 文件夹面板里的书签还没有桌面项目 ID。
+  if (source && source.kind !== 'bookmark') return false
+  return items.some((it) => {
+    if (it.kind !== 'group') return false
+    const pos = placements.get(it.id)
+    return pos && rectsOverlap(cell.x, cell.y, span, pos.x, pos.y, spanOf(it))
+  })
+}
+
 /**
  * 拖拽悬停预览（手机桌面式"排开"）：假设把 source 放到 cell，被压到的项目顺推到下一个空位。
  * 返回被挤动项目的 新位置表（不含 source 自身——拖拽中它由幽灵表示）；数据提交在松手时才发生。
@@ -112,6 +130,7 @@ export function previewInsert(
   rows: number,
   pageCols?: number
 ): Map<string, GridPos> {
+  if (isDropBlockedByFolder(items, placements, sourceId, span, cell)) return new Map()
   const map = new Map(placements)
   const others = items.filter((i) => i.id !== sourceId)
   const displaced = others.filter((o) => {
@@ -215,10 +234,17 @@ export function layoutItems(
   return { placements, cols }
 }
 
-/** Persist the rendered layout before removing an item so automatic cells stay put. */
-export function removeGroupPreservingLayout(items: DesktopItem[], groupId: string, rows: number, pageCols?: number): DesktopItem[] {
+/** 删除前保存剩余项目的显示坐标，避免自动摆放的项目补位。 */
+export function removeItemsPreservingLayout(
+  items: DesktopItem[],
+  shouldRemove: (item: DesktopItem) => boolean,
+  rows: number,
+  pageCols?: number,
+): DesktopItem[] {
+  const remaining = items.filter((it) => !shouldRemove(it))
+  if (remaining.length === items.length) return items
   const { placements } = layoutItems(items, rows, pageCols)
-  return items.filter((it) => it.kind !== 'group' || it.group.id !== groupId).map((it) => ({
+  return remaining.map((it) => ({
     ...it,
     pos: { ...placements.get(it.id)! },
   }))
