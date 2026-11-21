@@ -1,9 +1,0 @@
-汉仪行楷简（HYXingKaiJ），版本 3.53
-版权所有：汉仪字库。此字体不是开源字体，沿用权利方许可条款。
-
-官方详情：https://www.hanyi.com.cn/productdetail?id=592
-官方下载：https://hellofonts.oss-cn-beijing.aliyuncs.com/汉仪行楷/3.53/HYXingKaiJ.ttf
-个人非商用须知：https://www.hanyi.com.cn/faq-doc-1
-个人非商用许可协议：https://www.hanyi.com.cn/faq-doc-2
-
-本项目按用户说明用于非商业用途。上述链接保留字体来源及许可信息，不构成额外授权。

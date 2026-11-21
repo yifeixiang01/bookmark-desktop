@@ -1,11 +1,10 @@
 .answer-slip { position:relative; isolation:isolate; display:flex; flex:1; min-height:0; flex-direction:column; padding:12px 22px 10px; color:#47473d; background:radial-gradient(ellipse at 30% 10%,#fffdf6,#f6f1e5); overflow:hidden; }
 .answer-slip-paper { pointer-events:none; position:absolute; inset:0; z-index:-1; opacity:.5; background-image:radial-gradient(#8a78531a .6px,transparent .8px),repeating-linear-gradient(95deg,transparent 0 9px,#97845405 10px,transparent 11px); background-size:3px 5px,100% 100%; }
-@font-face { font-family:'HYXingKaiJ'; src:url('/fonts/HYXingKaiJ.ttf') format('truetype'); font-display:swap; font-weight:400; }
 .answer-slip-heading { display:flex; align-items:center; justify-content:center; gap:12px; font-size:9px; letter-spacing:3px; color:#aaa18e; }
 .answer-slip-line { width:22px; height:1px; background:linear-gradient(90deg,transparent,#bdb19b66,transparent); }
 .answer-slip-space { flex:1; min-height:94px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:12px 0; }
 .answer-slip-invitation { display:flex; flex-direction:column; align-items:center; gap:14px; color:#897f69; }
-.answer-slip-invitation p { font-family:'HYXingKaiJ',KaiTi,'Kaiti SC',STKaiti,serif; font-size:23px; letter-spacing:2px; color:#56594c; margin:0; }
+.answer-slip-invitation p { font-family:KaiTi,'Kaiti SC',STKaiti,serif; font-size:21px; letter-spacing:2px; color:#56594c; margin:0; }
 .answer-slip-invitation > span { font-size:10px; letter-spacing:1.5px; color:#aaa18e; }
 .answer-slip-signature { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:2px; }
 .answer-slip-signature > span:first-child { font-size:9px; letter-spacing:1px; color:#aaa18e; }
@@ -16,30 +15,23 @@
 .answer-slip-action:focus-visible { outline:2px solid #8a9272; outline-offset:3px; }
 .answer-slip-action:disabled { cursor:default; opacity:.65; }
 .answer-slip-footnote { font-size:8px; letter-spacing:1.5px; color:#b6ad9a; margin-top:9px; text-align:center; }
-.answer-slip-saved { font-family:'HYXingKaiJ',KaiTi,'Kaiti SC',STKaiti,'Songti SC',serif; font-size:27px; line-height:1.7; letter-spacing:2px; margin:0; text-wrap:balance; }
+.answer-slip-saved { font-family:KaiTi,'Kaiti SC',STKaiti,'Songti SC',serif; font-size:25px; line-height:1.8; letter-spacing:2px; margin:0; text-wrap:balance; }
 .answer-slip-wait { color:#99917f; font:15px/2 KaiTi,'Kaiti SC',serif; }
 .answer-slip-inkdrop { display:block; width:5px; height:5px; margin:0 auto 18px; background:#555e4d; border-radius:50%; animation:slip-ink-breathe 1.2s ease-in-out infinite; }
 .answer-slip-loading { font-size:12px; color:#99917f; }
-.answer-handwriting { position:relative; display:flex; flex-wrap:wrap; justify-content:center; max-width:100%; line-height:0; }
-.answer-handwriting-font-copy { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:0 3px; font:400 29px/1.45 'HYXingKaiJ',KaiTi,'Kaiti SC',STKaiti,serif; letter-spacing:1.5px; color:#30382d; opacity:0; transform:scale(.98); transform-origin:center; transition:opacity 1s ease,transform 1s ease; white-space:normal; text-align:center; text-shadow:.25px .4px 0 #30382d55; }
-.answer-handwriting-stroke-copy { display:flex; flex-wrap:wrap; justify-content:center; transition:opacity 1s ease; }
-.answer-handwriting-settled .answer-handwriting-font-copy { opacity:1; transform:scale(1); }
-.answer-handwriting-settled .answer-handwriting-stroke-copy { opacity:.04; }
-.answer-handwriting-writing .answer-handwriting-font-copy { opacity:1; transform:scale(1); clip-path:inset(0 100% 0 0); animation:answer-handwriting-reveal var(--write-total) linear forwards; }
-.answer-handwriting-writing .answer-handwriting-stroke-copy { opacity:0; }
+.answer-handwriting { display:flex; flex-wrap:wrap; justify-content:center; max-width:100%; line-height:0; }
 .answer-handwriting-glyph { width:30px; height:38px; flex-shrink:0; overflow:visible; color:#485044; }
-.answer-handwriting-punctuation { font:28px/38px 'HYXingKaiJ',KaiTi,'Kaiti SC',STKaiti,serif; color:#333b2d; text-shadow:0 0 1px #494d3940; }
+.answer-handwriting-punctuation { font:26px/38px KaiTi,'Kaiti SC',STKaiti,serif; color:#333b2d; text-shadow:0 0 1px #494d3940; }
 .answer-handwriting-stroke { stroke-dashoffset:var(--ink-length); animation:slip-write var(--ink-duration) linear var(--ink-delay) forwards; }
 @keyframes slip-write { to { stroke-dashoffset:0; } }
-@keyframes answer-handwriting-reveal { to { clip-path:inset(0 0 0 0); } }
 @keyframes slip-ink-breathe { 50% { transform:scale(1.5); opacity:.3; box-shadow:0 0 12px #66725240; } }
 @media(prefers-reduced-motion:reduce) { .answer-slip * { animation:none!important; transition:none!important; } .answer-handwriting-stroke { stroke-dashoffset:0; } }
 
 /* An independent literary palette and type system, scoped to this card. */
-.answer-slip-frame { --app-font-family:'HYXingKaiJ',KaiTi,'Kaiti SC',STKaiti,'Songti SC',serif; --app-font-scale:1; border-color:#d7c9a8!important; box-shadow:0 12px 30px -12px #302b1e45,inset 0 0 0 3px #faf5e8!important; }
-.answer-slip-frame > header { background:#eee5d280; border-bottom:1px solid #b9a78333; color:#75674c; font-family:'HYXingKaiJ',KaiTi,'Kaiti SC',STKaiti,serif; }
+.answer-slip-frame { --app-font-family:KaiTi,'Kaiti SC',STKaiti,'Songti SC',serif; --app-font-scale:1; border-color:#d7c9a8!important; box-shadow:0 12px 30px -12px #302b1e45,inset 0 0 0 3px #faf5e8!important; }
+.answer-slip-frame > header { background:#eee5d280; border-bottom:1px solid #b9a78333; color:#75674c; font-family:KaiTi,'Kaiti SC',STKaiti,serif; }
 .answer-slip-frame > header h3 { letter-spacing:2px; font-weight:400; }
-.answer-slip { font-family:'HYXingKaiJ',KaiTi,'Kaiti SC',STKaiti,'Songti SC',serif; background:linear-gradient(90deg,#cbb58b19,transparent 8%,transparent 94%,#cbb58b19),radial-gradient(ellipse at 30% 10%,#fffdf4,#f3ecd9); }
+.answer-slip { font-family:KaiTi,'Kaiti SC',STKaiti,'Songti SC',serif; background:linear-gradient(90deg,#cbb58b19,transparent 8%,transparent 94%,#cbb58b19),radial-gradient(ellipse at 30% 10%,#fffdf4,#f3ecd9); }
 .answer-slip::after { content:''; position:absolute; inset:10px 10px 58px; border:1px solid #b2a07c24; pointer-events:none; z-index:-1; }
 .answer-slip-paper { background-image:radial-gradient(#806d4726 .5px,transparent .9px),repeating-linear-gradient(3deg,transparent 0 17px,#b19b6810 18px,transparent 19px); opacity:.5; background-size:4px 5px,100% 100%; }
 .answer-slip-heading { font-size:10px; letter-spacing:4px; color:#9b8963; padding-top:1px; }
@@ -87,7 +79,7 @@
 .answer-handwriting-punctuation { font-size:24px; line-height:34px; }
 .answer-slip-autograph .answer-handwriting-glyph { width:12px; height:18px; }
 .answer-slip-invitation { gap:9px; }
-.answer-slip-invitation p { font-size:22px; }
+.answer-slip-invitation p { font-size:19px; }
 
 .answer-slip-tools button { opacity:1; pointer-events:auto; transition:color .2s; }
 .answer-slip[data-phase=fading] .answer-slip-answer-layer { animation:slip-fade-ink 1.6s ease both; }
