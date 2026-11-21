@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type CSSProperties } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
 import glyphs from './strokes.json'
 
 type Glyph = { strokes: string[]; medians: number[][][] }
@@ -10,6 +10,7 @@ export default function Handwriting({ text, animate, onComplete }: { text: strin
   const completion = useRef(onComplete)
   useEffect(() => { completion.current = onComplete }, [onComplete])
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const [settled, setSettled] = useState(!animate || reduced)
   let elapsed = 220
   const letters = Array.from(text).map((char, index) => {
     const glyph = data[char]
@@ -24,9 +25,15 @@ export default function Handwriting({ text, animate, onComplete }: { text: strin
     return { char, glyph, strokes, delay }
   })
   const total = elapsed
-  useEffect(() => { const timer = window.setTimeout(() => completion.current(), animate && !reduced ? total : 0); return () => window.clearTimeout(timer) }, [text, animate, reduced, total])
+  useEffect(() => {
+    const reset = window.setTimeout(() => setSettled(!animate || reduced), 0)
+    const timer = window.setTimeout(() => { setSettled(true); completion.current() }, animate && !reduced ? total : 0)
+    return () => { window.clearTimeout(reset); window.clearTimeout(timer) }
+  }, [text, animate, reduced, total])
   const writing = animate && !reduced
-  return <div className="answer-handwriting" aria-label={text}>
+  return <div className={`answer-handwriting${settled ? ' answer-handwriting-settled' : writing ? ' answer-handwriting-writing' : ''}`} style={{ '--write-total': `${total}ms` } as CSSProperties} aria-label={text}>
+    <span className="answer-handwriting-font-copy" aria-hidden="true">{text}</span>
+    <span className="answer-handwriting-stroke-copy" aria-hidden="true">
     {letters.map(({ char, glyph, strokes, delay }, index) => glyph && strokes ? <svg key={index} aria-hidden="true" className="answer-handwriting-glyph" viewBox="0 0 1024 1024">
       <defs>
         <linearGradient id={`${id}-ink-${index}`} x2="85%" y2="100%">
@@ -50,5 +57,6 @@ export default function Handwriting({ text, animate, onComplete }: { text: strin
         </g>)}
       </g>
     </svg> : <span key={index} aria-hidden="true" className="answer-handwriting-punctuation" style={animate && !reduced ? { animation: `slip-punctuation 260ms ease ${delay}ms both` } : undefined}>{char}</span>)}
+    </span>
   </div>
 }
