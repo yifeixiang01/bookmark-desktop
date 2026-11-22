@@ -99,7 +99,7 @@ export function findFreeRect(
   return { x: fallbackX, y: 0 }
 }
 
-/** 书签可以悬停加入文件夹，但不能把文件夹当作普通格子挤开。 */
+/** 应用卡片不可被挤开；书签可以加入文件夹，但不能挤开文件夹。 */
 export function isDropBlockedByFolder(
   items: DesktopItem[],
   placements: Map<string, GridPos>,
@@ -109,9 +109,9 @@ export function isDropBlockedByFolder(
 ): boolean {
   const source = items.find((it) => it.id === sourceId)
   // 文件夹面板里的书签还没有桌面项目 ID。
-  if (source && source.kind !== 'bookmark') return false
   return items.some((it) => {
-    if (it.kind !== 'group') return false
+    if (it.id === sourceId) return false
+    if (it.kind !== 'app' && !(it.kind === 'group' && (!source || source.kind === 'bookmark'))) return false
     const pos = placements.get(it.id)
     return pos && rectsOverlap(cell.x, cell.y, span, pos.x, pos.y, spanOf(it))
   })

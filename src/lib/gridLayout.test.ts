@@ -114,17 +114,16 @@ it('still relocates invalid vertical positions and overlapping items', () => {
   expect(placements.get('c')).toEqual({ x: 0, y: 1 })
 })
 
-it('moves a large app aside when a bookmark is dropped on it without creating overlaps', () => {
+it('keeps an application card fixed when a bookmark is dropped on it', () => {
   const app: DesktopItem = { id: 'app', kind: 'app', app: createPomodoro() }
   const items = [app, icon('source'), icon('other')]
   const positions = new Map([['app', { x: 0, y: 0 }], ['source', { x: 3, y: 0 }], ['other', { x: 3, y: 1 }]])
   const cell = { x: 1, y: 1 }
   const moved = previewInsert(items, positions, 'source', { w: 1, h: 1 }, cell, 6)
-  const target = moved.get('app')!
-  expect(target).toBeDefined()
-  expect(rectsOverlap(target.x, target.y, spanOf(app), cell.x, cell.y, { w: 1, h: 1 })).toBe(false)
-  const other = positions.get('other')!
-  expect(rectsOverlap(target.x, target.y, spanOf(app), other.x, other.y, { w: 1, h: 1 })).toBe(false)
+  expect(moved.has('app')).toBe(false)
+  expect(isDropBlockedByFolder(items, positions, 'source', { w: 1, h: 1 }, cell)).toBe(true)
+  const folder: DesktopItem = { id: 'folder', kind: 'group', group: { id: 'folder', name: 'Folder', bookmarks: [] } }
+  expect(isDropBlockedByFolder([...items, folder], positions, folder.id, spanOf(folder), { x: 2, y: 2 })).toBe(true)
 })
 
 it('reserves the whole app footprint while displacing a dense block of icons', () => {
