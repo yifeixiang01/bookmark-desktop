@@ -8,7 +8,7 @@ import { salaryDefinition } from './salary/definition'
 import { answersDefinition } from './answers/definition'
 
 const definitions = { note: noteDefinition, todo: todoDefinition, water: waterDefinition, woodfish: woodfishDefinition, pomodoro: pomodoroDefinition, salary: salaryDefinition, answers: answersDefinition }
-export const APP_CATALOG = [definitions.pomodoro, definitions.note, definitions.todo, definitions.water, definitions.woodfish, definitions.salary, definitions.answers, { type: 'pet', name: '桌宠', description: '一只会散步、打盹和扑毛线球的橘白猫。', available: true }] as const
+export const APP_CATALOG = [definitions.pomodoro, definitions.note, definitions.todo, definitions.water, definitions.woodfish, definitions.salary, definitions.answers] as const
 export const isAppType = (type: string): type is AppType => Object.hasOwn(definitions, type)
 export const appName = (type: AppType) => definitions[type].name
 export const createApp = (type: AppType, now = Date.now()): DesktopApp => definitions[type].create(now)
