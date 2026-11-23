@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Stashy",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "快速收藏网页到你的书签空间，支持多个空间同步保存。",
   "permissions": [
     "activeTab",
@@ -15,6 +15,12 @@
   "action": {
     "default_title": "Stashy · 保存书签",
     "default_popup": "index.html"
+  },
+  "commands": {
+    "save-bookmark": {
+      "suggested_key": { "default": "Alt+Shift+S", "mac": "MacCtrl+Shift+S" },
+      "description": "保存当前网页到 Stashy"
+    }
   },
   "background": {
     "service_worker": "background.js",

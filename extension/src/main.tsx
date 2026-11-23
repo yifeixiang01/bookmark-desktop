@@ -169,11 +169,16 @@ export default function App() {
       await chrome.storage.local.set({ [`selected:${account!.id}`]: selected })
       const saved = [...result.added, ...result.skipped]
       setSpaces(old => old.map(s => saved.includes(s.id) ? { ...s, saved: true } : s))
-      setSuccess(result.added.length ? `已保存到 ${result.added.length} 个空间${result.skipped.length ? `，${result.skipped.length} 个空间已收藏` : ''}` : '所选空间均已收藏，无需重复保存')
+      if (!result.added.length) {
+        setError('所选空间均已收藏，无需重复保存')
+        return
+      }
+      setSuccess(`已保存到 ${result.added.length} 个空间${result.skipped.length ? `，已跳过 ${result.skipped.length} 个已收藏的空间` : ''}`)
       await chrome.storage.session.remove(draftKey.current)
     } catch (e) { setError(e instanceof Error ? e.message : '保存失败，信息已保留，请重试') }
     finally { setBusy(false) }
   }
+  const savedCount = spaces.filter(space => space.saved).length
   const supported = isWebUrl(page.url)
   if (!captureMode) return <main className="account-panel">
     <header><h1>Stashy</h1><a href={SITE} target="_blank" rel="noreferrer">打开书签桌面 ↗</a></header>
@@ -194,6 +199,7 @@ export default function App() {
     <label className="field description-field">网站描述 <span>（可选）</span><textarea aria-label="网站描述" maxLength={2000} value={description} disabled={busy} onChange={e => { descriptionEdited.current = true; setDescription(e.target.value); setSuccess('') }} placeholder={metaLoading ? '正在获取网站描述…' : '该网页暂无描述，可手动填写'} rows={3} /></label>
     {(metaLoading || metaNotice) && <p className="meta-notice" role="status">{metaLoading ? '正在获取网页图标、名称和描述…' : metaNotice}</p>}
     <div className="space-heading"><h2>保存到空间 <small>可多选</small></h2><button className="text-button" disabled={busy} onClick={() => refresh(page, true)}>刷新</button></div>
+    {savedCount > 0 && <p className="duplicate-notice" role="status">当前网页已保存到 {savedCount} 个空间，保存时会跳过重复项。</p>}
     <div className="spaces">{spaces.map(space => <label className={`space ${selected.includes(space.id) ? 'chosen' : ''}`} key={space.id}><input type="checkbox" checked={selected.includes(space.id)} disabled={busy} onChange={e => { setSelected(e.target.checked ? [...selected, space.id] : selected.filter(id => id !== space.id)); setSuccess('') }} /><span>{space.name}</span>{space.saved && <small>已收藏</small>}</label>)}{!spaces.length && <p>暂无空间，请前往网页端创建后刷新。</p>}</div>
     <button className="primary" disabled={busy || metaLoading || !supported || !selected.length || !page.title.trim()} onClick={save}>{busy ? '正在处理…' : metaLoading ? '正在获取网站信息…' : !selected.length ? '请先选择空间' : `保存书签 · ${selected.length} 个空间`}</button>
     </> : <button className="primary" onClick={() => refresh(page)}>重新连接</button>}

@@ -6,6 +6,21 @@ const menuProperties: chrome.contextMenus.CreateProperties = {
   contexts: ['page', 'link', 'selection', 'image', 'video', 'audio', 'editable'],
   documentUrlPatterns: ['http://*/*', 'https://*/*'],
 }
+type Pointer = { x: number; y: number; left: number; top: number; width: number; height: number; time: number }
+
+async function openCapture(page: Page, windowId?: number, pointer?: Pointer) {
+  const id = crypto.randomUUID()
+  await chrome.storage.session.set({ [`page:${id}`]: page })
+  const width = 360, height = 660
+  const position = pointer ? {
+    left: Math.round(Math.max(pointer.left, Math.min(pointer.x, pointer.left + pointer.width - width))),
+    top: Math.round(Math.max(pointer.top, Math.min(pointer.y, pointer.top + pointer.height - height))),
+  } : windowId !== undefined ? await chrome.windows.get(windowId).then(window => ({
+    left: (window.left ?? 0) + Math.max(0, Math.round(((window.width ?? width) - width) / 2)),
+    top: (window.top ?? 0) + Math.max(0, Math.round(((window.height ?? height) - height) / 2)),
+  })).catch(() => ({})) : {}
+  await chrome.windows.create({ url: chrome.runtime.getURL(`index.html?capture=${id}`), type: 'popup', width, height, ...position })
+}
 let menuRegistration: Promise<void> | undefined
 function ensureSaveMenu() {
   if (menuRegistration) return menuRegistration
@@ -47,24 +62,23 @@ chrome.runtime.onStartup.addListener(() => { void ensureSaveMenu() })
 void ensureSaveMenu()
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== 'dandan-save') return
-  const url = info.linkUrl || info.pageUrl || tab?.url
-  if (!isWebUrl(url)) return
-  const page: Page = { url, title: info.linkUrl ? url : tab?.title || url, icon: !info.linkUrl && isWebUrl(tab?.favIconUrl) ? tab.favIconUrl : undefined }
-  const id = crypto.randomUUID()
   void (async () => {
+    const url = info.linkUrl || info.pageUrl || tab?.url
+    if (!isWebUrl(url)) return
+    const page: Page = { url, title: info.linkUrl ? url : tab?.title || url, icon: !info.linkUrl && isWebUrl(tab?.favIconUrl) ? tab.favIconUrl : undefined }
     const key = `pointer:${tab?.id}:${info.frameId ?? 0}`
     const stored = await chrome.storage.session.get(key)
-    const pointer = stored[key] as { x: number; y: number; left: number; top: number; width: number; height: number; time: number } | undefined
-    const width = 360, height = 660
-    const position = pointer && Date.now() - pointer.time < 120_000 ? {
-      left: Math.round(Math.max(pointer.left, Math.min(pointer.x, pointer.left + pointer.width - width))),
-      top: Math.round(Math.max(pointer.top, Math.min(pointer.y, pointer.top + pointer.height - height))),
-    } : tab?.windowId !== undefined ? await chrome.windows.get(tab.windowId).then(window => ({
-      left: (window.left ?? 0) + Math.max(0, Math.round(((window.width ?? width) - width) / 2)),
-      top: (window.top ?? 0) + Math.max(0, Math.round(((window.height ?? height) - height) / 2)),
-    })) : {}
-    await chrome.storage.session.set({ [`page:${id}`]: page })
-    await chrome.windows.create({ url: chrome.runtime.getURL(`index.html?capture=${id}`), type: 'popup', width, height, ...position })
+    const pointer = stored[key] as Pointer | undefined
+    await openCapture(page, tab?.windowId, pointer && Date.now() - pointer.time < 120_000 ? pointer : undefined)
+  })().catch(console.error)
+})
+chrome.commands.onCommand.addListener((command, tab) => {
+  if (command !== 'save-bookmark') return
+  void (async () => {
+    const current = tab ?? (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0]
+    const url = current?.url
+    if (!isWebUrl(url)) return
+    await openCapture({ url, title: current.title || url, icon: isWebUrl(current.favIconUrl) ? current.favIconUrl : undefined }, current.windowId)
   })().catch(console.error)
 })
 
