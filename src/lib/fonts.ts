@@ -53,6 +53,60 @@ export const FONT_OPTIONS = [
     description: '英文与数字等宽，中文使用设备字体回退',
     family: 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", "Microsoft YaHei", monospace',
   },
+  {
+    id: 'source-han-sans',
+    name: '思源黑体',
+    description: '干净匀称的现代黑体；若本机未安装则使用无衬线替代',
+    family: '"Source Han Sans SC", "Source Han Sans CN", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif',
+  },
+  {
+    id: 'source-han-serif',
+    name: '思源宋体',
+    description: '端正典雅，适合阅读与长文本',
+    family: '"Source Han Serif SC", "Source Han Serif CN", "Noto Serif CJK SC", "Songti SC", SimSun, serif',
+  },
+  {
+    id: 'lxgw-wenkai',
+    name: '霞鶩文楷',
+    description: '溫潤的手寫楷體，帶有筆記與閱讀的氣息',
+    family: '"LXGW WenKai", "LXGW WenKai Screen", "Kaiti SC", KaiTi, "Songti SC", serif',
+  },
+  {
+    id: 'zhuque-fangsong',
+    name: '朱雀仿宋',
+    description: '秀麗纖細、富有古典感的仿宋字體',
+    family: '"Zhuque Fangsong", "FangSong", STFangsong, "Songti SC", serif',
+  },
+  {
+    id: 'lxgw-neoxihei',
+    name: '霞鶩新晰黑',
+    description: '活潑明快的圓角黑體風格',
+    family: '"LXGW Neo XiHei", "LXGW Neo XiHei Lite", "Microsoft YaHei", "PingFang SC", sans-serif',
+  },
+  {
+    id: 'huiwen-mincho',
+    name: '匯文明朝體',
+    description: '明朝風格宋體，適合打造復古閱讀感',
+    family: '"Huiwen Mincho", "Huiwen-mincho", "Songti SC", SimSun, serif',
+  },
+  {
+    id: 'zcoool-kuaile',
+    name: '站酷快樂體',
+    description: '圓潤俏皮，為桌面添一點輕鬆感',
+    family: '"ZCOOL KuaiLe", "ZCOOL KuaiLe SC", "Microsoft YaHei", "PingFang SC", sans-serif',
+  },
+  {
+    id: 'consolas',
+    name: 'Consolas',
+    description: '清晰易讀的經典編程等寬字體',
+    family: 'Consolas, "Cascadia Code", "SFMono-Regular", Menlo, monospace',
+  },
+  {
+    id: 'courier-new',
+    name: 'Courier New',
+    description: '復古打字機風格的等寬字體',
+    family: '"Courier New", Courier, "Microsoft YaHei", monospace',
+  },
 ] as const
 
 export type FontPreference = (typeof FONT_OPTIONS)[number]['id']

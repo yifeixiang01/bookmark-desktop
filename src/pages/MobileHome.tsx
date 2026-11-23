@@ -108,7 +108,7 @@ export default function MobileHome() {
 
         <section className="mobile-library" aria-label={normalizedQuery ? '搜索结果' : '空间项目'}>
           {normalizedQuery ? (
-            <div className="mobile-grid" key={`search-${activePartition.id}`}>
+            <div className="mobile-grid mobile-grid-results" key={`search-${activePartition.id}-${query}`}>
               {searchResults.map(({ bookmark, spaceId }) => (
                 <a key={`${spaceId}-${bookmark.id}`} href={bookmark.url} target="_blank" rel="noreferrer" className="mobile-tile mobile-tile-link">
                   <span className="mobile-tile-icon"><FaviconImg url={bookmark.url} name={bookmark.name} customIcon={bookmark.icon} size={46} /></span>
@@ -119,7 +119,7 @@ export default function MobileHome() {
             </div>
           ) : (
             <>
-              <div className="mobile-grid" key={activePartition.id}>
+              <div className="mobile-grid mobile-grid-library" key={activePartition.id}>
                 {orderedItems.map((item, index) => (
                   <div key={item.id} className="mobile-tile" style={{ animationDelay: `${Math.min(index, 12) * 25}ms` }}>
                     {item.kind === 'bookmark' ? (

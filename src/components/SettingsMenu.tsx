@@ -17,8 +17,6 @@ const SETTINGS_SECTIONS = [
 ] as const
 
 interface Props {
-  petEnabled: boolean
-  onPetEnabled: (enabled: boolean) => void
   currentPartitionName: string
   appCounts: Partial<Record<AppType, number>>
   onAddApp: (type: AppType) => void
@@ -43,7 +41,7 @@ interface Props {
 }
 
 export function SettingsMenu({
-  currentPartitionName, appCounts, onAddApp, petEnabled, onPetEnabled,
+  currentPartitionName, appCounts, onAddApp,
   wallpaper, onWallpaper, font, onFont, fontScale, onFontScale, onImportHTML, onExportJSON, onImportJSON,
   accountLabel, syncing, syncError, onLogout, partitions, onAddPartition, onRenamePartition, onDeletePartition, onReorderPartitions,
 }: Props) {
@@ -108,15 +106,10 @@ export function SettingsMenu({
                 <div className="mb-4 flex h-12 items-center transition-transform duration-300 group-hover:translate-x-1"><AppIcon type={app.type} /></div>
                 <h4 className="text-sm font-semibold tracking-wide text-slate-800">{app.name}</h4>
                 <p className="mb-4 mt-1 flex-1 text-xs leading-5 text-slate-500">{app.description}</p>
-                {app.type === 'pet' ? (
-                  <button type="button" className="app-action rounded-full bg-slate-800 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700" onClick={() => {
-                    onPetEnabled(!petEnabled)
-                    if (!petEnabled) setOpen(false)
-                  }}>{petEnabled ? '收起桌宠' : '添加到桌面'}</button>
-                ) : <>
+                <>
                   <div className="flex flex-wrap gap-2"><button type="button" aria-label={`预览${app.name}`} className="app-action rounded-full border border-stone-200 bg-white px-4 py-2 text-xs text-stone-500 hover:border-stone-400" onClick={() => setPreviewType(app.type)}>预览</button><button type="button" aria-label={`添加${app.name}到当前桌面`} className="app-action flex flex-1 items-center justify-center gap-1 rounded-full bg-slate-800 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700" onClick={() => onAddApp(app.type)}><Plus size={14} />添加到桌面</button></div>
                   <p role="status" className="mt-2 text-center text-[11px] text-slate-400">{appCounts[app.type] ? `当前桌面已添加 ${appCounts[app.type]} 张` : '可添加多个，独立保存'}</p>
-                </>}
+                </>
               </article>)}
             </div>
           </section>
@@ -202,7 +195,7 @@ export function SettingsMenu({
               <h3 className="text-base font-semibold">字体外观</h3>
               <button type="button" onClick={() => onFont('system')} disabled={font === 'system'} className="rounded-md px-3 py-2 text-xs text-sky-700 hover:bg-sky-50 disabled:opacity-40">恢复默认</button>
             </div>
-            <p className="text-xs leading-5 text-slate-500">选择后立即生效，自动保存并同步到账号，手机端跟随。使用设备已有字体；未安装所选字体时会自动使用替代字体，实际效果以预览为准。</p>
+            <p className="text-xs leading-5 text-slate-500">选择后立即生效，自动保存并同步到账号，手机端跟随。字体来自设备本机；部分特色字体需自行安装，未安装时会自动使用相近字体。预览为本机实际显示效果。</p>
             <div className="space-y-3 rounded-xl border border-slate-200 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <label htmlFor="app-font-scale" className="text-sm font-medium">字体大小 <output htmlFor="app-font-scale">{fontScale}%</output></label>

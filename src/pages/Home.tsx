@@ -29,7 +29,6 @@ import { BookmarkFormDialog } from '@/components/BookmarkFormDialog'
 import { NamePromptDialog } from '@/components/NamePromptDialog'
 import { OptionPickerDialog } from '@/components/OptionPickerDialog'
 import { ConfirmDialog, type ConfirmConfig } from '@/components/ConfirmDialog'
-import { DesktopPet } from '@/apps/pet/DesktopPet'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { DesktopContextMenu } from '@/components/DesktopContextMenu'
 
@@ -367,10 +366,7 @@ export default function Home() {
         </span>
       )}
 
-      {activePartition.petEnabled && <DesktopPet key={activePartition.id} onRemove={() => store.setPetEnabled(false)} />}
       <SettingsMenu
-        petEnabled={activePartition.petEnabled === true}
-        onPetEnabled={store.setPetEnabled}
         currentPartitionName={activePartition.name}
         appCounts={activePartition.items.reduce<Partial<Record<AppType, number>>>((counts, it) => { if (it.kind === 'app') counts[it.app.type] = (counts[it.app.type] ?? 0) + 1; return counts }, {})}
         onAddApp={(type) => { store.addApp(type); showToast(`已添加${appName(type)}到「${activePartition.name}」`) }}

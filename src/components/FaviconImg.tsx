@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
-import { faviconCandidates, hostColor, hostLetter } from '@/lib/favicon'
+import { faviconCandidates, hostLetter } from '@/lib/favicon'
+
+const workingSources = new Map<string, string>()
 
 interface Props {
   url: string
@@ -11,19 +13,22 @@ interface Props {
 
 /** favicon 多源级联加载，全部失败时退化为字母色块 */
 export function FaviconImg({ url, name, customIcon, size = 44, className = '' }: Props) {
+  const sourceKey = JSON.stringify([url, customIcon])
+  return <FaviconLoader key={sourceKey} sourceKey={sourceKey} {...{ url, name, customIcon, size, className }} />
+}
+
+function FaviconLoader({ url, name, customIcon, size = 44, className = '', sourceKey }: Props & { sourceKey: string }) {
   const candidates = useMemo(() => {
-    if (!customIcon) return faviconCandidates(url)
-    // 裸 favicon.ico 通常只有 16/32px，放大后模糊：优先用图标服务的大图，ico 只作兜底
-    const weakIco = /\/favicon\.ico(\?|#|$)/i.test(customIcon)
-    return weakIco ? [...faviconCandidates(url), customIcon] : [customIcon, ...faviconCandidates(url)]
-  }, [url, customIcon])
+    const known = workingSources.get(sourceKey)
+    return [...new Set([known, customIcon, ...faviconCandidates(url)].filter((src): src is string => !!src))]
+  }, [url, customIcon, sourceKey])
   const [idx, setIdx] = useState(0)
 
   if (idx >= candidates.length) {
     return (
       <div
-        className={`flex items-center justify-center rounded-xl text-white font-semibold select-none ${className}`}
-        style={{ width: size, height: size, background: hostColor(url), fontSize: size * 0.44 }}
+        className={`flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 font-semibold select-none ${className}`}
+        style={{ width: size, height: size, fontSize: size * 0.44 }}
       >
         {hostLetter(url, name)}
       </div>
@@ -34,10 +39,12 @@ export function FaviconImg({ url, name, customIcon, size = 44, className = '' }:
       src={candidates[idx]}
       alt={name}
       draggable={false}
-      className={`rounded-xl object-cover bg-white ${className}`}
-      style={{ width: size, height: size }}
-      onError={() => setIdx((i) => i + 1)}
+      className={`rounded-xl object-contain ${className}`}
+      style={{ width: size, height: size, backgroundColor: 'transparent' }}
+      onError={() => setIdx((i) => Math.min(i + 1, candidates.length))}
+      onLoad={() => workingSources.set(sourceKey, candidates[idx])}
       loading="lazy"
+      decoding="async"
     />
   )
 }
