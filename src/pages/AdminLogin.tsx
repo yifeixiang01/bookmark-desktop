@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router";
 import {
-  Bookmark,
   ShieldCheck,
   Eye,
   EyeOff,
@@ -42,7 +41,7 @@ export default function AdminLogin() {
     <div className="mgmt-login">
       <header className="mgmt-login-topbar">
         <Link to="/" className="mgmt-login-brand">
-          <Bookmark size={23} aria-hidden="true" />
+          <ShieldCheck size={23} aria-hidden="true" />
           <span>书签桌面</span>
           <span className="mgmt-login-tag">管理中心</span>
         </Link>

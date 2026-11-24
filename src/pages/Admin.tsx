@@ -7,7 +7,7 @@ import {
   useNavigate,
 } from "react-router";
 import {
-  Bookmark,
+  ShieldCheck,
   LayoutDashboard,
   Users,
   KeyRound,
@@ -660,7 +660,7 @@ export default function Admin() {
   if (auth.user.role !== "admin")
     return (
       <div className="admin-shell admin-denied">
-        <Bookmark size={36} />
+        <ShieldCheck size={36} />
         <h1>此账号没有管理权限</h1>
         <p>请使用已授权的管理员账号登录。</p>
         <Link to="/">返回书签桌面</Link>
@@ -677,7 +677,7 @@ export default function Admin() {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <Link to="/admin/overview" className="admin-brand">
-          <Bookmark aria-hidden="true" />
+          <ShieldCheck aria-hidden="true" />
           <span>
             书签桌面<small>管理中心</small>
           </span>
