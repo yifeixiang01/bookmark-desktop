@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
-import { userStates } from '@db/schema';
+import { userStates, users } from '@db/schema';
 import { getDb } from './connection';
 import { defaultState } from '../lib/extension-state';
 import type { AppState } from '../../src/types/bookmark';
@@ -12,6 +12,8 @@ export async function findStateByUser(userId: number) {
 export async function mutateState<T>(userId: number, fn: (state: AppState, revision: number, exists: boolean) => { state: AppState; result: T }) {
   return getDb().transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(17611, ${userId})`);
+    const [owner] = await tx.select({ id: users.id }).from(users).where(eq(users.id, userId));
+    if (!owner) throw new TRPCError({ code: 'NOT_FOUND', message: '用户不存在或已删除' });
     const [row] = await tx.select().from(userStates).where(eq(userStates.userId, userId));
     const revision = row?.revision ?? 0;
     const next = fn((row?.state as AppState | undefined) ?? defaultState(), revision, !!row);

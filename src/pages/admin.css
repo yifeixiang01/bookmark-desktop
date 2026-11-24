@@ -420,3 +420,33 @@
     grid-template-columns: 1fr;
   }
 }
+
+.admin-delete-user {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--admin-line);
+}
+.admin-delete-user form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+}
+.admin-delete-user label {
+  display: grid;
+  gap: 8px;
+}
+.admin-delete-user input {
+  width: 100%;
+  max-width: 280px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  background: var(--admin-panel);
+  color: var(--admin-ink);
+}
+.admin-shell .admin-delete-button {
+  color: #983930;
+  border-color: #d6a29a;
+}

@@ -59,7 +59,16 @@ export const adminRouter = createRouter({
           .from(users)
           .where(eq(users.id, ctx.user.id))
           .for("update");
-        if (!actor || actor.disabled || actor.role !== "admin" || actor.sessionVersion !== ctx.user.sessionVersion) throw new TRPCError({ code: "UNAUTHORIZED", message: "登录已失效，请重新登录" });
+        if (
+          !actor ||
+          actor.disabled ||
+          actor.role !== "admin" ||
+          actor.sessionVersion !== ctx.user.sessionVersion
+        )
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "登录已失效，请重新登录",
+          });
         if (
           !actor.passwordHash ||
           !verifyPassword(input.currentPassword, actor.passwordHash)
@@ -81,13 +90,11 @@ export const adminRouter = createRouter({
         await tx
           .delete(extensionCodes)
           .where(eq(extensionCodes.userId, ctx.user.id));
-        await tx
-          .insert(adminAuditLogs)
-          .values({
-            actorId: ctx.user.id,
-            targetId: ctx.user.id,
-            action: "change_password",
-          });
+        await tx.insert(adminAuditLogs).values({
+          actorId: ctx.user.id,
+          targetId: ctx.user.id,
+          action: "change_password",
+        });
       });
       return { ok: true };
     }),
@@ -183,6 +190,49 @@ export const adminRouter = createRouter({
       sessions: sessions.value,
     };
   }),
+  deleteUser: adminQuery
+    .input(idInput.extend({ confirmation: z.string().max(32) }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.confirmation !== String(input.id))
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "请输入正确的用户 ID 确认删除",
+        });
+      await getDb().transaction(async tx => {
+        await tx.execute(sql`select pg_advisory_xact_lock(17611, ${input.id})`);
+        const [target] = await tx
+          .select()
+          .from(users)
+          .where(eq(users.id, input.id))
+          .for("update");
+        if (!target)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "用户不存在或已删除",
+          });
+        if (target.id === ctx.user.id || target.role === "admin")
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "不能删除管理员账号",
+          });
+        await tx
+          .delete(extensionCodes)
+          .where(eq(extensionCodes.userId, input.id));
+        await tx
+          .delete(extensionSessions)
+          .where(eq(extensionSessions.userId, input.id));
+        await tx.delete(userStates).where(eq(userStates.userId, input.id));
+        await tx.delete(users).where(eq(users.id, input.id));
+        await tx
+          .insert(adminAuditLogs)
+          .values({
+            actorId: ctx.user.id,
+            targetId: input.id,
+            action: "delete_user",
+          });
+      });
+      return { ok: true };
+    }),
   setDisabled: adminQuery
     .input(idInput.extend({ disabled: z.boolean() }))
     .mutation(async ({ ctx, input }) => {

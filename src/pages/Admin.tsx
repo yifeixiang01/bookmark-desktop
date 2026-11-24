@@ -35,6 +35,7 @@ const actions: Record<string, string> = {
   enable_user: "恢复账号",
   revoke_extension: "撤销扩展授权",
   change_password: "修改管理员密码",
+  delete_user: "删除用户",
 };
 const nav = [
   ["overview", "数据概览", LayoutDashboard],
@@ -147,6 +148,13 @@ function UserDetail({ id, close }: { id: number; close: () => void }) {
       void utils.admin.invalidate();
     },
   });
+  const [confirmation, setConfirmation] = useState("");
+  const deletion = trpc.admin.deleteUser.useMutation({
+    onSuccess: () => {
+      close();
+      void utils.admin.invalidate();
+    },
+  });
   const user = query.data;
   return (
     <section className="admin-panel">
@@ -185,7 +193,7 @@ function UserDetail({ id, close }: { id: number; close: () => void }) {
               <h3>账号状态管理</h3>
               <p>禁用后网页会话和扩展授权立即失效。恢复后需要重新登录。</p>
               <button
-                disabled={mutation.isPending}
+                disabled={mutation.isPending || deletion.isPending}
                 onClick={() => {
                   if (
                     window.confirm(
@@ -207,6 +215,51 @@ function UserDetail({ id, close }: { id: number; close: () => void }) {
                 </p>
               )}
               {mutation.isSuccess && <p role="status">账号状态已更新</p>}
+              <div className="admin-delete-user">
+                <h3>永久删除用户</h3>
+                <p>
+                  将永久删除该账号及全部书签、桌面应用数据和扩展授权，无法恢复。操作日志会保留。
+                </p>
+                <form
+                  onSubmit={event => {
+                    event.preventDefault();
+                    if (
+                      window.confirm(
+                        `确定永久删除用户「${user.name || user.email || id}」（ID：${id}）及全部数据？此操作无法恢复。`
+                      )
+                    )
+                      deletion.mutate({ id, confirmation });
+                  }}
+                >
+                  <label>
+                    输入用户 ID「{id}」确认删除
+                    <input
+                      value={confirmation}
+                      onChange={event => setConfirmation(event.target.value)}
+                      inputMode="numeric"
+                      autoComplete="off"
+                      maxLength={32}
+                      disabled={deletion.isPending}
+                    />
+                  </label>
+                  <button
+                    className="admin-delete-button"
+                    type="submit"
+                    disabled={
+                      confirmation !== String(id) ||
+                      mutation.isPending ||
+                      deletion.isPending
+                    }
+                  >
+                    {deletion.isPending ? "正在删除…" : "永久删除用户"}
+                  </button>
+                </form>
+                {deletion.error && (
+                  <p role="alert" className="admin-error">
+                    {deletion.error.message}
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </>
@@ -387,7 +440,9 @@ function Logs() {
   return (
     <section className="admin-panel">
       <h2>管理操作记录</h2>
-      <p className="admin-note">记录已成功提交的账号状态变更、扩展授权撤销与管理员密码修改。</p>
+      <p className="admin-note">
+        记录已成功提交的账号状态变更、用户删除、扩展授权撤销与管理员密码修改。
+      </p>
       <Feedback loading={query.isLoading} error={query.error} />
       {query.data && (
         <>
@@ -535,8 +590,15 @@ function SettingsPage() {
               {message}
             </p>
           )}
-          {mutation.isSuccess && <a className="admin-link" href="/admin/login">使用新密码重新登录</a>}
-          <button type="submit" disabled={mutation.isPending || mutation.isSuccess}>
+          {mutation.isSuccess && (
+            <a className="admin-link" href="/admin/login">
+              使用新密码重新登录
+            </a>
+          )}
+          <button
+            type="submit"
+            disabled={mutation.isPending || mutation.isSuccess}
+          >
             {mutation.isPending ? "正在更新…" : "更新密码"}
           </button>
         </form>
