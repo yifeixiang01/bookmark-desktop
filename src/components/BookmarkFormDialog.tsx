@@ -242,20 +242,6 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
               >
                 <><span className="bookmark-location-icon"><Globe2 size={14} /></span><span>桌面<span>独立图标</span></span>{groupId === DESKTOP && <Check size={14} className="ml-auto" />}</>
               </button>
-              {groups.map((g) => (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => setGroupId(g.id)}
-                  className={`bookmark-location-option ${
-                    groupId === g.id
-                      ? 'bg-slate-800 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  <><span className="bookmark-location-icon"><FolderOpen size={14} /></span><span className="truncate">{g.name}</span>{groupId === g.id && <Check size={14} className="ml-auto" />}</>
-                </button>
-              ))}
               <button
                 type="button"
                 onClick={() => setGroupId(NEW_GROUP)}
@@ -268,6 +254,11 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
                 <><span className="bookmark-location-icon"><FolderOpen size={14} /></span><span>新文件夹</span>{groupId === NEW_GROUP && <Check size={14} className="ml-auto" />}</>
               </button>
             </div>
+            {groupId !== DESKTOP && groupId !== NEW_GROUP && (
+              <p className="mt-3 text-sm text-slate-600">
+                保存到当前文件夹：{groups.find((group) => group.id === groupId)?.name ?? '当前文件夹'}
+              </p>
+            )}
             {groupId === NEW_GROUP && (
               <Input
                 className="mt-3"

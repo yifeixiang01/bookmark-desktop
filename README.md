@@ -9,6 +9,22 @@
 - **数据库**：PostgreSQL 17（兼容 Supabase）
 - **构建产物**：单进程一体化 —— `dist/boot.js` 同时托管前端静态资源与 API
 
+## Windows 本地一键启动
+
+安装依赖（`npm ci`）、配置好 `.env` 中的 `APP_SECRET`，并安装 PostgreSQL 17 后，双击根目录 **`start-local.cmd`** 即可。
+
+脚本会自动启动本地数据库，仅在空数据库首次启动时初始化表结构，再启动前端和 API，最后打开 <http://127.0.0.1:3000>。已有数据库直接复用，避免启动时删除额外的表或字段。修改代码后支持热更新，无需部署到云端。
+
+也可以在终端运行：
+
+```powershell
+npm run dev:local
+```
+
+本地数据库使用 `127.0.0.1:5433/bookmark_desktop`，数据保存在 `.local-data/postgres`，会复用已有数据。启动脚本会为本次进程指定本地数据库，不修改 `.env` 中的连接地址。PostgreSQL 17 默认安装目录为 `C:\Program Files\PostgreSQL\17\bin`。
+
+在终端按 `Ctrl+C` 停止开发服务，数据库会继续运行。需要停止数据库时运行 `npm run db:local:stop`；再次启动使用上述快捷脚本即可。若 3000 端口已被占用或被 Windows 保留，脚本会尝试 3100 等备用端口，以终端显示及自动打开的地址为准。
+
 ## 部署到自己的服务器
 
 ### 前置要求
@@ -68,7 +84,8 @@ DATABASE_URL="postgresql://..." npx drizzle-kit push
 ## 常用命令
 
 ```bash
-npm run dev        # 本地开发（Vite 热更新）
+npm run dev:local  # 同时启动本地 PostgreSQL、前端和 API（热更新）
+npm run dev        # 仅启动 Vite/API，不负责启动数据库
 npm run check      # TypeScript 类型检查
 npm run build      # 构建前端 + 打包后端到 dist/
 npm start          # 生产模式启动
