@@ -15,6 +15,11 @@ import { STASHY_RELEASE } from '@/lib/stashyRelease'
 const SETTINGS_SECTIONS = [
   ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '壁纸背景'], ['font', '字体外观'], ['data', '数据备份'], ['extension', '插件'], ['account', '账号'],
 ] as const
+const PET_CATALOG_ENTRY = {
+  type: 'pet' as const,
+  name: '桌宠',
+  description: '让一只可爱的桌面伙伴陪伴你工作。',
+}
 
 interface Props {
   currentPartitionName: string
@@ -102,14 +107,16 @@ export function SettingsMenu({
           <section hidden={section !== 'apps'} className="space-y-4">
             <div><h3 className="text-base font-semibold">应用中心</h3><p className="mt-1 text-xs leading-5 text-slate-500">挑选适合你的工具，添加到「{currentPartitionName}」空间，让桌面更顺手。</p></div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {APP_CATALOG.map((app) => <article key={app.type} className="app-catalog-entry group relative flex flex-col overflow-hidden rounded-[24px] border border-stone-200/70 bg-gradient-to-br from-white to-stone-50/80 p-5 shadow-sm">
+              {[...APP_CATALOG, PET_CATALOG_ENTRY].map((app) => <article key={app.type} className="app-catalog-entry group relative flex flex-col overflow-hidden rounded-[24px] border border-stone-200/70 bg-gradient-to-br from-white to-stone-50/80 p-5 shadow-sm">
                 <div className="mb-4 flex h-12 items-center transition-transform duration-300 group-hover:translate-x-1"><AppIcon type={app.type} /></div>
                 <h4 className="text-sm font-semibold tracking-wide text-slate-800">{app.name}</h4>
                 <p className="mb-4 mt-1 flex-1 text-xs leading-5 text-slate-500">{app.description}</p>
-                <>
+                {app.type === 'pet' ? (
+                  <div className="mt-auto rounded-full bg-stone-100 px-3 py-2 text-center text-xs font-medium text-stone-500">敬请期待</div>
+                ) : <>
                   <div className="flex flex-wrap gap-2"><button type="button" aria-label={`预览${app.name}`} className="app-action rounded-full border border-stone-200 bg-white px-4 py-2 text-xs text-stone-500 hover:border-stone-400" onClick={() => setPreviewType(app.type)}>预览</button><button type="button" aria-label={`添加${app.name}到当前桌面`} className="app-action flex flex-1 items-center justify-center gap-1 rounded-full bg-slate-800 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700" onClick={() => onAddApp(app.type)}><Plus size={14} />添加到桌面</button></div>
                   <p role="status" className="mt-2 text-center text-[11px] text-slate-400">{appCounts[app.type] ? `当前桌面已添加 ${appCounts[app.type]} 张` : '可添加多个，独立保存'}</p>
-                </>
+                </>}
               </article>)}
             </div>
           </section>
