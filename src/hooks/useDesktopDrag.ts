@@ -111,6 +111,8 @@ export function useDesktopDrag(opts: Opts) {
     startY: number
     anchor: { x: number; y: number }
     isTouch: boolean
+    pointerId: number
+    captureTarget: HTMLElement
     holdTimer?: ReturnType<typeof setTimeout>
   } | null>(null)
   const pointerCaptureTarget = useRef<HTMLElement | null>(null)
@@ -179,12 +181,6 @@ export function useDesktopDrag(opts: Opts) {
       if (optsRef.current.locked) return
       if (dragRef.current) return // 吸附动画进行中，忽略新按压
       if (e.pointerType === 'mouse' && e.button !== 0) return
-      // Keep receiving pointermove events after the cursor leaves the icon.
-      // This is required for dragging to the viewport edge to switch pages.
-      const captureTarget = e.currentTarget as HTMLElement
-      if (captureTarget.setPointerCapture) {
-        try { captureTarget.setPointerCapture(e.pointerId); pointerCaptureTarget.current = captureTarget } catch { /* target may have unmounted */ }
-      }
       clearTimeout(pendingRef.current?.holdTimer)
       let anchor = { x: 0, y: 0 }
       const g = optsRef.current.gridRef.current
@@ -205,6 +201,8 @@ export function useDesktopDrag(opts: Opts) {
         startY: number
         anchor: { x: number; y: number }
         isTouch: boolean
+        pointerId: number
+        captureTarget: HTMLElement
         holdTimer?: ReturnType<typeof setTimeout>
       } = {
         source,
@@ -212,6 +210,8 @@ export function useDesktopDrag(opts: Opts) {
         startY: e.clientY,
         anchor,
         isTouch: e.pointerType !== 'mouse',
+        pointerId: e.pointerId,
+        captureTarget: e.currentTarget as HTMLElement,
       }
       if (pending.isTouch) {
         pending.holdTimer = setTimeout(() => {
@@ -225,6 +225,15 @@ export function useDesktopDrag(opts: Opts) {
   )
 
   function activate(source: DragSource, x: number, y: number, anchor: { x: number; y: number }) {
+    // Capture only after crossing the drag threshold (or a touch long press).
+    // Capturing the initial press on the grid retargets ordinary link clicks.
+    const pending = pendingRef.current
+    if (pending?.captureTarget.setPointerCapture) {
+      try {
+        pending.captureTarget.setPointerCapture(pending.pointerId)
+        pointerCaptureTarget.current = pending.captureTarget
+      } catch { /* pointer or target is no longer active */ }
+    }
     const scrollElement = optsRef.current.scrollRef?.current
     if (scrollElement) {
       snapScrollElement.current = scrollElement

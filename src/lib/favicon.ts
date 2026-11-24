@@ -1,14 +1,15 @@
-// favicon 多源级联：favicon.im -> DuckDuckGo -> Google -> 字母兜底
-//（Google 的 s2 服务在国内不可达，放最后；前两个国内可直连）
+// favicon 多源级联：国内可用的聚合服务优先，网站自身图标和 Google 作为回退。
 export function faviconCandidates(url: string): string[] {
   try {
-    const host = new URL(url).hostname
+    const parsed = new URL(url)
+    const host = parsed.hostname
     if (!host) return []
-    return [
+    return [...new Set([
       `https://favicon.im/${host}?larger=true`,
       `https://icons.duckduckgo.com/ip3/${host}.ico`,
+      `${parsed.origin}/favicon.ico`,
       `https://www.google.com/s2/favicons?domain=${host}&sz=128`,
-    ]
+    ])]
   } catch {
     return []
   }
