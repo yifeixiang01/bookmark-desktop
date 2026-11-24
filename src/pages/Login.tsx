@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import {
   ArrowRight,
   AtSign,
@@ -19,7 +19,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Wallpaper } from "@/components/Wallpaper";
 
 const authErrorMessages = new Set([
-  "账号已禁用",
   "邮箱或密码不正确",
   "该邮箱已注册，请直接登录",
   "邮箱格式不正确",
@@ -38,10 +37,8 @@ function getAuthErrorMessage(error: { message?: string; data?: { code?: string }
 
 export default function Login() {
   const navigate = useNavigate();
-  const [returnTo] = useState(() => {
-    const requestedReturn = new URLSearchParams(window.location.search).get("returnTo");
-    return requestedReturn === "/admin" || requestedReturn?.startsWith("/extension/authorize?") ? requestedReturn : "/";
-  });
+  const requestedReturn = new URLSearchParams(window.location.search).get("returnTo");
+  const returnTo = requestedReturn?.startsWith("/extension/authorize?") ? requestedReturn : "/";
   const utils = trpc.useUtils();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
@@ -104,8 +101,6 @@ export default function Login() {
       loginMut.mutate({ email, password });
     }
   };
-
-  if (returnTo === "/admin") return <Navigate to="/admin/login" replace />;
 
   return (
     <main className="login-page min-h-dvh px-4 py-6 sm:px-8 sm:py-10">
