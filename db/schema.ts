@@ -16,6 +16,8 @@ export const users = pgTable("users", {
   avatar: text("avatar"),
   /** 邮箱注册用户的密码哈希（scrypt，格式 salt:hash）；Kimi OAuth 用户为 null */
   passwordHash: varchar("passwordHash", { length: 255 }),
+  disabled: integer("disabled").default(0).notNull(),
+  sessionVersion: integer("sessionVersion").default(0).notNull(),
   role: varchar("role", { length: 16 }).default("user").notNull(),
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -55,4 +57,12 @@ export const extensionSessions = pgTable("extension_sessions", {
   tokenHash: varchar("tokenHash", { length: 64 }).primaryKey(),
   userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
   expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
+});
+
+export const adminAuditLogs = pgTable("admin_audit_logs", {
+  id: serial("id").primaryKey(),
+  actorId: integer("actorId").notNull(),
+  targetId: integer("targetId").notNull(),
+  action: varchar("action", { length: 64 }).notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
 });

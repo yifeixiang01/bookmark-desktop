@@ -56,6 +56,8 @@ app.post('/token', async c => {
   const ok = await getDb().transaction(async tx => {
     const [row] = await tx.delete(extensionCodes).where(and(eq(extensionCodes.codeHash, hash(code)), eq(extensionCodes.challenge, challenge), eq(extensionCodes.redirectUri, redirectUri), gt(extensionCodes.expiresAt, new Date()))).returning();
     if (!row) return false;
+    const [owner] = await tx.select({ disabled: users.disabled }).from(users).where(eq(users.id, row.userId)).for('update');
+    if (!owner || owner.disabled) return false;
     await tx.delete(extensionSessions).where(lt(extensionSessions.expiresAt, new Date()));
     await tx.insert(extensionSessions).values({ tokenHash: hash(token), userId: row.userId, expiresAt });
     return true;
@@ -67,7 +69,7 @@ app.post('/token', async c => {
 async function session(req: Request) {
   const token = req.headers.get('authorization')?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1];
   if (!token) return null;
-  const [row] = await getDb().select({ userId: extensionSessions.userId, email: users.email, name: users.name }).from(extensionSessions).innerJoin(users, eq(users.id, extensionSessions.userId)).where(and(eq(extensionSessions.tokenHash, hash(token)), gt(extensionSessions.expiresAt, new Date())));
+  const [row] = await getDb().select({ userId: extensionSessions.userId, email: users.email, name: users.name }).from(extensionSessions).innerJoin(users, eq(users.id, extensionSessions.userId)).where(and(eq(extensionSessions.tokenHash, hash(token)), gt(extensionSessions.expiresAt, new Date()), eq(users.disabled, 0)));
   return row ? { ...row, tokenHash: hash(token) } : null;
 }
 app.get('/spaces', async c => {

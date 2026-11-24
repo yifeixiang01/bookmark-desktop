@@ -42,3 +42,7 @@ build/
 # Test coverage
 coverage/
 .nyc_output/
+
+# Browser verification artifacts
+.playwright-cli/
+output/playwright/

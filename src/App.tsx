@@ -3,6 +3,8 @@ import { Routes, Route } from 'react-router'
 import NotFound from "./pages/NotFound"
 import { useIsMobile } from './hooks/use-mobile'
 
+const AdminLogin = lazy(() => import('./pages/AdminLogin'))
+const Admin = lazy(() => import('./pages/Admin'))
 const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/Login'))
 const ExtensionAuthorize = lazy(() => import('./pages/ExtensionAuthorize'))
@@ -16,6 +18,8 @@ export default function App() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-background" aria-busy="true" />}>
       <Routes>
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/*" element={<Admin />} />
         <Route path="/" element={<ResponsiveHome />} />
         <Route path="/mobile" element={<MobileHome />} />
         <Route path="/login" element={<Login />} />

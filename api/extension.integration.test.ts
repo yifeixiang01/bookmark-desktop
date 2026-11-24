@@ -10,6 +10,10 @@ vi.mock('./queries/connection', () => ({ getDb: () => database }))
 import extensionApp from './extension-router'
 import { signSessionToken } from './kimi/session'
 import { Session } from '../contracts/constants'
+import { emailAuthRouter } from './email-auth-router'
+import { adminRouter } from './admin-router'
+import { authenticateRequest } from './kimi/auth'
+import { eq } from 'drizzle-orm'
 import { stateRouter } from './state-router'
 import { ensureState, findStateByUser } from './queries/user-states'
 import { upgradeSchema } from './queries/upgrade-schema'
@@ -100,5 +104,78 @@ suite('extension HTTP and state concurrency (isolated PostgreSQL schema)', () =>
     await expect(caller.save({ state: data, expectedRevision: snapshot.revision })).rejects.toMatchObject({ code: 'CONFLICT' })
     await expect(caller.save({ state: data })).rejects.toMatchObject({ code: 'CONFLICT' })
     expect(JSON.stringify((await findStateByUser(user.id))!.state)).toContain('https://fresh.example/')
+  })
+  it('protects admin procedures and safely manages accounts and extensions', async () => {
+    const context = { req: new Request(origin), resHeaders: new Headers() }
+    await expect(adminRouter.createCaller(context).overview()).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+    const regular = adminRouter.createCaller({ ...context, user })
+    await expect(regular.users({})).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    await expect(regular.setDisabled({ id: otherUser.id, disabled: true })).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    const [manager] = await database.insert(schema.users).values({ unionId: 'email:manager@example.com', role: 'admin' }).returning()
+    const caller = adminRouter.createCaller({ ...context, user: manager })
+    await expect(caller.setDisabled({ id: manager.id, disabled: true })).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    const overview = await caller.overview()
+    expect(overview.users).toBe(4)
+    expect(overview.bookmarks).toBeGreaterThan(0)
+    expect(await caller.users({ search: 'test@example.com' })).toMatchObject({ total: 1 })
+    expect(await caller.users({ search: '%' })).toMatchObject({ total: 0 })
+    const detail = await caller.user({ id: user.id })
+    expect(detail).not.toHaveProperty('passwordHash')
+    expect(detail).not.toHaveProperty('state')
+    expect(detail.stats.bookmarks).toBeGreaterThan(0)
+    const access = await token()
+    const sessions = await caller.sessions({})
+    const sessionId = createHash('sha256').update(access).digest('hex')
+    expect(sessions.rows.some(row => row.id === sessionId)).toBe(true)
+    await caller.revokeSession({ id: sessionId })
+    expect((await request('/spaces', undefined, { authorization: `Bearer ${access}` })).status).toBe(401)
+    const secondAccess = await token()
+    await caller.setDisabled({ id: user.id, disabled: true })
+    await expect(authenticateRequest(new Headers({ cookie }))).rejects.toBeDefined()
+    expect((await request('/spaces', undefined, { authorization: `Bearer ${secondAccess}` })).status).toBe(401)
+    expect(await caller.users({ status: 'disabled' })).toMatchObject({ total: 1 })
+    await caller.setDisabled({ id: user.id, disabled: false })
+    await expect(authenticateRequest(new Headers({ cookie }))).rejects.toBeDefined()
+    const [fresh] = await database.select().from(schema.users).where(eq(schema.users.id, user.id))
+    const newCookie = `${Session.cookieName}=${await signSessionToken({ unionId: user.unionId, clientId: 'bookmark-desktop', sessionVersion: fresh.sessionVersion })}`
+    expect((await authenticateRequest(new Headers({ cookie: newCookie }))).id).toBe(user.id)
+    expect((await caller.logs({})).rows.map(row => row.action)).toEqual(['enable_user', 'disable_user', 'revoke_extension'])
+    expect((await caller.system()).database).toBe('connected')
+  })
+  it('rejects disabled email login and issues current session versions after recovery', async () => {
+    const headers = new Headers()
+    const input = { email: 'login-lifecycle@example.test', password: 'test-password-only' }
+    const emailCaller = emailAuthRouter.createCaller({ req: new Request(origin), resHeaders: headers })
+    await emailCaller.register(input)
+    const [account] = await database.select().from(schema.users).where(eq(schema.users.email, input.email))
+    const [manager] = await database.select().from(schema.users).where(eq(schema.users.role, 'admin'))
+    const caller = adminRouter.createCaller({ req: new Request(origin), resHeaders: new Headers(), user: manager })
+    await caller.setDisabled({ id: account.id, disabled: true })
+    await expect(emailCaller.login(input)).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    await caller.setDisabled({ id: account.id, disabled: false })
+    const loginHeaders = new Headers()
+    await emailAuthRouter.createCaller({ req: new Request(origin), resHeaders: loginHeaders }).login(input)
+    const loginCookie = loginHeaders.get('set-cookie')!.split(';')[0]
+    expect((await authenticateRequest(new Headers({ cookie: loginCookie }))).id).toBe(account.id)
+    const registerCookie = headers.get('set-cookie')!.split(';')[0]
+    await expect(authenticateRequest(new Headers({ cookie: registerCookie }))).rejects.toBeDefined()
+  })
+  it('changes administrator password and invalidates old credentials', async () => {
+    const context = { req: new Request(origin), resHeaders: new Headers() }
+    const credentials = { email: 'password-admin@example.test', password: 'old-password-test' }
+    await emailAuthRouter.createCaller(context).register(credentials)
+    const [account] = await database.update(schema.users).set({ role: 'admin' }).where(eq(schema.users.email, credentials.email)).returning()
+    const caller = adminRouter.createCaller({ ...context, user: account })
+    const oldCookie = `${Session.cookieName}=${await signSessionToken({ unionId: account.unionId, clientId: 'bookmark-desktop', sessionVersion: account.sessionVersion })}`
+    await database.insert(schema.extensionSessions).values({ tokenHash: 'a'.repeat(64), userId: account.id, expiresAt: new Date(Date.now() + 60000) })
+    await expect(caller.changePassword({ currentPassword: 'incorrect', newPassword: 'new-password-test' })).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+    await expect(caller.changePassword({ currentPassword: credentials.password, newPassword: credentials.password })).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    await caller.changePassword({ currentPassword: credentials.password, newPassword: 'new-password-test' })
+    await expect(authenticateRequest(new Headers({ cookie: oldCookie }))).rejects.toBeDefined()
+    expect(await database.select().from(schema.extensionSessions).where(eq(schema.extensionSessions.userId, account.id))).toHaveLength(0)
+    await expect(emailAuthRouter.createCaller(context).login(credentials)).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+    await emailAuthRouter.createCaller(context).login({ ...credentials, password: 'new-password-test' })
+    expect((await caller.logs({})).rows[0]).toMatchObject({ action: 'change_password', targetId: account.id })
+    await expect(caller.changePassword({ currentPassword: 'new-password-test', newPassword: 'another-password-test' })).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
   })
 })

@@ -32,7 +32,7 @@ export async function verifySessionToken(
       console.warn("[session] JWT payload missing required fields.");
       return null;
     }
-    return { unionId, clientId } as SessionPayload;
+    return { unionId, clientId, sessionVersion: payload.sessionVersion } as SessionPayload;
   } catch (error) {
     console.warn("[session] JWT verification failed:", error);
     return null;

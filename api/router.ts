@@ -1,3 +1,4 @@
+import { adminRouter } from "./admin-router";
 import { authRouter } from "./auth-router";
 import { emailAuthRouter } from "./email-auth-router";
 import { stateRouter } from "./state-router";
@@ -5,6 +6,7 @@ import { siteMetaRouter } from "./site-meta-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
+  admin: adminRouter,
   ping: publicQuery.query(() => ({ ok: true, ts: Date.now() })),
   auth: authRouter,
   emailAuth: emailAuthRouter,

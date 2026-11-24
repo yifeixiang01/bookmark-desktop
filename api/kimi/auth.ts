@@ -76,7 +76,7 @@ export async function authenticateRequest(headers: Headers) {
     throw Errors.forbidden("Invalid authentication token.");
   }
   const user = await findUserByUnionId(claim.unionId);
-  if (!user) {
+  if (!user || user.disabled || (claim.sessionVersion ?? 0) !== user.sessionVersion) {
     throw Errors.forbidden("User not found. Please re-login.");
   }
   return user;
@@ -126,7 +126,10 @@ export function createOAuthCallbackHandler() {
         lastSignInAt: new Date(),
       });
 
+      const signedUser = await findUserByUnionId(userId);
+      if (!signedUser || signedUser.disabled) throw new Error("Account disabled");
       const token = await signSessionToken({
+        sessionVersion: signedUser.sessionVersion,
         unionId: userId,
         clientId: env.appId,
       });
