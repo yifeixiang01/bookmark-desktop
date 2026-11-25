@@ -20,7 +20,7 @@ interface Props {
   onEditBookmark: (groupId: string, bookmarkId: string) => void
   onDeleteBookmark: (bookmarkId: string) => void
   onMoveToDesktop: (bookmarkId: string) => void
-  /** 拖拽中的面板书签 id（半透明源位） */
+  /** 拖拽中的面板书签 id（隐藏源图标并保留占位） */
   dragBookmarkId?: string | null
   /** 有桌面书签悬停在面板上（松手即放入文件夹） */
   dropHighlight?: boolean
@@ -56,7 +56,7 @@ function PanelBookmarkCell({
     <BookmarkContextMenu onMove={onMove} onEdit={onEdit} onDelete={onDelete} onCopy={onCopy}>
     <div
       data-folder-bookmark={b.id}
-      className={`relative flex flex-col items-center gap-1.5 ${dragging ? 'opacity-25' : ''}`}
+      className={`relative flex flex-col items-center gap-1.5 ${dragging ? 'opacity-0 pointer-events-none' : ''}`}
       onPointerDown={(e) => {
         tip.bind.onPointerDown()
         onPress?.(e, b.id)
