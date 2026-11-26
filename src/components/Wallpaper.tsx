@@ -65,7 +65,7 @@ export function Wallpaper({ id }: { id: string }) {
   }, [id])
 
   return (
-    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
+    <div className="desktop-wallpaper pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
       {layers.map((layerId, i) => (
         <FadeScene key={layerId} id={layerId} instant={i < layers.length - 1 || layers.length === 1} />
       ))}

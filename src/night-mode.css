@@ -1,4 +1,40 @@
 /* Quiet blue-grey surfaces, warm text and muted jade accents. No image inversion. */
+.dark .space-management-row {
+  background: #26313d;
+  border-color: #3b4958;
+  color: #dde3df;
+}
+.dark .space-management-row:hover { border-color: #658b80; }
+.dark .space-management-row button:hover { background: #34434f; }
+.dark .desktop-wallpaper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgb(13 22 34 / 42%), rgb(13 22 34 / 25%));
+}
+.dark .desktop-search > div:first-child,
+.dark .desktop-search .result-list-in {
+  background: #202b36f2;
+  color: #dce4e1;
+  border-color: #4a5b66;
+}
+.dark .desktop-search input { color: #e1e6e2; }
+.dark .desktop-search input::placeholder { color: #a8b6c2; }
+.dark .desktop-search [data-slot=dropdown-menu-trigger] { color: #c2d1cd; }
+.dark .desktop-search > div:first-child > button:first-child { color: #c2d1cd; }
+.dark .desktop-search .result-list-in :is(a, p, span) { color: #bac9cf; }
+.dark .desktop-search .result-list-in :is(a:hover, .bg-slate-100) { background: #34464a; }
+.dark .partition-sidebar { background-color: #202c38e6; border-color: #52657266; }
+.dark .partition-sidebar-selection { background: #3b5d53; box-shadow: inset 0 0 0 1px #91bca466; }
+.dark .partition-sidebar-button { color: #d2dfda; }
+.dark .partition-sidebar-button[aria-current=page] { color: #e5efe8; }
+.dark .note-card { --night-note-ink: #dfdbcc; --night-note-muted: #bab6a8; background: #34352f; color: var(--night-note-ink); border-color: #656658; }
+.dark .note-card-pink { background: #3d3138; --night-note-ink: #e6d6dd; --night-note-muted: #c2aeb8; border-color: #685460; }
+.dark .note-card-green { background: #2e3b34; --night-note-ink: #d6e2d5; --night-note-muted: #afc3b3; border-color: #526d5b; }
+.dark .note-card .note-paper { color: var(--night-note-ink); background-image: repeating-linear-gradient(transparent, transparent 27px, #d5ceac16 27px, #d5ceac16 28px); }
+.dark .note-card :is([class*="text-stone-"], .note-paper::placeholder) { color: var(--night-note-muted); }
+.dark .note-card button:hover { background-color: #d6dace14; }
 .theme-choice {
   display: flex;
   min-height: 80px;

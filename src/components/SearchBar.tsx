@@ -38,7 +38,7 @@ export function SearchBar({ engine, onEngineChange, partitions }: Props) {
   }
 
   return (
-    <div className="relative z-30 w-full max-w-xl" onBlur={(e) => {
+    <div className="desktop-search relative z-30 w-full max-w-xl" onBlur={(e) => {
       if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false)
     }}>
     <div className="flex w-full items-center rounded-full bg-white/90 shadow-lg shadow-black/10 backdrop-blur-md border border-white/50 focus-within:bg-white transition-colors">
