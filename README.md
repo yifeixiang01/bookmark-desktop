@@ -83,6 +83,10 @@ DATABASE_URL="postgresql://..." npx drizzle-kit push
 
 ## 常用命令
 
+### 暗夜模式
+
+电脑端打开 **设置 → 字体外观 → 显示模式**，可选择明亮、暗夜或跟随系统。手机端在账号面板切换。模式仅保存在当前浏览器，不同步到账号，方便不同设备独立设置；刷新后保留选择。
+
 ```bash
 npm run dev:local  # 同时启动本地 PostgreSQL、前端和 API（热更新）
 npm run dev        # 仅启动 Vite/API，不负责启动数据库

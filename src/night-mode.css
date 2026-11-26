@@ -1,0 +1,378 @@
+/* Quiet blue-grey surfaces, warm text and muted jade accents. No image inversion. */
+.theme-choice {
+  display: flex;
+  min-height: 80px;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 16px;
+  background: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  transition:
+    background-color 180ms,
+    border-color 180ms,
+    color 180ms;
+}
+.theme-choice:hover {
+  background: hsl(var(--accent));
+}
+.theme-choice[data-selected="true"] {
+  border-color: #528d80;
+  background: #eaf3ef;
+  color: #285e50;
+}
+.theme-choice:has(:focus-visible) {
+  outline: 2px solid #78af9e;
+  outline-offset: 3px;
+}
+html.dark {
+  color-scheme: dark;
+  --background: 216 23% 11%;
+  --foreground: 42 16% 88%;
+  --card: 215 20% 14%;
+  --card-foreground: 42 16% 88%;
+  --popover: 215 20% 14%;
+  --popover-foreground: 42 16% 88%;
+  --primary: 157 24% 67%;
+  --primary-foreground: 216 23% 11%;
+  --secondary: 215 17% 20%;
+  --secondary-foreground: 42 16% 88%;
+  --muted: 215 17% 20%;
+  --muted-foreground: 214 12% 66%;
+  --accent: 211 17% 23%;
+  --accent-foreground: 42 16% 88%;
+  --border: 214 16% 27%;
+  --input: 214 16% 30%;
+  --ring: 157 24% 67%;
+}
+.dark .theme-choice[data-selected="true"] {
+  background: #273d39;
+  color: #b1d9c9;
+  border-color: #6da48f;
+}
+/* Scope hard-coded legacy colours to interface surfaces, leaving image assets alone. */
+.dark
+  :is(
+    [data-slot="dialog-content"],
+    [role="alertdialog"],
+    .folder-pop,
+    .mobile-sheet,
+    .menu-pop
+  ) {
+  background: #1c242f;
+  color: #e5e3dc;
+  border-color: #364352;
+  box-shadow: 0 24px 80px #0005;
+}
+.dark
+  :is(
+    [data-slot="dialog-content"],
+    [role="alertdialog"],
+    .folder-pop,
+    .mobile-sheet,
+    .menu-pop
+  )
+  :is(
+    [class*="text-slate-9"],
+    [class*="text-slate-8"],
+    [class*="text-slate-7"],
+    [class*="text-slate-6"],
+    [class*="text-stone-8"]
+  ) {
+  color: #dce1e5;
+}
+.dark
+  :is(
+    [data-slot="dialog-content"],
+    [role="alertdialog"],
+    .folder-pop,
+    .mobile-sheet,
+    .menu-pop
+  )
+  :is(
+    [class*="text-slate-5"],
+    [class*="text-slate-4"],
+    [class*="text-stone-5"]
+  ) {
+  color: #a9b5c4;
+}
+.dark
+  :is(
+    [data-slot="dialog-content"],
+    [role="alertdialog"],
+    .folder-pop,
+    .mobile-sheet,
+    .menu-pop
+  )
+  :is(
+    [class*="bg-slate-50"],
+    [class*="bg-slate-100"],
+    [class*="bg-stone-100"]
+  ) {
+  background-color: #25303c;
+}
+.dark
+  :is(
+    [data-slot="dialog-content"],
+    [role="alertdialog"],
+    .folder-pop,
+    .mobile-sheet,
+    .menu-pop
+  )
+  :is(
+    button.bg-white,
+    input:not([type="radio"], [type="checkbox"], [type="range"]),
+    textarea,
+    select
+  ) {
+  background: #141d27;
+  color: #e5e3dc;
+  border-color: #3a4858;
+}
+.dark
+  :is(
+    [data-slot="dialog-content"],
+    [role="alertdialog"],
+    .folder-pop,
+    .mobile-sheet,
+    .menu-pop
+  )
+  :is(
+    [class*="border-slate-2"],
+    [class*="border-stone-2"],
+    [class*="border-white"]
+  ) {
+  border-color: #364352;
+}
+.dark .settings-nav-indicator {
+  background: #34534d;
+}
+.dark .settings-nav-button:hover:not([aria-current="page"]) {
+  background: #2c3845;
+}
+.dark .app-catalog-entry {
+  background: linear-gradient(140deg, #27323c, #202a34);
+  border-color: #3b4956;
+}
+.dark .settings-panels section > .bg-gradient-to-br {
+  background: linear-gradient(140deg, #263b35, #222e38);
+  border-color: #3b564c;
+}
+.dark .settings-panels :is(.text-sky-700, .text-emerald-800) {
+  color: #a4cdbc;
+}
+.dark .settings-panels :is(button:hover, a:hover) {
+  filter: brightness(1.08);
+}
+.dark .settings-panels button[disabled] {
+  filter: none;
+}
+.dark .settings-panels .hover\:bg-sky-50:hover {
+  background: #2c433d;
+}
+.dark .settings-panels .hover\:bg-slate-50:hover {
+  background: #2b3946;
+}
+.dark .settings-panels .bg-sky-50 {
+  background: #29413f;
+}
+.dark .bookmark-dialog-header,
+.dark .bookmark-dialog-actions {
+  background: #202b37;
+  border-color: #364352;
+}
+.dark .bookmark-site-card {
+  background: linear-gradient(135deg, #26333f, #222d38);
+  border-color: #3b4a59;
+  box-shadow: none;
+}
+.dark .bookmark-form-section > label {
+  color: #d5dce3;
+}
+.dark .bookmark-dialog-mark {
+  background: #29423f;
+  color: #acd3c3;
+  border-color: #47695f;
+  box-shadow: none;
+}
+.dark .bookmark-dialog-body input:focus,
+.dark .bookmark-dialog-body textarea:focus {
+  background: #192530;
+  border-color: #78af9e;
+}
+.dark .bookmark-location-option {
+  background: #242f3c;
+  border-color: #3a4858;
+  color: #d5dce3;
+  box-shadow: none;
+}
+.dark .bookmark-location-option:hover {
+  background: #2b3b46;
+  border-color: #6d9b8e;
+}
+.dark .bookmark-location-option.bg-slate-800 {
+  background: #34534d;
+  border-color: #78af9e;
+  color: #e6f0eb;
+}
+.dark .bookmark-location-icon {
+  background: #31414d;
+  color: #b6c7ce;
+}
+.dark .theme-picker {
+  color: #e5e3dc;
+}
+.dark .folder-drop-surface {
+  background-color: #202e3bcc;
+  border-color: #a9c4ce40;
+}
+.dark .folder-drop-surface[data-folder-drop-ready] {
+  background-color: #314e4bd9;
+  border-color: #b1d9c9aa;
+}
+/* Utility cards retain their illustration and accent colours. Paper cards retain paper. */
+.dark .mobile-sheet[data-slot="drawer-content"] {
+  background: #1c242f;
+  color: #e5e3dc;
+  border-color: #364352;
+}
+.dark .water-widget [class*="text-[#"] {
+  color: #b8d5d2;
+}
+.dark .app-widget:not(:has(.answer-slip, .note-paper)) {
+  background: #222e38;
+  color: #e0e4e2;
+  border-color: #495764;
+}
+.dark
+  .app-widget:not(:has(.answer-slip, .note-paper))
+  :is(
+    [class*="text-stone-"],
+    [class*="text-slate-"],
+    [class*="text-amber-8"],
+    [class*="text-amber-7"]
+  ) {
+  color: #b8c5cb;
+}
+.dark
+  .app-widget:not(:has(.answer-slip, .note-paper))
+  :is(
+    input:not([type="checkbox"]),
+    select,
+    [class*="bg-white/"],
+    button.bg-white
+  ) {
+  background-color: #2e414a;
+  color: #d5e2df;
+  border-color: #50646b;
+}
+.dark .salary-card > header h3,
+.dark .salary-time,
+.dark .salary-month,
+.dark .salary-welcome {
+  color: #c9d6c9;
+}
+.dark
+  .salary-card
+  :is(
+    .salary-welcome label,
+    .salary-welcome p,
+    .salary-status,
+    .salary-tools button
+  ) {
+  color: #a5b9aa;
+}
+.dark .water-widget {
+  background: radial-gradient(ellipse at 50% 45%, #30535155, transparent 73%);
+}
+.dark .mobile-home {
+  --mobile-ink: #dbe6df;
+  --mobile-accent: #a3cbb8;
+  background:
+    radial-gradient(ellipse at 100% 0%, #253b36, transparent 42%), #171f29;
+}
+.dark .mobile-header {
+  background: #171f29f2;
+  border-color: #364352;
+}
+.dark
+  :is(
+    .mobile-search,
+    .mobile-search:focus-within,
+    .mobile-spaces button,
+    .mobile-folder-icon,
+    .mobile-account-status,
+    .mobile-action-icon
+  ) {
+  background: #26343d;
+  color: #c2d7cc;
+  border-color: #3c5055;
+}
+.dark .mobile-search input {
+  color: #e0e6e3;
+}
+.dark .mobile-tile-name {
+  color: #c3cec6;
+}
+.dark .mobile-spaces button[aria-current="page"] {
+  background: #345b4f;
+  border-color: #78af9e;
+  color: #e4eee8;
+}
+.dark .mobile-folder-row,
+.dark .mobile-logout {
+  border-color: #364352;
+}
+.dark .mobile-folder-actions button {
+  background: #2b3943;
+}
+.dark .login-page,
+.dark .login-page::before {
+  background: #171f29;
+}
+.dark .login-layout {
+  background: #202b35;
+  border-color: #364352;
+}
+.dark .login-form-panel {
+  background: #202b35;
+  color: #e5e3dc;
+}
+.dark
+  .login-form-panel
+  :is(
+    [class*="text-slate-9"],
+    [class*="text-slate-8"],
+    [class*="text-slate-7"]
+  ) {
+  color: #dce1e5;
+}
+.dark
+  .login-form-panel
+  :is([class*="text-slate-5"], [class*="text-slate-4"], .login-field-label) {
+  color: #a9b5c4;
+}
+.dark .login-field {
+  background: #18222c;
+  border-color: #3c4c5b;
+  box-shadow: none;
+}
+.dark .login-field input {
+  color: #e5e3dc;
+}
+.dark .login-segment {
+  background: #17212b;
+}
+.dark .login-segment button.bg-white {
+  background: #34483f;
+  color: #dce8df;
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-choice {
+    transition: none;
+  }
+}

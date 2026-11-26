@@ -4,6 +4,8 @@ import { BrowserRouter } from 'react-router'
 import './index.css'
 import { TRPCProvider } from "@/providers/trpc"
 import App from './App.tsx'
+import { ThemeProvider } from 'next-themes'
+import './night-mode.css'
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -17,7 +19,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <TRPCProvider>
-        <App />
+        <ThemeProvider attribute="class" storageKey="bookmark-desktop-theme" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <App />
+        </ThemeProvider>
       </TRPCProvider>
     </BrowserRouter>
   </StrictMode>,

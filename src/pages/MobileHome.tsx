@@ -9,6 +9,7 @@ import { mobileItems } from '@/lib/mobileLayout'
 import { searchBookmarks } from '@/lib/searchBookmarks'
 import { FaviconImg } from '@/components/FaviconImg'
 import { PwaInstall } from '@/components/PwaInstall'
+import { ThemePicker } from '@/components/ThemePicker'
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 import './MobileHome.css'
 
@@ -163,6 +164,7 @@ export default function MobileHome() {
       <MobileSheet open={accountOpen} onOpenChange={setAccountOpen} title="账号与数据" description={user.email ?? user.name ?? '已登录'}>
         <PwaInstall />
         <div className="mobile-account-status"><Cloud size={19} /><div><strong>{cloud.error ? '云端读取需要留意' : '只读浏览'}</strong><p>{cloud.error ? '请检查网络，切回页面后将重试' : '可切换空间、搜索和打开书签；内容请在电脑端管理'}</p></div></div>
+        <div className="my-5"><ThemePicker /></div>
         <button onClick={() => { setLogoutError(''); void exit() }} className="mobile-logout"><LogOut size={17} />退出登录</button>
       </MobileSheet>
 

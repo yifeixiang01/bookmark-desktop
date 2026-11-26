@@ -11,6 +11,7 @@ import { AppPreview } from '@/apps/AppPreview'
 import { AppIcon } from '@/apps/AppIcon'
 import { FONT_OPTIONS, FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP, type FontPreference } from '@/lib/fonts'
 import { STASHY_RELEASE } from '@/lib/stashyRelease'
+import { ThemePicker } from './ThemePicker'
 
 const SETTINGS_SECTIONS = [
   ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '壁纸背景'], ['font', '字体外观'], ['data', '数据备份'], ['extension', '插件'], ['account', '账号'],
@@ -198,6 +199,7 @@ export function SettingsMenu({
           </form>
           </section>
           <section hidden={section !== 'font'} className="space-y-4">
+            <ThemePicker />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-base font-semibold">字体外观</h3>
               <button type="button" onClick={() => onFont('system')} disabled={font === 'system'} className="rounded-md px-3 py-2 text-xs text-sky-700 hover:bg-sky-50 disabled:opacity-40">恢复默认</button>
