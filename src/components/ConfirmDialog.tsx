@@ -66,7 +66,7 @@ export function ConfirmDialog({
               </div>
             )}
           </div>
-          <h3 id={titleId} className="break-words text-lg font-semibold tracking-tight text-slate-900">{title}</h3>
+          <h3 id={titleId} className="break-words text-center text-lg font-semibold tracking-tight text-slate-900">{title}</h3>
           {description && (
             <p id={descriptionId} className="mt-2 break-words text-sm leading-6 text-slate-500">{description}</p>
           )}

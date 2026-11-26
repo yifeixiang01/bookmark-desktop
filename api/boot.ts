@@ -27,11 +27,11 @@ app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
 export default app;
 
+// Development also needs additive upgrades when reusing an existing local database.
+const { upgradeSchema } = await import('./queries/upgrade-schema')
+await upgradeSchema()
+
 if (env.isProduction) {
-  const { upgradeSchema } = await import('./queries/upgrade-schema')
-  console.log('Checking database upgrades...')
-  await upgradeSchema()
-  console.log('Database upgrades complete.')
   const { serve } = await import("@hono/node-server");
   const { serveStaticFiles } = await import("./lib/vite");
   serveStaticFiles(app);

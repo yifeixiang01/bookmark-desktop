@@ -162,7 +162,7 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
             <span className="bookmark-dialog-mark"><Globe2 size={18} /></span>
             <div className="min-w-0">
               <DialogTitle>{editing ? '修改书签' : '添加书签'}</DialogTitle>
-              <DialogDescription className="mt-1">输入网址后会自动识别网站名称和图标。</DialogDescription>
+              <DialogDescription className="mt-1">输入网址，自动识别名称和图标。</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -190,7 +190,7 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
                   fetchState === 'idle' ? 'opacity-0' : 'opacity-100'
                 } ${fetchState === 'fail' ? 'text-amber-500' : 'text-slate-400'}`}>
                   {fetchState === 'loading' && '正在获取网站信息…'}
-                  {fetchState === 'done' && (<><Sparkles size={11} className="text-sky-500" />已自动填充，可随意修改</>)}
+                  {fetchState === 'done' && (<><Sparkles size={11} className="text-sky-500" />已识别</>)}
                   {fetchState === 'fail' && '没能自动获取，手动填写即可'}
                   {fetchState === 'idle' && '占位'}
                 </p>
@@ -226,7 +226,7 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
               onChange={(e) => { touched.current.icon = true; setIcon(e.target.value) }}
               placeholder="https://…/icon.png"
             />
-            <p className="mt-2 text-xs text-slate-400">留空将自动获取网站图标。</p>
+            <p className="mt-2 text-xs text-slate-400">留空自动获取网站图标。</p>
           </div>
           <div className="bookmark-form-section">
             <Label>保存位置</Label>

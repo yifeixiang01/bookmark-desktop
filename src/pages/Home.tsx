@@ -43,6 +43,8 @@ export default function Home() {
   const { user, isLoading: authLoading, isLoggingOut, logout } = useAuth({ redirectOnUnauthenticated: true })
   const store = useBookmarkStore()
   const { state, activePartition } = store
+  // Keep saved article entries intact while their desktop presentation is paused.
+  const desktopItems = useMemo(() => activePartition.items.filter(item => item.kind !== 'app' || item.app.type !== 'articles'), [activePartition.items])
   useAppFont(state.font, state.fontScale)
   const cloud = useCloudSync(state, store.replaceState, user?.id)
   const [logoutError, setLogoutError] = useState('')
@@ -366,6 +368,7 @@ export default function Home() {
         </span>
       )}
 
+
       <SettingsMenu
         currentPartitionName={activePartition.name}
         appCounts={activePartition.items.reduce<Partial<Record<AppType, number>>>((counts, it) => { if (it.kind === 'app') counts[it.app.type] = (counts[it.app.type] ?? 0) + 1; return counts }, {})}
@@ -455,9 +458,9 @@ export default function Home() {
               noteHistory={activePartition.noteHistory}
               onDeleteApp={(id) => {
                 const item = activePartition.items.find((it) => it.id === id)
-                if (item?.kind === 'app') setConfirm({ title: `移除${appName(item.app.type)}？`, description: item.app.type === 'note' ? '仅移除这张卡片及未归档的内容。当前空间的便签历史会保留，重新添加便签后仍可查看。' : '这张卡片的内容和记录会一起移除。其他卡片不受影响。', action: () => store.removeApp(id, gridRef.current?.rows, gridRef.current?.pageCols) })
+                if (item?.kind === 'app') setConfirm({ title: `移除${appName(item.app.type)}？`, description: item.app.type === 'articles' ? '仅移除桌面入口，收藏的文章、标签和备注都会保留，可从应用中心重新添加入口。' : item.app.type === 'note' ? '仅移除这张卡片及未归档的内容。当前空间的便签历史会保留，重新添加便签后仍可查看。' : '这张卡片的内容和记录会一起移除。其他卡片不受影响。', action: () => store.removeApp(id, gridRef.current?.rows, gridRef.current?.pageCols) })
               }}
-              items={activePartition.items}
+              items={desktopItems}
               editMode={false}
               locked={state.locked}
               iconPx={iconPx}
@@ -519,7 +522,7 @@ export default function Home() {
             />
           </div>
 
-          {activePartition.items.length === 0 && (
+          {desktopItems.length === 0 && (
             <div className="absolute left-1/2 top-1/3 -translate-x-1/2 rounded-2xl border border-white/15 bg-black/25 px-8 py-6 text-center backdrop-blur-md">
               <p className="text-white/90">「{activePartition.name}」还是空的</p>
               <p className="mt-1 text-sm text-white/60">

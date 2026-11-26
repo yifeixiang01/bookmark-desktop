@@ -2,6 +2,7 @@ import { BookOpen, Cat, CircleDot, Droplets, ListTodo, NotebookPen, Timer, Trend
 import type { AppType } from './types'
 
 const icons = {
+  articles: BookOpen,
   answers: BookOpen,
   salary: TrendingUp,
   pomodoro: Timer,
@@ -13,6 +14,7 @@ const icons = {
 }
 
 const colors = {
+  articles: 'bg-emerald-50 text-emerald-800',
   answers: 'bg-[#eee9d9] text-[#405c4c]',
   salary: 'bg-emerald-50 text-emerald-800',
   pomodoro: 'bg-rose-50 text-rose-700',

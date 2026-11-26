@@ -4,7 +4,7 @@ import { SortablePartitionRow } from './SortablePartitionRow'
 import type { AppType, Partition } from '@/types/bookmark'
 import { useEffect, useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
-import { Settings, Plus, Trash2, Upload, Download, FileUp, Pencil, LogOut, Cloud, CloudUpload } from 'lucide-react'
+import { Settings, Plus, Trash2, Upload, Download, FileUp, Pencil, LogOut, Cloud, CloudUpload, Layers3, LayoutGrid, Image, Type, Archive, Puzzle, UserRound } from 'lucide-react'
 import { DynamicWallpaperPicker, WallpaperPicker } from './WallpaperPicker'
 import { APP_CATALOG } from '@/apps'
 import { AppPreview } from '@/apps/AppPreview'
@@ -12,9 +12,10 @@ import { AppIcon } from '@/apps/AppIcon'
 import { FONT_OPTIONS, FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP, type FontPreference } from '@/lib/fonts'
 import { STASHY_RELEASE } from '@/lib/stashyRelease'
 import { ThemePicker } from './ThemePicker'
+import './interface-polish.css'
 
 const SETTINGS_SECTIONS = [
-  ['partitions', '空间管理'], ['apps', '应用中心'], ['wallpaper', '壁纸背景'], ['font', '字体外观'], ['data', '数据备份'], ['extension', '插件'], ['account', '账号'],
+  ['partitions', '空间管理', Layers3], ['apps', '应用中心', LayoutGrid], ['wallpaper', '壁纸背景', Image], ['font', '字体外观', Type], ['data', '数据备份', Archive], ['extension', '插件', Puzzle], ['account', '账号', UserRound],
 ] as const
 const PET_CATALOG_ENTRY = {
   type: 'pet' as const,
@@ -81,17 +82,17 @@ export function SettingsMenu({
             <Settings size={14} />设置
           </button>
         </DialogTrigger>
-        <DialogContent className="flex h-[min(640px,85dvh)] max-w-3xl flex-col gap-0 overflow-hidden bg-white/95 p-0 backdrop-blur-xl sm:max-w-3xl">
+        <DialogContent className="settings-dialog flex h-[min(640px,85dvh)] max-w-3xl flex-col gap-0 overflow-hidden bg-white/95 p-0 backdrop-blur-xl sm:max-w-3xl">
           <DialogHeader className="border-b px-6 py-5 text-left">
             <DialogTitle>设置</DialogTitle>
-            <DialogDescription>管理空间、应用、壁纸、字体、书签备份和账号。</DialogDescription>
+            <DialogDescription className="sr-only">桌面与账号设置</DialogDescription>
           </DialogHeader>
           <div className="flex min-h-0 flex-1">
             <nav aria-label="设置分类" className="w-24 shrink-0 overflow-y-auto border-r bg-slate-50/80 p-2 sm:w-40 sm:p-3">
               <div className="relative isolate flex flex-col gap-1">
                 <div aria-hidden="true" className="settings-nav-indicator pointer-events-none absolute inset-x-0 top-0 h-11 rounded-xl bg-slate-800 shadow-sm" style={{ transform: `translateY(${SETTINGS_SECTIONS.findIndex(([id]) => id === section) * 48}px)` }} />
-              {SETTINGS_SECTIONS.map(([id, label]) => (
-                <button key={id} type="button" aria-current={section === id ? 'page' : undefined} onClick={() => setSection(id)} className={`settings-nav-button relative z-10 flex h-11 w-full shrink-0 items-center rounded-xl px-2 text-left text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 sm:px-3 sm:text-sm ${section === id ? 'font-medium text-white' : 'text-slate-600 hover:bg-slate-200/50'}`}><span>{label}</span></button>
+              {SETTINGS_SECTIONS.map(([id, label, Icon]) => (
+                <button key={id} type="button" aria-current={section === id ? 'page' : undefined} onClick={() => setSection(id)} className={`settings-nav-button relative z-10 flex h-11 w-full shrink-0 items-center rounded-xl px-2 text-left text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 sm:px-3 sm:text-sm ${section === id ? 'font-medium text-white' : 'text-slate-600 hover:bg-slate-200/50'}`}><Icon size={16} strokeWidth={1.7} aria-hidden="true" className="settings-section-icon" /><span>{label}</span></button>
               ))}
               </div>
             </nav>
@@ -106,7 +107,8 @@ export function SettingsMenu({
             <div className="space-y-3 text-sm leading-6 text-slate-600"><h4 className="font-medium text-slate-800">安装方法</h4><ol className="list-decimal space-y-2 pl-5"><li>下载并解压 ZIP，保留解压后的文件夹。</li><li>打开 Chrome 或 Edge 的扩展程序管理页面，开启「开发者模式」。</li><li>点击「加载已解压的扩展程序」，选择包含 manifest.json 的解压目录。</li><li>点击 Stashy 登录并授权，在网页右键选择「保存书签」。</li></ol><p className="text-xs text-slate-400">更新时解压新版到原目录，再点击扩展程序的「重新加载」。</p></div>
           </section>
           <section hidden={section !== 'apps'} className="space-y-4">
-            <div><h3 className="text-base font-semibold">应用中心</h3><p className="mt-1 text-xs leading-5 text-slate-500">挑选适合你的工具，添加到「{currentPartitionName}」空间，让桌面更顺手。</p></div>
+            <div className="settings-section-heading"><h3 className="text-base font-semibold">应用中心</h3><span className="settings-context"><Layers3 size={12} aria-hidden="true" />{currentPartitionName}</span></div>
+            <p className="text-xs leading-5 text-slate-500">添加到当前空间，同一应用可添加多张卡片，分别保存。</p>
             <div className="grid gap-3 sm:grid-cols-2">
               {[...APP_CATALOG, PET_CATALOG_ENTRY].map((app) => <article key={app.type} className="app-catalog-entry group relative flex flex-col overflow-hidden rounded-[24px] border border-stone-200/70 bg-gradient-to-br from-white to-stone-50/80 p-5 shadow-sm">
                 <div className="mb-4 flex h-12 items-center transition-transform duration-300 group-hover:translate-x-1"><AppIcon type={app.type} /></div>
@@ -116,7 +118,7 @@ export function SettingsMenu({
                   <div className="mt-auto rounded-full bg-stone-100 px-3 py-2 text-center text-xs font-medium text-stone-500">敬请期待</div>
                 ) : <>
                   <div className="flex flex-wrap gap-2"><button type="button" aria-label={`预览${app.name}`} className="app-action rounded-full border border-stone-200 bg-white px-4 py-2 text-xs text-stone-500 hover:border-stone-400" onClick={() => setPreviewType(app.type)}>预览</button><button type="button" aria-label={`添加${app.name}到当前桌面`} className="app-action flex flex-1 items-center justify-center gap-1 rounded-full bg-slate-800 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700" onClick={() => onAddApp(app.type)}><Plus size={14} />添加到桌面</button></div>
-                  <p role="status" className="mt-2 text-center text-[11px] text-slate-400">{appCounts[app.type] ? `当前桌面已添加 ${appCounts[app.type]} 张` : '可添加多个，独立保存'}</p>
+                  {!!appCounts[app.type] && <p role="status" className="mt-2 text-center text-[11px] text-slate-400">已添加 {appCounts[app.type]}</p>}
                 </>}
               </article>)}
             </div>
@@ -133,7 +135,7 @@ export function SettingsMenu({
             <button className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50" onClick={() => { setOpen(false); onLogout() }}><LogOut size={14} />退出登录</button>
           </section>
           <section hidden={section !== 'partitions'} className="space-y-3">
-            <h3 className="text-sm font-medium">空间管理</h3>
+            <div className="settings-section-heading"><h3 className="text-base font-semibold">空间管理</h3><span className="settings-context">{partitions.length}</span></div>
             <form className="flex gap-2" onSubmit={(e) => {
               e.preventDefault()
               if (!newPartition.trim()) return
@@ -143,7 +145,7 @@ export function SettingsMenu({
               <input aria-label="新空间名称" placeholder="输入新空间名称" className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm" value={newPartition} onChange={(e) => setNewPartition(e.target.value)} />
               <button disabled={!newPartition.trim()} className="flex items-center gap-1 rounded-md bg-slate-800 px-3 text-sm text-white disabled:opacity-40"><Plus size={14} />新增</button>
             </form>
-            <p className="text-xs text-slate-500">拖动左侧手柄调整顺序，自动保存并同步到空间栏。</p>
+            <p className="text-xs text-slate-500">拖动左侧手柄排序，更改自动保存并同步。</p>
             <DndContext sensors={sensors} modifiers={[({ transform }) => ({ ...transform, x: 0 })]} collisionDetection={closestCenter} onDragEnd={({ active, over }) => {
               if (over && active.id !== over.id) onReorderPartitions(String(active.id), String(over.id))
             }}>
@@ -204,7 +206,7 @@ export function SettingsMenu({
               <h3 className="text-base font-semibold">字体外观</h3>
               <button type="button" onClick={() => onFont('system')} disabled={font === 'system'} className="rounded-md px-3 py-2 text-xs text-sky-700 hover:bg-sky-50 disabled:opacity-40">恢复默认</button>
             </div>
-            <p className="text-xs leading-5 text-slate-500">选择后立即生效，自动保存并同步到账号，手机端跟随。字体来自设备本机；部分特色字体需自行安装，未安装时会自动使用相近字体。预览为本机实际显示效果。</p>
+            <p className="text-xs leading-5 text-slate-500">字体和字号实时生效，并同步到账号。字体需在设备上安装，否则使用相近字体。</p>
             <div className="space-y-3 rounded-xl border border-slate-200 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <label htmlFor="app-font-scale" className="text-sm font-medium">字体大小 <output htmlFor="app-font-scale">{fontScale}%</output></label>
@@ -222,7 +224,6 @@ export function SettingsMenu({
                     <input type="radio" name="app-font" value={option.id} checked={font === option.id} onChange={() => onFont(option.id)} className="h-4 w-4 accent-sky-600" />
                     <span className="text-sm font-medium">{option.name}</span>
                   </span>
-                  <span className="mt-1 block text-xs leading-5 text-slate-500">{option.description}</span>
                   <span style={{ fontFamily: option.family }} className="mt-3 block break-words text-base leading-7 text-slate-800">收藏每一份灵感，让桌面更顺手。<br />Bookmark Desktop · 0123456789</span>
                 </label>
               ))}

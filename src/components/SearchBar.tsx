@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import type { Partition } from '@/types/bookmark'
 import { searchBookmarks } from '@/lib/searchBookmarks'
 import { Search } from 'lucide-react'
+import { trpc } from '@/providers/trpc'
+import { FaviconImg } from '@/components/FaviconImg'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +28,16 @@ export function SearchBar({ engine, onEngineChange, partitions }: Props) {
   const [q, setQ] = useState('')
   const [focused, setFocused] = useState(false)
   const [active, setActive] = useState(-1)
-  const results = useMemo(() => searchBookmarks(partitions, q), [partitions, q])
+  const articles = trpc.articles.list.useQuery(undefined, { refetchOnWindowFocus: true })
+  const results = useMemo(() => {
+    const bookmarks = searchBookmarks(partitions, q)
+    const words = q.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
+    const matches = words.length ? (articles.data ?? []).filter(a => {
+      const text = [a.title, a.url, a.description, a.note, ...a.tags].join(' ').toLocaleLowerCase()
+      return words.every(word => text.includes(word))
+    }).map(a => ({ spaceId: 'article', spaceName: '文章收藏', bookmark: { id: a.id, name: a.title, url: a.url } })) : []
+    return [...bookmarks, ...matches]
+  }, [partitions, q, articles.data])
   const showResults = focused && q.trim().length > 0
   const current = ENGINES[engine] ?? ENGINES.baidu
 
@@ -76,12 +87,12 @@ export function SearchBar({ engine, onEngineChange, partitions }: Props) {
           }
         }}
         role="combobox"
-        aria-label="搜索所有空间的书签或搜索网页"
+        aria-label="搜索所有空间的书签、文章或搜索网页"
         aria-expanded={showResults}
         aria-controls="bookmark-search-results"
         aria-autocomplete="list"
         aria-activedescendant={showResults && active >= 0 ? `bookmark-search-${active}` : undefined}
-        placeholder="搜索所有空间书签，或输入网址"
+        placeholder="搜索书签、文章，或输入网址"
         className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400"
       />
       <button
@@ -94,19 +105,19 @@ export function SearchBar({ engine, onEngineChange, partitions }: Props) {
     </div>
     {showResults && (
       <div className="result-list-in absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-        <p className="border-b px-4 py-2 text-xs text-slate-400" aria-live="polite">所有空间 · {results.length} 个匹配书签</p>
+        <p className="border-b px-4 py-2 text-xs text-slate-400" aria-live="polite">书签与文章 · {results.length} 个匹配结果</p>
         <ul id="bookmark-search-results" role="listbox" className="max-h-72 overflow-y-auto p-1.5">
           {results.map(({ spaceId, spaceName, bookmark }, index) => {
             let domain = bookmark.url
             try { domain = new URL(bookmark.url).hostname } catch { /* 保留原始链接 */ }
             return <li className="result-list-item" key={`${spaceId}-${bookmark.id}-${index}`} role="option" id={`bookmark-search-${index}`} aria-selected={active === index}>
-              <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={() => setFocused(false)} className={`block truncate rounded-lg px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100 ${active === index ? 'bg-slate-100' : ''}`} title={`${spaceName} · ${bookmark.name}（${domain}）`}>
-                <span className="text-slate-400">{spaceName}</span> · {bookmark.name}<span className="text-slate-400">（{domain}）</span>
+              <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={() => setFocused(false)} className={`flex items-center gap-2 truncate rounded-lg px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100 ${active === index ? 'bg-slate-100' : ''}`} title={`${spaceName} · ${bookmark.name}（${domain}）`}>
+                <FaviconImg url={bookmark.url} name={domain} size={22} className="shrink-0" /><span className="min-w-0 truncate"><span className="text-slate-400">{spaceName}</span> · {bookmark.name}<span className="text-slate-400">（{domain}）</span></span>
               </a>
             </li>
           })}
         </ul>
-        {!results.length && <p className="px-4 pb-4 pt-2 text-sm text-slate-400">没有匹配的书签，可点击搜索进行网页搜索</p>}
+        {!results.length && <p className="px-4 pb-4 pt-2 text-sm text-slate-400">没有匹配的书签或文章，可点击搜索进行网页搜索</p>}
       </div>
     )}
     </div>

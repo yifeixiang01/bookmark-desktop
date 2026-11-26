@@ -6,6 +6,8 @@ import {
   timestamp,
   integer,
   jsonb,
+  boolean,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -41,6 +43,21 @@ export const userStates = pgTable("user_states", {
 });
 
 export type UserState = typeof userStates.$inferSelect;
+
+export const articles = pgTable('articles', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  userId: integer('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  url: text('url').notNull(),
+  title: varchar('title', { length: 300 }).notNull(),
+  description: text('description').notNull().default(''),
+  cover: text('cover').notNull().default(''),
+  note: text('note').notNull().default(''),
+  tags: jsonb('tags').$type<string[]>().notNull().default([]),
+  read: boolean('read').notNull().default(false),
+  starred: boolean('starred').notNull().default(false),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),
+}, table => [uniqueIndex('articles_user_url_unique').on(table.userId, table.url)]);
 
 /** Only hashes of extension credentials are persisted. */
 export const extensionCodes = pgTable("extension_codes", {

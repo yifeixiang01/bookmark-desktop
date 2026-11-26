@@ -125,7 +125,16 @@ async function parseMeta(html: string, finalUrl: string) {
       /* ignore */
     }
   }
-  return { name, description, icon };
+  const articleTitle = clean(pick('meta[property="og:title"]', 'meta[name="twitter:title"]', 'title'), 300);
+  let cover = '';
+  try {
+    const image = pick('meta[property="og:image"]', 'meta[name="twitter:image"]');
+    if (image) {
+      const resolved = new URL(image, finalUrl);
+      if (['http:', 'https:'].includes(resolved.protocol)) cover = resolved.toString();
+    }
+  } catch { /* A malformed cover should not prevent collection. */ }
+  return { name, description, icon, articleTitle, cover };
 }
 
 export const siteMetaRouter = createRouter({
