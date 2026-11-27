@@ -37,9 +37,10 @@ async function createEncryptedDump(path) {
     '--format=custom',
     '--no-owner',
     '--no-privileges',
+    '--dbname', databaseUrl,
   ], {
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, PGDATABASE: databaseUrl, PGCONNECT_TIMEOUT: '10' },
+    env: { ...process.env, PGCONNECT_TIMEOUT: '10' },
   })
   const encrypt = spawn('age', ['--encrypt', '--recipient', ageRecipient, '--output', path], {
     stdio: ['pipe', 'ignore', 'pipe'],
