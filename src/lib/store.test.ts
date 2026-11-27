@@ -55,10 +55,10 @@ describe('字体偏好兼容与备份', () => {
 describe('首次使用的示例桌面', () => {
   it('在宽屏保持预设布局，在窄屏分页时卡片不重叠且不跨页', () => {
     const items = createInitialState().partitions[0].items
-    const desktop = layoutItems(items, 6, 7)
-    expect(desktop.cols).toBe(7)
+    const desktop = layoutItems(items, 6, 9)
+    expect(desktop.cols).toBe(9)
     for (const item of items) expect(desktop.placements.get(item.id)).toEqual(item.pos)
-    for (const pageCols of [3, 4, 5, 6, 7, 10]) {
+    for (const pageCols of [3, 4, 5, 6, 7, 9, 10, 14]) {
       const { placements } = layoutItems(items, 6, pageCols)
       for (const [index, item] of items.entries()) {
         const position = placements.get(item.id)!
@@ -80,8 +80,10 @@ describe('首次使用的示例桌面', () => {
     expect(home.items.some((item) => item.kind === 'bookmark')).toBe(true)
     expect(home.items.some((item) => item.kind === 'group' && item.group.bookmarks.length > 0)).toBe(true)
     for (const bookmark of allBookmarks(home)) expect(new URL(bookmark.url).protocol).toBe('https:')
-    expect(home.items.filter((item) => item.kind === 'app').map((item) => item.app.type)).toEqual(['note', 'todo', 'pomodoro'])
-    expect(home.items.find((item) => item.kind === 'app' && item.app.type === 'pomodoro')).toMatchObject({ app: { endsAt: null, completed: 0 } })
+    expect(home.items.filter((item) => item.kind === 'app').map((item) => item.app.type)).toEqual(['note', 'todo', 'answers'])
+    expect(home.items.filter((item) => item.kind === 'bookmark')).toHaveLength(6)
+    expect(home.items.filter((item) => item.kind === 'group')).toHaveLength(3)
+    expect(home.items.find((item) => item.kind === 'app' && item.app.type === 'answers')).toMatchObject({ app: { answer: null, draws: 0 } })
     const parsed = parseStateJSON(JSON.stringify(state))
     expect(parsed?.partitions[0].name).toBe('主页')
     expect(parsed?.partitions[0].items).toHaveLength(home.items.length)

@@ -8,7 +8,7 @@ describe('extension bookmark operations', () => {
     expect(state.partitions[0].name).toBe('主页')
     expect(state.partitions[0].items.some(item => item.kind === 'bookmark')).toBe(true)
     expect(state.partitions[0].items.some(item => item.kind === 'group')).toBe(true)
-    expect(state.partitions[0].items.filter(item => item.kind === 'app').map(item => item.app.type)).toEqual(['note', 'todo', 'pomodoro'])
+    expect(state.partitions[0].items.filter(item => item.kind === 'app').map(item => item.app.type)).toEqual(['note', 'todo', 'answers'])
     const initialCount = state.partitions[0].items.length
     const first = state.partitions[0].id
     state.partitions.push({ id: 'second', name: '工作', items: [] })

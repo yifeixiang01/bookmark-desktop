@@ -1,7 +1,6 @@
 import type { AppState, Bookmark, DesktopItem, Group, Partition } from '../types/bookmark'
 import { createNote } from '../apps/note/model'
 import { createTodo } from '../apps/todo/model'
-import { createPomodoro } from '../apps/pomodoro/model'
 
 function uid(): string { return crypto.randomUUID() }
 function groupItem(group: Group): DesktopItem { return { id: uid(), kind: 'group', group } }
@@ -18,37 +17,45 @@ export function createInitialState(): AppState {
   const bilibili = bm('B站', 'https://www.bilibili.com')
   const dev: Group = {
     id: uid(),
-    name: '学习与探索',
+    name: '学习成长',
     bookmarks: [
       bm('GitHub', 'https://github.com'),
-      bm('掘金', 'https://juejin.cn'),
-      bm('MDN', 'https://developer.mozilla.org'),
-      bm('StackOverflow', 'https://stackoverflow.com'),
+      bm('中国大学MOOC', 'https://www.icourse163.org'),
+      bm('维基百科', 'https://zh.wikipedia.org'),
+      bm('少数派', 'https://sspai.com'),
     ],
   }
   const shopping: Group = {
     id: uid(),
-    name: '购物',
-    bookmarks: [bm('淘宝', 'https://www.taobao.com'), bm('京东', 'https://www.jd.com')],
+    name: '生活日常',
+    bookmarks: [bm('淘宝', 'https://www.taobao.com'), bm('京东', 'https://www.jd.com'), bm('小红书', 'https://www.xiaohongshu.com'), bm('豆瓣', 'https://www.douban.com')],
+  }
+  const work: Group = {
+    id: uid(), name: '效率工具',
+    bookmarks: [bm('飞书', 'https://www.feishu.cn'), bm('腾讯文档', 'https://docs.qq.com'), bm('DeepSeek', 'https://chat.deepseek.com'), bm('Canva 可画', 'https://www.canva.cn')],
   }
   const home: Partition = {
     id: uid(),
     name: '主页',
     items: [
-      // Seven-column composition: tools on the left, collections on the lower right.
-      // The layout engine repacks cards that would cross a page on smaller screens.
-      { ...bookmarkItem(baidu), pos: { x: 3, y: 5 } },
-      { ...bookmarkItem(zhihu), pos: { x: 4, y: 5 } },
-      { ...bookmarkItem(bilibili), pos: { x: 5, y: 5 } },
-      { ...groupItem(dev), pos: { x: 3, y: 3 } },
-      { ...groupItem(shopping), pos: { x: 5, y: 3 } },
+      // Nine-column composition: three tools above three collections.
+      // The final row is left empty; narrow screens use the normal paging engine.
+      { ...bookmarkItem(baidu), pos: { x: 0, y: 3 } },
+      { ...bookmarkItem(zhihu), pos: { x: 0, y: 4 } },
+      { ...bookmarkItem(bilibili), pos: { x: 3, y: 3 } },
+      { ...bookmarkItem(bm('网易云音乐', 'https://music.163.com')), pos: { x: 3, y: 4 } },
+      { ...bookmarkItem(bm('QQ邮箱', 'https://mail.qq.com')), pos: { x: 6, y: 3 } },
+      { ...bookmarkItem(bm('高德地图', 'https://www.amap.com')), pos: { x: 6, y: 4 } },
+      { ...groupItem(dev), pos: { x: 1, y: 3 } },
+      { ...groupItem(shopping), pos: { x: 4, y: 3 } },
+      { ...groupItem(work), pos: { x: 7, y: 3 } },
       {
         id: uid(),
         kind: 'app',
         pos: { x: 0, y: 0 },
         app: {
           ...createNote(),
-          text: '欢迎来到你的书签桌面\n\n• 点击图标打开网站，点击文件夹名称展开收藏。\n• 拖动图标整理位置，叠放两个书签即可创建文件夹。\n• 右键桌面添加书签，右键图标可修改或删除。\n• 在「设置」中更换壁纸、创建空间，或添加更多应用。\n\n这是一张示例便签，可以直接修改，也可以移除。',
+          text: '把常用，留在手边。\n\n右键空白处，添加你的书签。\n拖入文件夹，收好同类收藏。\n在设置里，换一张喜欢的壁纸。\n\n这张便签，留给你的下一份灵感。',
           createdAt: Date.now(),
         },
       },
@@ -59,13 +66,13 @@ export function createInitialState(): AppState {
         app: {
           ...createTodo(),
           tasks: [
-            { id: uid(), text: '打开一个示例书签', done: false },
-            { id: uid(), text: '右键桌面，添加常用网站', done: false },
-            { id: uid(), text: '在设置里挑选喜欢的壁纸', done: false },
+            { id: uid(), text: '收藏一个每天都会打开的网站', done: false },
+            { id: uid(), text: '挑选一张喜欢的壁纸', done: false },
+            { id: uid(), text: '带着一个问题，试试答案之书', done: false },
           ],
         },
       },
-      { id: uid(), kind: 'app', pos: { x: 0, y: 3 }, app: createPomodoro() },
+      { id: uid(), kind: 'app', pos: { x: 6, y: 0 }, app: { type: 'answers', answer: null, draws: 0 } },
     ],
   }
   return {
