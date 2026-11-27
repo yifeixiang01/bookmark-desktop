@@ -268,13 +268,13 @@ export function BookmarkFormDialog({ open, groups, editing, defaultGroupId, onCl
               />
             )}
           </div>
-          <div className="bookmark-dialog-actions -mx-5 -mb-5 mt-1 flex justify-end gap-2 border-t px-5 py-4 sm:-mx-7 sm:-mb-7 sm:px-7">
+          <div className="bookmark-dialog-actions -mx-5 -mb-5 mt-1 flex flex-wrap justify-end gap-2 border-t px-5 py-4 sm:-mx-7 sm:-mb-7 sm:px-7">
           <Button variant="outline" className="rounded-xl border-slate-200" disabled={saving} onClick={onClose}>取消</Button>
-          <Button className="min-w-28 rounded-xl bg-slate-900 shadow-lg shadow-slate-900/15 hover:bg-slate-700" disabled={!canSave || saving} onClick={() => void handleSave()}>
+          <Button className="min-w-28 rounded-xl shadow-lg shadow-black/10" disabled={!canSave || saving} onClick={() => void handleSave()}>
             {saving ? (
               <span className="inline-flex items-center gap-2">
                 <Loader2 size={15} className="animate-spin" />
-                正在抓取网站图标…
+                正在保存…
               </span>
             ) : (
               editing ? '保存修改' : '添加书签'
