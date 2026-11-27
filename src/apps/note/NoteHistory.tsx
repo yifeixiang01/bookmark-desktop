@@ -15,7 +15,7 @@ export function NoteHistory({ app, onAction, onClose }: { app: NoteApp; onAction
   const selected = entries.find((entry) => entry.id === selectedId) ?? entries[0]
 
   return <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
-    <DialogContent className="flex h-[min(620px,85dvh)] max-w-3xl flex-col gap-4 overflow-hidden sm:max-w-3xl" onPointerDown={(e) => e.stopPropagation()} onContextMenu={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
+    <DialogContent className="note-history-dialog flex h-[min(620px,85dvh)] max-w-3xl flex-col gap-4 overflow-hidden sm:max-w-3xl" onPointerDown={(e) => e.stopPropagation()} onContextMenu={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2"><Archive size={18} />便签历史 <span className="text-sm font-normal text-slate-400">{history.length} 条</span></DialogTitle>
         <DialogDescription>当前空间的所有便签共享历史，移除卡片不影响归档。恢复前会自动归档当前内容。</DialogDescription>

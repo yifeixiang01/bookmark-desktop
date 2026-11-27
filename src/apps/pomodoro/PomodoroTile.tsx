@@ -44,7 +44,7 @@ export function PomodoroTile({ app, width, height, editMode, locked, preview, on
         {!preview && <button type="button" aria-label="移除番茄钟" title="移除应用" className="rounded-full p-1 text-stone-300 transition hover:bg-stone-200/60 hover:text-stone-600" onPointerDown={(e) => e.stopPropagation()} onClick={onRemove}><X size={14} /></button>}
       </header>
       <div className="relative flex min-h-0 flex-1 flex-col items-center px-4 pb-3">
-        <div className="flex shrink-0 rounded-full bg-[#eeede8] p-[3px] text-[11px]">
+        <div className="pomodoro-mode-switch flex shrink-0 rounded-full bg-[#eeede8] p-[3px] text-[11px]">
           {(['focus', 'break'] as const).map((mode) => <button key={mode} type="button" disabled={disabled} aria-label={mode === 'focus' ? '专注 25 分钟' : '休息 5 分钟'} aria-pressed={app.mode === mode} onClick={() => onAction?.(mode)} className={`rounded-full px-5 py-1.5 transition-all ${app.mode === mode ? 'bg-white font-semibold text-[#414841] shadow-sm' : 'text-stone-400 hover:text-stone-600'} disabled:cursor-default`}>{mode === 'focus' ? '专注' : '休息'}<span className="ml-1.5 font-normal opacity-50">{mode === 'focus' ? '25′' : '5′'}</span></button>)}
         </div>
         <div className="relative my-1 flex min-h-0 w-full flex-1 items-center justify-center">

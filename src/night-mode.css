@@ -1,4 +1,18 @@
 /* Quiet blue-grey surfaces, warm text and muted jade accents. No image inversion. */
+.dark :is([data-slot="context-menu-content"], [data-slot="context-menu-sub-content"]) {
+  border-color: #3b4958;
+  box-shadow: 0 12px 32px #0005;
+}
+.dark [data-slot="context-menu-item"][data-variant="destructive"] {
+  color: #f1a5ac;
+}
+.dark [data-slot="context-menu-item"][data-variant="destructive"][data-highlighted] {
+  background-color: #4b303b;
+  color: #ffc3c8;
+}
+.dark [data-slot="context-menu-item"][data-variant="destructive"] > svg {
+  color: currentColor !important;
+}
 .dark .space-management-row {
   background: #26313d;
   border-color: #3b4958;
@@ -407,6 +421,30 @@ html.dark {
   background: #34483f;
   color: #dce8df;
 }
+/* Non-selected/hover/error states must be themed alongside their containers. */
+.dark :is([data-slot="dialog-content"], [role="alertdialog"], .menu-pop, .folder-pop)
+  :is(.hover\:bg-slate-50, .hover\:bg-slate-100, .hover\:bg-slate-200, .hover\:bg-white):hover {
+  background-color: #2e3d49;
+}
+.dark :is([data-slot="dialog-content"], [role="alertdialog"])
+  :is(.bg-red-50, .bg-rose-50, .hover\:bg-red-50:hover, .hover\:bg-rose-50:hover) {
+  background-color: #442c36;
+  color: #f2b4b8;
+}
+.dark :is([data-slot="dialog-content"], [role="alertdialog"], .menu-pop)
+  :is(.text-red-600, .text-red-700, .text-rose-500) { color: #f0a6ae; }
+.dark .space-choice:has(input:checked) { background: #304a42; border-color: #80ad98; }
+.dark .space-choice input { accent-color: #8dbca6; }
+.dark .app-preview-stage { background: linear-gradient(140deg, #253b3b, #18232e); }
+.dark .note-history-dialog .bg-white { background-color: #202c37; }
+.dark .note-history-dialog button[aria-pressed="true"] { background: #443f30; border-color: #a69b6b; }
+.dark .note-history-dialog .text-slate-700 { color: #dce1e5; }
+.dark .pomodoro-mode-switch { background: #16242e; }
+.dark .pomodoro-mode-switch button[aria-pressed="true"] { background: #36554a; color: #d9e9df; }
+.dark .app-widget:has(.todo-entry) form { background: #192630; border-color: #455861; }
+.dark .app-widget .todo-entry:hover { background: #30423f; border-color: #587c69; }
+.dark .mobile-empty > svg { background: #253a36; border-color: #425c50; }
+.dark .mobile-sheet :is(.text-\[\#285e50\], .text-\[\#788b7c\]) { color: #b2c9ba; }
 @media (prefers-reduced-motion: reduce) {
   .theme-choice {
     transition: none;
